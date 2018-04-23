@@ -1,0 +1,27 @@
+;
+;	GOES-R SIS XRS-A Responsivity Requirements
+;	from SIS PORD  (May 2006)
+;
+;  Wavelength [nm]	Preferred	Upper Limit	Lower Limit
+;
+;	REVISED  15-Jan-09  T. Woods
+;
+17  lines : SIS PORD XRS-A Responsivity Requirement
+ 4  columns : Wavelength_nm, Preferred, Upper_limit, Lower_limit
+0.04	0.05	0.16	0.015
+0.08	0.32	0.44	0.12
+0.12	0.71	0.88	0.37
+0.16	0.96	1.20	0.65
+0.20	1.00	1.20	0.81
+0.24	0.87	1.00	0.68
+0.28	0.57	0.85	0.44
+0.32	0.48	0.62	0.36
+0.36	0.34	0.45	0.24
+0.40	0.22	0.29	0.17
+0.44	0.12	0.16	0.092
+0.48	0.05	0.069	0.038
+0.52	0.03	0.039	0.023
+0.55	0.013	0.017	0.01
+0.60	0.0031	0.0041	0.0024
+0.65	0.00058	0.00083	0.00041
+0.70	8.00E-05	0.00014	4.50E-05
