@@ -1,0 +1,114 @@
+! Time and Frequency Steps by USNO (and/or WWV?)
+!
+! Ref: P. Kenneth Seidelmann, Explanatory Supplement to the
+!      Astronomical Almanac, University Science Books, 1992,
+!      Section 2.58, Table 2.58.1.
+!
+! Prepared by B. Knapp, CU/LASP, 2000-12-19
+!
+! Note that the steps of 1964 Oct 1 and 1967 Sep 20 are omitted here
+! because these are inconsistent with the TAI-UTC table published on
+! the USNO web site (ftp://maia.usno.navy.mil/ser7/tai-utc.dat). The
+! presumption (supported by comments in Seidelmann's table) is that
+! these steps were inserted by WWV only, and not at USNO, and moreover,
+! that the USNO table is the "official" TAI-UTC algorithm for 1961 to
+! the present.
+!
+! The column "df" specifies the value of the frequency offset (parts
+! per billion) used to control the WWV time signal.  A given value for
+! df stays in effect until a different value is instituted.
+!
+! The initial step (1956 Jan 1, +0.307238 sec) is determined empirically,
+! in order to make dTAI at 1961 Jan 1 agree with the USNO table referred
+! to above.  Since the reference above (Seidelmann) does not specify
+! whether or not a frequency offset was used in 1956 and 1957, we may
+! also second-guess the df value during this period.  Restricting df
+! values to integer multiples of 1 ppb (as apparently was the practice),
+! the minimum magnitude initial step which can be achieved for 1956 Jan 1
+! is -0.008554, corresponding to df = +5 ppb.  This alternate is shown
+! as a comment line.
+!
+! This table must be updated whenever BIH inserts a leap second
+! (announced by USNO/WWV two months in advance).
+!
+!    y  m  d  h     step  df
+!
+! 1956 01 01  0    -8554  +5
+  1956 01 01 00   307238   0
+  1956 01 04 19    60000   0
+  1956 03 07 19    20000   0
+  1956 03 28 19   -20000   0
+  1956 07 25 19   -20000   0
+  1956 08 22 19   -20000   0
+  1956 09 19 19   -20000   0
+  1956 10 31 19   -20000   0
+  1956 11 14 19   -20000   0
+  1957 01 23 19   -20000   0
+  1957 03 13 20   -20000   0
+  1957 05 01 19   -20000   0
+  1957 06 05 20   -20000   0
+  1957 06 19 19   -20000   0
+  1957 07 03 19   -20000   0
+  1957 07 17 19   -20000   0
+  1957 08 14 19   -20000   0
+  1957 10 16 19   -20000   0
+  1957 11 06 19   -20000   0
+  1957 12 11 19   -20000   0
+  1958 01 01 00        0 -10
+  1958 01 15 19   -20000 -10
+  1958 02 05 19   -20000 -10
+  1958 02 19 19   -20000 -10
+  1958 04 09 19   -20000 -10
+  1958 06 11 19   -20000 -10
+  1958 07 02 19   -20000 -10
+  1958 07 16 19   -20000 -10
+  1958 10 22 19   -20000 -10
+  1958 11 26 19   -20000 -10
+  1958 12 24 19   -20000 -10
+  1959 01 28 19   -20000 -10
+  1959 02 25 19   -20000 -10
+  1959 08 05 19   -20000 -10
+  1959 08 26 19   -20000 -10
+  1959 09 30 19   -20000 -10
+  1959 11 04 19   -20000 -10
+  1959 11 18 19   -20000 -10
+  1959 12 16 19   -20000 -10
+  1960 01 01 00        0 -15
+  1961 01 01 00    -5000 -15
+  1961 08 01 00    50000 -15
+  1962 01 01 00        0 -13
+  1963 11 01 00  -100000 -13
+  1964 01 01 00        0 -15
+  1964 04 01 00  -100000 -15
+  1964 09 01 00  -100000 -15
+! 1964 10 01  0    -1000 -15
+  1965 01 01 00  -100000 -15
+  1965 03 01 00  -100000 -15
+  1965 07 01 00  -100000 -15
+  1965 09 01 00  -100000 -15
+  1966 01 01 00        0 -30
+! 1967 09 20  0      200 -30
+  1968 02 01 00   100000 -30
+  1972 01 01 00  -107758   0
+  1972 07 01 00 -1000000   0
+  1973 01 01 00 -1000000   0
+  1974 01 01 00 -1000000   0
+  1975 01 01 00 -1000000   0
+  1976 01 01 00 -1000000   0
+  1977 01 01 00 -1000000   0
+  1978 01 01 00 -1000000   0
+  1979 01 01 00 -1000000   0
+  1980 01 01 00 -1000000   0
+  1981 07 01 00 -1000000   0
+  1982 07 01 00 -1000000   0
+  1983 07 01 00 -1000000   0
+  1985 07 01 00 -1000000   0
+  1988 01 01 00 -1000000   0
+  1990 01 01 00 -1000000   0
+  1991 01 01 00 -1000000   0
+  1992 07 01 00 -1000000   0
+  1993 07 01 00 -1000000   0
+  1994 07 01 00 -1000000   0
+  1996 01 01 00 -1000000   0
+  1997 07 01 00 -1000000   0
+  1999 01 01 00 -1000000   0

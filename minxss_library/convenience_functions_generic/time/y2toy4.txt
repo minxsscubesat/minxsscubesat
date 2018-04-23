@@ -1,0 +1,51 @@
+Y2K Compliance and 2-digit Year Representations
+~~~ ~~~~~~~~~~ ~~~ ~~~~~~~ ~~~~ ~~~~~~~~~~~~~~~
+
+It has been the practice in the past, in some of our general-use
+IDL library services, to support users' 2-digit year habits by
+silently converting these short-hand year forms to 4-digit years
+by (for example) adding the digits '19' to the front of 2-digit
+years.  This practice is no longer tenable, now that the correct
+century for a 2-digit year is ambiguous.
+
+The solution is for users to stop using 2-digit years altogether.
+But this is an old habit and will be hard to break.  Also, there
+is undoubtedly a lot of existing user IDL code in which 2-digit
+years are used, and passed to library services.  Thus library
+services which accept date arguments and which have supported
+2-digit years up till now should probably continue to do so for
+some time.  However, because of the ambiguity in the meaning of
+a 2-digit year, there will be some increased risk to users who
+continue to use 2-digit years that they will be mis-interpreted.
+
+There are three possible interpretations: 1st century, 20th
+century, and 21st century.  In applications where '19' has been
+added to the front of 2-digit years in the past, the 1st century
+interpretation may be safely ruled out.  Also, in applications
+where a 1st century date is a legitimate possibility (e.g., in
+historical eclipse studies), short-hand 2-digit years were
+probably never supported.  So in most cases where the short-hand
+2-digit years have been supported in the past we need only to
+distinguish between the 20th and 21st centuries.
+
+As a case-in-point, the library procedure msis90.pro, which
+provides an IDL interface to Al Hedin's thermospheric model
+MSIS-90, takes a date input of the form [yy]yyddd[.ddd], where
+the first two digits of the year are optional.  The interpretation
+of 2-digit years in msis90 was not Y2K-compliant, and has been
+changed.  This was done with a new IDL function which I have
+developed, y2toy4, which converts year/day dates of the form
+yyddd[.ddd] to 4-digit year/day dates of the form yyyyddd[.ddd].
+It assumes that years 30 to 99 are in the 20th century and 00 to
+29 are in the 21st century.
+
+The function y2toy4 also will print a warning if detects a 2-digit
+year and if the !warn.obs_routines flag is true (turn this on
+with the WARN procedure).  I have placed this function in my
+date/time library (which is already in your IDL_PATH) on both the
+Mizar and Halley clusters. Users should consider using this
+function in their own codes whenever a problematic 2-digit year
+is discovered.  However, each case should be carefully analyzed
+to determine whether or not it is appropriate to continue support
+of the short-hand 2-digit year form: the ultimate goal should be
+the elimination of the use of, and support of, 2-digit year forms.

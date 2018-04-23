@@ -1,0 +1,132 @@
+IDL Date/Time Conversion services
+
+The SOLSTICE IDL library now includes an extensive collection of date and
+time conversion functions, which are designed to work together and are all
+"IDL-friendly", i.e., they all accept scalars or arrays, and produce the
+appropriate results (with loop-free implementations).
+
+Several different date/time formats are supported.  The following table
+lists these, and indicates the "name" of each format.  To convert from one
+format to another, say from "fmt1" to "fmt2", use the function named
+<fmt1>2<fmt2>.  For example, to convert from UARS Day ("UD") to Julian Day
+Number ("JD"), use the function UD2JD (or ud2jd).
+
+  Description              Name          Epoch      Example  (2000-01-01)
+  ~~~~~~~~~~~              ~~~~          ~~~~~      ~~~~~~~
+  Julian Day Number        JD       -4713-11-24.5   2451544.5
+  YearDay (Year/DOY)       YD           0-01-01.0   2000001.0
+  YearMonthDay             YMD          0-01-01.0   [2000,1,1.0]
+  Mission Day              MD   e.g. 1991-09-11.0   3034.0
+  UARS Day                 UD        1991-09-11.0   3034.0
+  SORCE Day                SD        2002-07-31.0   -942.0
+  GPS Seconds              GPS       1980-01-06.0   630720013.0
+  UARS Date/Time Format    UDTF      1900-01-01.0   [100001,0]
+  VMS Date/Time string     VMS          0-01-01.0  '01-Jan-2000 00:00:00.00'
+  4-digit year & fraction  YF4          0-01-01.0   2000.0
+  2-digit year & fraction  YF2       1900-01-01.0   100.0
+
+The formats listed above encompass most of those that have traditionally
+been supported in our science analysis environment.  Additional formats
+used in the engineering analysis, planning, and CDHF production environ-
+ments could be added to this set in the future.  The formats above determine
+an 11 x 11 matrix with a total of 110 possible conversion services.  50 of
+these have been implemented directly, including all of the conversions to
+and from Julian Day Number (JD); thus to perform a conversion which is not
+implemented directly, no more than two nested function calls are required. 
+For example, to convert from VMS to YF4, use "yf4 = jd2yf4(vms2jd(vms))".
+Here is the matrix indicating which services are available with "x", with
+"from" going down on the left, and "to" going across on the top:
+
+   \ To:                          U
+    \                 Y           D     V     Y     Y                 G
+     \    J     Y     M     U     T     M     F     F     M     S     P
+From: \   D     D     D     D     F     S     4     2     D     D     S
+       \__________________________________________________________________
+   JD  |  .  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |   
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+   YD  |  x  |  .  |  x  |  x  |  .  |  x  |  .  |  .  |  x  |  x  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+  YMD  |  x  |  x  |  .  |  x  |  .  |  x  |  .  |  .  |  x  |  x  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+   UD  |  x  |  x  |  x  |  .  |  .  |  x  |  .  |  .  |  .  |  .  |  x  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+ UDTF  |  x  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+  VMS  |  x  |  x  |  x  |  x  |  .  |  .  |  .  |  .  |  x  |  x  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+  YF4  |  x  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+  YF2  |  x  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+   MD  |  x  |  x  |  x  |  .  |  .  |  x  |  .  |  .  |  .  |  .  |  x  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+   SD  |  x  |  x  |  x  |  .  |  .  |  x  |  .  |  .  |  .  |  .  |  x  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+  GPS  |  x  |  .  |  .  |  x  |  .  |  .  |  .  |  .  |  x  |  x  |  .  |
+       |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+
+
+In addition to the conversion services, there are also services to
+convert day (and fraction) to/from [hour,minute,sec] (d2hms, hms2d); to
+determine the number of days between two dates (dyd or dymd); to add an
+increment of days to a given date (yd2, ymd2); to add an increment of
+milliseconds to a given UARS Date/Time format date (udtf_ms_add), and
+to determine the difference in milliseconds between two UARS Date/Time
+format dates (udtf_ms_dif).
+
+Each service is self-documenting, and full documentation and usage for
+a particular service may be obtained by invoking the service without
+parameters.  For example, to see the documentation for ymd2jd, simply
+type "print,ymd2jd()" at the IDL> prompt.  Also, this documentation file
+($bgk_idllib/datetime.doc) may be displayed by typing "datetime" at the
+IDL> prompt.
+
+Caveats:
+
+(1) The Julian Day Number was chosen as the base standard for this system,
+since it is the standard most prevalent in the astronomical/space science
+community.  Nearly every ephemeris requires Julian Day Number as input,
+including those available in the SOLSTICE IDL library (ephem, helios,
+carr2ut).  Everyone is encouraged to use this format as the fundamental
+"time stamp" in all data products and stored data sets.  Remember that
+Julian Days begin at noon UT, not at midnight.
+
+(2) Double precision is used throughout these routines, so that better
+than millisecond resolution is retained even with the JD and YD formats.
+That is, outputs are invariably double precision, regardless of the input
+type, with one exception: the UARS Date/Time (UDTF) format is an array
+of two longword integers (yyddd,ms).  Also, note that the VMS string
+format retains only 1/100th of a second resolution, so some precision is
+lost converting to and from that format.
+
+(3) Note that the YearMonthDay (YMD) and UARS Date/Time formats are actually
+arrays ([yyyy,mm,dd], [yyyyddd,ms] respectively), and results of conversions
+*to* these formats will always be arrays.  For multiple dates, the returned
+arrays will be 2-dimensional ((3,n), (2,n), respectively).  Conversions
+*from* these formats, however, do not require arrays as input; almost any
+input that makes sense will be accepted.
+
+(4) Only Gregorian calendar dates are supported.  The Gregorian calendar
+was instituted in 1582, so historical dates before 1582 cannot be properly
+converted with these services.  The "proleptic" Gregorian calendar is
+mathematically correct indefinitely into the past and into the future,
+but before 1582 these dates do not coincide with historical dates.  Support
+for the old Julian calendar could be added if the need arises.
+
+(5) The string format supported here is the old IDL "VMS" format, i.e.,
+the format of the system variable !stime.  Recent versions of IDL have
+included a new function, systime, which returns a string in a slightly
+different format.  The VMS format has been retained, since it is also used
+extensively in the SOLSTICE data production environment.  The newer IDL
+systime format could be added in the future.
+
+(6) The two "year and fraction" formats (YF4, YF2) are intended primarily
+for use in making plots; these formats should not be used as fundamental
+or permanent timetags.  Note that both of these formats will have year-
+boundary discrepancies for most years, because of the fact that the civil
+calendar year varies in length (365 or 366 days).  Note also that the
+YF2 format actually becomes a 3-digit number starting with the year 2000.
+
+Please report problems, suggestions, and requests to Barry Knapp
+(knapp@lasp.colorado.edu).
+
