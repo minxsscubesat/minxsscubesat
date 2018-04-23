@@ -101,7 +101,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;for testing purposes just run the ~ 1,000 entries
-  ;  minxsslevel0d_old = minxsslevel0d
+  ; minxsslevel0d_old = minxsslevel0d
   ; minxsslevel0d = minxsslevel0d[4E3:4.1E3]
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -847,7 +847,7 @@ endfor
 
 
 
-  ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .fits files also
+  ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file
   ;
   ;create the file name extension that changes with the minute average chossen as a variable
   ;  outdir = fmdir + 'level1' + x_minute_average_string +'minute' + path_sep()
@@ -856,6 +856,16 @@ endfor
   if keyword_set(verbose) then print, '   Saving Level 1 save set in ', outdir+outfile
   save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
     minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
+    
+  ; Save to NETCDF files, one per variable since it can't hold multiple
+  write_netcdf, minxsslevel1_x123, outdir + file_basename(outfile, '.sav') + '_x123.ncdf', $
+                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
+  write_netcdf, minxsslevel1_x123_dark, outdir + file_basename(outfile, '.sav') + '_x123_dark.ncdf', $
+                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
+  write_netcdf, minxsslevel1_xp, outdir + file_basename(outfile, '.sav') + '_xp.ncdf', $
+                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
+  write_netcdf, minxsslevel1_xp_dark, outdir + file_basename(outfile, '.sav') + '_xp_dark.ncdf', $
+                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
 
   if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
 
