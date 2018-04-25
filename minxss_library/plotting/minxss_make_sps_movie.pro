@@ -100,11 +100,11 @@ FOR timeIndex = 0, n_elements(sps_y) - 1 DO BEGIN
   ; Insert frame into movie
   timeInMovie = movieObject.Put(vidStream, p1.CopyWindow()) ; time returned in seconds
   
-  IF timeIndex MOD 50 EQ 0 THEN message, /INFO, systime() + ' SPS movie progress: ' + JPMPrintNumber(float(timeIndex) / (n_elements(sps_y) - 1) * 100.) + '%'
+  IF timeIndex MOD 50 EQ 0 THEN message, /INFO, JPMsystime() + ' SPS movie progress: ' + JPMPrintNumber(float(timeIndex) / (n_elements(sps_y) - 1) * 100.) + '%'
 ENDFOR
 
 movieObject.Cleanup
-message, /INFO, systime() + ' Time to complete movie: ' + JPMPrintNumber(toc()) + ' seconds'
+message, /INFO, JPMsystime() + ' Time to complete movie: ' + JPMPrintNumber(toc()) + ' seconds'
 
-message, /INFO, systime() + ' -= Program normal completion =-'
+message, /INFO, JPMsystime() + ' -= Program normal completion =-'
 END
