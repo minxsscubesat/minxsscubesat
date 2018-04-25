@@ -87,9 +87,8 @@ t1b = text(6, 6, 'X = ' + JPMPrintNumber(sps_y[0]) + 'º', /DATA, FONT_SIZE = 16
 t1c = text(6, 5.5, 'Y = ' + JPMPrintNumber(sps_z[0]) + 'º', /DATA, FONT_SIZE = 16, FONT_COLOR = foregroundBlackOrWhite, VERTICAL_ALIGNMENT = 1.0, ALIGNMENT = 1.0, TARGET = p1)
 t1d = text(6, -6, time_human[0], /DATA, FONT_SIZE = 16, FONT_COLOR = foregroundBlackOrWhite, ALIGNMENT = 1.0, TARGET = p1)
 
+tic
 FOR timeIndex = 0, n_elements(sps_y) - 1 DO BEGIN
-  tic
-  
   p1.SetData, sps_y[timeIndex], sps_z[timeIndex]
   p1.MAGNITUDE = sps_sum[timeIndex]
   t1a.STRING = 'Total = ' + strtrim(round(sps_sum[timeIndex]), 2) + ' fC'
