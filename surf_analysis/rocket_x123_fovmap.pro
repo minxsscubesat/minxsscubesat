@@ -18,16 +18,14 @@
 ; OPTIONAL INPUTS:
 ;   orientation [integer]: Set orientation < 0 or > 0 (e.g. -1 or +1) to signify -45 or +45 degree orientation, respectively, in BL-2 gimbal 
 ;                          Default = -45.
-;   mapstep [?]:           Set to override automatic calculation of distance (in degrees) between successive alpha/beta points
+;   mapstep [float]:       Set to override automatic calculation of distance (in degrees) between successive alpha/beta points
 ;   
 ; KEYWORDS:
 ;   NOPLOT:         Set to suppress plot (see outmap keyword, below)
-;   SOLAR_DISK_AVG: Set to average nominal FOV map over 0.5-degree solar disk.
 ;   MULTIPLIER:     Set to return a map of multiplicative factors instead of the DEFAULT difference map.
 ;   DESPIKE:        Set to attempt spike removal in SURF beam current (MAY exclude good data by accident)
 ;   CORRECTBC:      Set to modify SURF beam current using empirical correction for potential nonlinearity (MAY NOT BE ACCURATE)
 ;   INCLUDEDARK:    Set this to prevent automatic exclusion of dark data
-;   HELP:           Set this to print messages providing guidance on usage
 ;	  DEBUG:          Option to print DEBUG messages
 ;	  VERBOSE:        Set this to print additional processing messages
 ;
@@ -54,7 +52,7 @@
 ;+
 pro rocket_x123_fovmap, datafile, surffile, $
                         mapstep=mapstep, $
-                        ORIENTATION=ORIENTATION, NOPLOT=NOPLOT, SOLAR_DISK_AVG=SOLAR_DISK_AVG, MULTIPLIER=MULTIPLIER, DESPIKE=DESPIKE, CORRECTBC=CORRECTBC, INCLUDEDARK = INCLUDEDARK, HELP=HELP, DEBUG=DEBUG, VERBOSE=VERBOSE, $
+                        ORIENTATION=ORIENTATION, NOPLOT=NOPLOT, MULTIPLIER=MULTIPLIER, DESPIKE=DESPIKE, CORRECTBC=CORRECTBC, INCLUDEDARK = INCLUDEDARK, DEBUG=DEBUG, VERBOSE=VERBOSE, $
                         sci=sci, surferData=surferData, outmap = outmap
 
 ; Defaults
@@ -203,7 +201,6 @@ endif else begin ; For XP and SPS, use total signal
 endelse ; cdata now contains the correct signal(s) to use
 
 ; Find all the science data during stable periods, and mark it
-STOP
 for k = 1, n_elements(runstarts)-1 do begin
   tmax = (tdata_fine[wgood[runstarts[k]-1]])[0]
   tmin = (tdata_fine[wgood[runstarts[k-1]]])[0]
@@ -230,15 +227,6 @@ endfor
 ;
 cmap = transpose(cdata_avg)
 ecmap = transpose(ecdata_avg)
-;if (wdiff eq 2) then begin
-  ; Yaw first
-;  yaws = sdata1_avg
-;  pitches = sdata2_avg
-;endif else begin
-  ; Pitch first
-;  yaws = sdata2_avg
-;  pitches = sdata1_avg
-;endelse
 yaws = sdata_u_avg
 pitches = sdata_v_avg
 
@@ -250,7 +238,9 @@ alphas = cos(orientation) * (-yaws) + sin(orientation) * pitches
 betas = -sin(orientation) * (-yaws) + cos(orientation) * pitches
 ; If mapstep not given, find most common step size of alpha and beta (ASSUMES row/col scanning) and ROUND to nearest 0.1 degree
 if not keyword_set(mapstep) then begin
-  mapstep = median(abs((alphas+betas)-shift(alphas+betas,1)))
+  alphaUnique = alphas[uniq(alphas, sort(alphas))]
+  betaUnique = betas[uniq(betas, sort(betas))]
+  mapstep = median(abs((alphaUnique+betaUnique)-shift(alphaUnique+betaUnique,1)))
   mapstep = round(mapstep/.1d)*.1d
 endif
 
@@ -259,7 +249,7 @@ alpha_rnd = round(alphas/mapstep)*mapstep  &  alphas = alpha_rnd[uniq(alpha_rnd,
 n_alpha = n_elements(alphas)
 beta_rnd = round(betas/mapstep)*mapstep  &  betas = beta_rnd[uniq(beta_rnd,sort(beta_rnd))]
 n_beta = n_elements(betas)
-cmap_regrid = fltarr(n_alpha,n_beta, n_elements(cmap[0,*]))   &   ecmap_regrid = cmap_regrid
+cmap_regrid = fltarr(n_alpha, n_beta, n_elements(cmap))   &   ecmap_regrid = cmap_regrid
 
 for i=0,n_alpha-1 do begin
   for j=0,n_beta-1 do begin
@@ -267,8 +257,8 @@ for i=0,n_alpha-1 do begin
     if (ngood ne 0) then begin
       ; Ignore first and last center-point measurements...
 ;      if ((i eq n_alpha/2) and (j eq n_beta/2)) then wgood = wgood[where((wgood ge 2) and (wgood le n_elements(cmap_regrid)))]
-      cmap_regrid[i,j,*] = mean(cmap[wgood,*],dim=1)
-      ecmap_regrid[i,j,*] = sqrt(total(ecmap[wgood,*]^2,1))/sqrt(ngood)
+      cmap_regrid[i,j,*] = mean(cmap[wgood],dim=1)
+      ecmap_regrid[i,j,*] = sqrt(total(ecmap[wgood]^2,1))/sqrt(ngood)
     endif else begin
       cmap_regrid[i,j,*] = !values.f_nan
       ecmap_regrid[i,j,*] = !values.f_nan
@@ -278,100 +268,53 @@ for i=0,n_alpha-1 do begin
 endfor
 
 ; Normalize map to center-point average
-;cmap_ctr_avg = mean(cmap[where((abs(alphas) le mapstep/10.) and (abs(betas) le mapstep/10.))])
-;cmap = ((cmap/cmap_ctr_avg) - 1.) * 100.
 a0 = where(alphas eq 0)
 b0 = where(betas eq 0)
 pct_factor = keyword_set(multiplier) ? 1. : 100.
 add_factor = keyword_set(multiplier) ? 0. : 1.
-for k=0,n_elements(cmap[0,*])-1 do begin
+for k=0,n_elements(cmap)-1 do begin
   ecmap_regrid[*,*,k] *= pct_factor/(cmap_regrid[a0,b0,k])[0] ; Must do errors first because of reassignment below...
   cmap_regrid[*,*,k] = ((cmap_regrid[*,*,k]/(cmap_regrid[a0,b0,k])[0]) - add_factor) * pct_factor
 endfor
 
-if not keyword_set(solar_disk_avg) then begin
-  ; Our FOV map is complete, store it in the output variable
-  outmap = { alphas_deg: alphas, betas_deg: betas, fovmap_pct: cmap_regrid, errormap_pct: ecmap_regrid }
-endif else begin
-  ; We need to average over the 0.5-degree solar disk, for each point...
-  ; Since our grid is uniform in each dimension, begin by calculating the area mask - the fractions of each grid point covered by disk centered at (0,0)
-  cmap_new = cmap_regrid * 0.
-  ecmap_new = ecmap_regrid * 0.
-  areas = fltarr(n_alpha,n_beta)
-  for i=0,n_alpha-1 do begin
-    for j=0,n_beta-1 do begin
-      areas[i,j] = poly_circarea(transpose([[alphas[i]-(mapstep/2.),alphas[i]+(mapstep/2.),alphas[i]+(mapstep/2.),alphas[i]-(mapstep/2.)],[betas[j]-(mapstep/2.),betas[j]-(mapstep/2.),betas[j]+(mapstep/2.),betas[j]+(mapstep/2.)]]), 0.25, [0,0])
-    endfor
-  endfor
-  ; Now, for each point, shift the area mask to be centered at that point and calculate the weighted average
-  for i=0,n_alpha-1 do begin
-    for j=0,n_beta-1 do begin
-      mask = rebin(ashift(areas, [i-a0,j-b0], fill=0.),size(cmap_new,/dim))
-      cmap_new[i,j,*] = total(total(mask * cmap_regrid,2),1) / total(total(mask,2),1)
-      ecmap_new[i,j,*] = sqrt(total(total((mask * ecmap_regrid)^2,2),1))
-    endfor
-  endfor
-
-  ; Store the smoothed map in the previous variables, so plotting below works either way...
-  cmap_orig = cmap_regrid  &  ecmap_orig = ecmap_regrid
-  cmap_regrid = cmap_new  &  ecmap_regrid = ecmap_new
-  title += ' [Solar Disk Average]'
-  ; And, output the smoothed FOV map, but restrict it ONLY to where we don't clip, within 0.25 degrees of the edges
-;  a5 = where(abs(alphas) le 0.5)  &  b5 = where(abs(betas) le 0.5)
-  a5 = where((abs(alphas) + 0.25) le min(abs([min(alphas),max(alphas)])))  &  b5 = where((abs(betas) + 0.25) le min(abs([min(betas),max(betas)])))
-  outmap = { alphas_deg: alphas[a5], betas_deg: betas[b5], fovmap_pct: cmap_regrid[a5,b5,*], errormap_pct: ecmap_regrid[a5,b5,*] }
-endelse
-
 if not keyword_set(noplot) then begin
-  
-  if keyword_set(debug) then begin
-    ans = ''
-    read,prompt='DEBUG: Hit RETURN for Alpha/Beta DEBUG grid plot ... ', ans
-    contour, cmap_regrid, alphas, betas, /iso, /nodata, /xs, /ys, xtitle = 'Alpha [deg]', ytitle = 'Beta [deg]', title = title, xr=plotrange(alphas), yr=plotrange(betas)
-    for i=0,n_alpha-1 do begin
-      for j=0,n_beta-1 do begin
-        xyouts, alphas[i], betas[j], string(cmap_regrid[i,j],format='(F+4.1)')
-      endfor
-    endfor
-  
-    ; ask user if ready for next plot
-    ans = ''
-    read,prompt='DEBUG: Hit RETURN for Alpha/Beta contour plot ... ', ans
-  
-  endif
-  
   ; Bilinearly interpolate on 5x finer grid
-  ;alphas = (findgen((n_alpha-1)*5+1)/((n_alpha-1)*5)-0.5) * (max(alphas)-min(alphas))
-  ;betas = (findgen((n_beta-1)*5+1)/((n_beta-1)*5)-0.5) * (max(betas)-min(betas))
   alphas = interpol(alphas, findgen(n_alpha), findgen((n_alpha-1)*5+1)/5.)
   betas = interpol(betas, findgen(n_beta), findgen((n_beta-1)*5+1)/5.)
-  cmap_regrid = bilinear(cmap_regrid,findgen((n_alpha-1)*5+1)/5.,findgen((n_beta-1)*5+1)/5.)
+  cmap_regrid_bilinear = fltarr(n_elements(alphas), n_elements(betas), n_elements(cmap_regrid[0, 0, *]))
+  FOR timeIndex = 0, n_elements(cmap_regrid[0, 0, *]) - 1 DO BEGIN
+    cmap_regrid_bilinear[*, *, timeIndex] = bilinear(cmap_regrid[*, *, timeIndex], findgen((n_alpha-1)*5+1)/5., findgen((n_beta-1)*5+1)/5.)
+  ENDFOR
+  cmap_regrid = cmap_regrid_bilinear
   
   neg_thresh = keyword_set(multiplier) ? 1. : 0.
   format_str = keyword_set(multiplier) ? '(F5.3)' : '(F+4.1)'
   pct_str = keyword_set(multiplier) ? '' : '%'
   
-  contour, cmap_regrid, alphas, betas, /iso, /nodata, /xs, /ys, xtitle = 'Alpha [deg]', ytitle = 'Beta [deg]', title = title, xr=plotrange(alphas), yr=plotrange(betas)
+  contour, cmap_regrid[*, *, 0], alphas, betas, /iso, /nodata, /xs, /ys, xtitle = 'Alpha [deg]', ytitle = 'Beta [deg]', title = title, xr=plotrange(alphas), yr=plotrange(betas)
   device,decomp=0
   loadct, 1, /silent ; Blue/White
   wgood = where(cmap_regrid lt neg_thresh, ngood) ; Plot negative deviations in blue...
   percentstep = (('X123' eq 'XP') ? 0.5 : (('X123' eq 'SPS') ? 0.5 : 0.5)) / (keyword_set(multiplier) ? 100. : 1.)
-  if (ngood ne 0) then begin
-    minval = floor(min(cmap_regrid[wgood])/percentstep)*percentstep ; minimum contour level needed in tenths of a percent (NEGATIVE)
-    levels = findgen(abs(minval-neg_thresh)/percentstep+1)*percentstep + minval ; contours from minval up to 0, in tenths of a percent
-    colors = indgen(n_elements(levels))*100/(n_elements(levels)-1)+155 ; darker blue = more negative
-    contour, cmap_regrid, alphas, betas, levels=levels, c_colors=colors, /iso, /cell_fill, /over
-    contour, cmap_regrid, alphas, betas, levels=levels, /iso, /over, c_charsize=2, c_annotation=string(levels[0:n_elements(levels)-2],format=format_str)+pct_str
-  endif
-  loadct, 3, /silent ; Red Temperature
-  wgood = where(cmap_regrid gt neg_thresh, ngood) ; Plot positive deviations in red...
-  if (ngood ne 0) then begin
-    minval = ceil(max(cmap_regrid[wgood])/percentstep)*percentstep ; maximum contour level needed in tenths of a percent (POSITIVE)
-    levels = findgen(round(abs(minval-neg_thresh)/percentstep+1))*percentstep + neg_thresh; contours from 0 up to minval, in tenths of a percent
-    colors = reverse(indgen(n_elements(levels))*100/(n_elements(levels)-1)+135) ; reversed so darker red = more positive
-    contour,cmap_regrid,alphas,betas,levels=levels,c_colors=colors,/iso,/cell_fill,/over,/noerase
-    contour,cmap_regrid,alphas,betas,levels=levels,/iso,/over,c_charsize=2,c_annotation=string(levels,format=format_str)+pct_str
-  endif
+  
+  FOR timeIndex = 0, n_elements(cmap_regrid[0, 0, *]) - 1 DO BEGIN
+    if (ngood ne 0) then begin
+      minval = floor(min(cmap_regrid[wgood])/percentstep)*percentstep ; minimum contour level needed in tenths of a percent (NEGATIVE)
+      levels = findgen(abs(minval-neg_thresh)/percentstep+1)*percentstep + minval ; contours from minval up to 0, in tenths of a percent
+      colors = indgen(n_elements(levels))*100/(n_elements(levels)-1)+155 ; darker blue = more negative
+      contour, cmap_regrid[*, *, timeIndex], alphas, betas, levels=levels, c_colors=colors, /iso, /cell_fill, /over
+      contour, cmap_regrid[*, *, timeIndex], alphas, betas, levels=levels, /iso, /over, c_charsize=2, c_annotation=string(levels[0:n_elements(levels)-2],format=format_str)+pct_str
+    endif
+    loadct, 3, /silent ; Red Temperature
+    wgood = where(cmap_regrid gt neg_thresh, ngood) ; Plot positive deviations in red...
+    if (ngood ne 0) then begin
+      minval = ceil(max(cmap_regrid[wgood])/percentstep)*percentstep ; maximum contour level needed in tenths of a percent (POSITIVE)
+      levels = findgen(round(abs(minval-neg_thresh)/percentstep+1))*percentstep + neg_thresh; contours from 0 up to minval, in tenths of a percent
+      colors = reverse(indgen(n_elements(levels))*100/(n_elements(levels)-1)+135) ; reversed so darker red = more positive
+      contour,cmap_regrid[*, *, timeIndex],alphas,betas,levels=levels,c_colors=colors,/iso,/cell_fill,/over,/noerase
+      contour,cmap_regrid[*, *, timeIndex],alphas,betas,levels=levels,/iso,/over,c_charsize=2,c_annotation=string(levels,format=format_str)+pct_str
+    endif
+  ENDFOR
   
   ; Overplot circle at +/- 20 arcmin to show PORD requirements
   circle_points = transpose([[(20./60.) * cos((2 * !PI / 99.0) * FINDGEN(100))], [(20./60.) * sin((2 * !PI / 99.0) * FINDGEN(100))]])
@@ -380,7 +323,7 @@ if not keyword_set(noplot) then begin
   oplot, circle_points[0,*], circle_points[1,*], thick=4
   circle_points = transpose([[(27./60.) * cos((2 * !PI / 99.0) * FINDGEN(100))], [(27./60.) * sin((2 * !PI / 99.0) * FINDGEN(100))]])
   oplot, circle_points[0,*], circle_points[1,*], thick=4, color=125
-
+  STOP
 endif ; if not noplot
 
 return

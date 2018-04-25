@@ -32,8 +32,8 @@
 ;   dataConsolidated = rocket_x123_surfer_consolidate(x123Data, surferData, /MANUALDARK)
 ;
 ; MODIFICATION HISTORY:
-;   2018-03-29: James Paul Mason: Wrote script based on minxss_process_surfer_data.
-;   2018-04-02: James Paul Mason: Rewriting of this code from scratch, using minxss_process_surfer.pro as a reference.
+;   2018-03-29: James Paul Mason: Wrote script based on minxss_process_surferdata.
+;   2018-04-02: James Paul Mason: Rewriting of this code from scratch, using minxss_process_surfdata.pro as a reference.
 ;-
 FUNCTION rocket_x123_surfer_consolidate, x123Data, surferData, $
                                          timeBaseJd = timeBaseJd, $
