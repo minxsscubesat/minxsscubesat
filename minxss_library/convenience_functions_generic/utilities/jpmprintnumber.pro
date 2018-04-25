@@ -36,6 +36,7 @@
 ;   2016-03-28: James Paul Mason: Implemented proper rounding of decimals
 ;   2016-04-27: James Paul Mason: Added EXPONENT_FORM and SCIENTIFIC_NOTATION keywords
 ;   2017-03-02: James Paul Mason: Can now handle array input for numbersToFormat
+;   2018-04-25: James Paul Mason: Properly handle integer rounding when /NO_DECIMALS is set
 ;-
 FUNCTION JPMPrintNumber, numbersToFormat, NUMBER_OF_DECIMALS = number_of_decimals, $
                          NO_DECIMALS = NO_DECIMALS, EXPONENT_FORM = EXPONENT_FORM, SCIENTIFIC_NOTATION = SCIENTIFIC_NOTATION
@@ -54,7 +55,7 @@ FOREACH numberToFormat, numbersToFormat DO BEGIN
   pos = strpos(trimmed, '.')
   IF pos NE [-1] THEN BEGIN
     IF ~keyword_set(NO_DECIMALS) THEN trimmed = strjoin(strmid(trimmed, 0, pos) + strmid(trimmed, pos, number_of_decimals + 1)) ELSE $
-                                      trimmed = strjoin(strmid(trimmed, 0, pos))
+                                      trimmed = strtrim(fix(round(float(trimmed))), 2)
   ENDIF
   
   IF keyword_set(EXPONENT_FORM) THEN BEGIN
