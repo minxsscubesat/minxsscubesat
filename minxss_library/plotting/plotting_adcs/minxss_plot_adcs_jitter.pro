@@ -56,22 +56,22 @@ fineRefIndices = where(adcs_mode EQ 1)
 adcs3 = adcs3[fineRefIndices]
 
 ; Filter out eclipse data
-;insolatedIndices = where(adcs3.SUN_POINT_ANGLE_ERROR LT 180)
-;adcs3 = adcs3[insolatedIndices]
-;eclipseStateSwitchIndices = uniq(hk.ECLIPSE_STATE)
-;jdOfEclipseStateChange = hk[eclipseStateSwitchIndices].time_jd
-;insolatedIndices = !NULL
-;FOR i = 1, n_elements(jdOfEclipseStateChange) - 1 DO BEGIN
-;  t1 = jdOfEclipseStateChange[i-1]
-;  t2 = jdOfEclipseStateChange[i]
-;  IF hk[eclipseStateSwitchIndices[i-1] + 1].eclipse_state EQ 0 THEN BEGIN
-;    tmp = where(adcs3.time_jd GT t1 AND adcs3.time_jd LT t2)
-;    IF tmp NE [-1] THEN BEGIN
-;      insolatedIndices = insolatedIndices EQ !NULL ? tmp : [insolatedIndices, tmp]
-;    ENDIF
-;  ENDIF
-;ENDFOR
-;adcs3 = adcs3[insolatedIndices]
+insolatedIndices = where(adcs3.SUN_POINT_ANGLE_ERROR LT 180)
+adcs3 = adcs3[insolatedIndices]
+eclipseStateSwitchIndices = uniq(hk.ECLIPSE_STATE)
+jdOfEclipseStateChange = hk[eclipseStateSwitchIndices].time_jd
+insolatedIndices = !NULL
+FOR i = 1, n_elements(jdOfEclipseStateChange) - 1 DO BEGIN
+  t1 = jdOfEclipseStateChange[i-1]
+  t2 = jdOfEclipseStateChange[i]
+  IF hk[eclipseStateSwitchIndices[i-1] + 1].eclipse_state EQ 0 THEN BEGIN
+    tmp = where(adcs3.time_jd GT t1 AND adcs3.time_jd LT t2)
+    IF tmp NE [-1] THEN BEGIN
+      insolatedIndices = insolatedIndices EQ !NULL ? tmp : [insolatedIndices, tmp]
+    ENDIF
+  ENDIF
+ENDFOR
+adcs3 = adcs3[insolatedIndices]
 
 ; Filter out bad tracker data
 goodTrackerIndices = where(adcs3.TRACKER_ATTITUDE_STATUS EQ 0)
@@ -149,10 +149,41 @@ t3 = text(0.25, 0.21, '3$\sigma$ = ' + JPMPrintNumber(3 * zSigma, NUMBER_OF_DECI
 ; Save plot to disk
 p1.save, saveloc + 'Jitter Histogram.png'
 
-
 ; Solar pointing error in degrees
 yError = adcs3.attitude_error1 * !RADEG ; MinXSS +Y = XACT +X
 zError = adcs3.attitude_error3 * !RADEG ; MinXSS +Z = XACT +Z
+
+; Statistics on number of points within sigma circles
+tmp = where(yError LT 1 * ysigma AND zError LT 1 * zsigma, numberOfPointsIn1Sigma)
+tmp = where(yError LT 2 * ysigma AND zError LT 2 * zsigma, numberOfPointsIn2Sigma)
+tmp = where(yError LT 3 * ysigma AND zError LT 3 * zsigma, numberOfPointsIn3Sigma)
+percentOfPointsIn1Sigma = float(numberOfPointsIn1Sigma) / n_elements(yError) * 100.
+percentOfPointsIn2Sigma = float(numberOfPointsIn2Sigma) / n_elements(yError) * 100.
+percentOfPointsIn3Sigma = float(numberOfPointsIn3Sigma) / n_elements(yError) * 100.
+
+; Find 1, 2, and 3 sigma circles
+;FOR sigma = 0., 0.06, 0.001 DO BEGIN
+;  tmp = where(yError LT 1 * sigma AND zError LT 1 * sigma, numberOfPointsIn1Sigma)
+;  tmp = where(yError LT 2 * sigma AND zError LT 2 * sigma, numberOfPointsIn2Sigma)
+;  tmp = where(yError LT 3 * sigma AND zError LT 3 * sigma, numberOfPointsIn3Sigma)
+;  percentOfPointsIn1SigmaTmp = float(numberOfPointsIn1Sigma) / n_elements(yError) * 100.
+;  percentOfPointsIn2SigmaTmp = float(numberOfPointsIn2Sigma) / n_elements(yError) * 100.
+;  percentOfPointsIn3SigmaTmp = float(numberOfPointsIn3Sigma) / n_elements(yError) * 100.
+;  
+;  IF percentOfPointsIn1SigmaTmp GT 67 AND percentOfPointsIn1SigmaTmp LT 69 THEN BEGIN
+;    percentOfPointsIn1Sigma = percentOfPointsIn1SigmaTmp
+;    oneSigma = sigma
+;  ENDIF
+;  IF percentOfPointsIn2SigmaTmp GT 94 AND percentOfPointsIn2SigmaTmp LT 96 THEN BEGIN
+;    percentOfPointsIn2Sigma = percentOfPointsIn2SigmaTmp
+;    twoSigma = sigma
+;  ENDIF
+;  IF percentOfPointsIn3SigmaTmp GT 99 AND percentOfPointsIn3SigmaTmp LT 100 THEN BEGIN
+;    percentOfPointsIn3Sigma = percentOfPointsIn3SigmaTmp
+;    threeSigma = sigma
+;    BREAK
+;  ENDIF
+;ENDFOR
 
 ; Plot just like ASTERIA from JPL: https://www.jpl.nasa.gov/news/news.php?feature=7097
 p2 = scatterplot(yError, zError, FONT_SIZE = fontSize, AXIS_STYLE = 3, $
@@ -161,12 +192,12 @@ p2 = scatterplot(yError, zError, FONT_SIZE = fontSize, AXIS_STYLE = 3, $
                  YRANGE = xyrange, YTICKVALUES = [-0.04, -0.02, 0.02, 0.04])
 xtitle = text(0.5, 0.02, 'Pointing Error [º]', ALIGNMENT = 0.5, FONT_SIZE = fontSize - 2)
 ytitle = text(0.03, 0.5, 'Pointing Error [º]', ALIGNMENT = 0.5, ORIENTATION = 90, FONT_SIZE = fontSize - 2)
-c1 = ellipse(0, 0, MAJOR = ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'lime green', NAME = '1')
-c2 = ellipse(0, 0, MAJOR = 2 * ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'gold', NAME = '2')
-c3 = ellipse(0, 0, MAJOR = 3 * ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'tomato', NAME = '3')
-l1 = text(0.85, 0.89, '1$\sigma$', COLOR = c1.color, FONT_SIZE = fontSize - 4)
-l2 = text(0.85, 0.85, '2$\sigma$', COLOR = c2.color, FONT_SIZE = fontSize - 4)
-l3 = text(0.85, 0.81, '3$\sigma$', COLOR = c3.color, FONT_SIZE = fontSize - 4)
+c1 = ellipse(0, 0, MAJOR = ysigma, MINOR = zsigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'lime green', NAME = '1')
+c2 = ellipse(0, 0, MAJOR = 2 * ysigma, MINOR = 2 * zsigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'gold', NAME = '2')
+c3 = ellipse(0, 0, MAJOR = 3 * ysigma, MINOR = 3 * zsigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'tomato', NAME = '3')
+l1 = text(0.85, 0.89, JPMPrintNumber(percentOfPointsIn1Sigma, /NO_DECIMALS) + '%', COLOR = c1.color, FONT_SIZE = fontSize - 4)
+l2 = text(0.85, 0.85, JPMPrintNumber(percentOfPointsIn2Sigma, /NO_DECIMALS) + '%', COLOR = c2.color, FONT_SIZE = fontSize - 4)
+l3 = text(0.85, 0.81, JPMPrintNumber(percentOfPointsIn3Sigma, /NO_DECIMALS) + '%', COLOR = c3.color, FONT_SIZE = fontSize - 4)
 p2.save, saveloc + 'Jitter Zoom.png'
 
 ; Same plot but with whole sun size shown for scale
@@ -176,11 +207,11 @@ p3 = scatterplot(yError, zError, FONT_SIZE = fontSize, AXIS_STYLE = 3, ASPECT_RA
                  YRANGE = [-0.5, 0.5], YCOLOR = 'dark grey')
 xtitle = text(0.5, 0.02, 'Pointing Error [º]', ALIGNMENT = 0.5, FONT_SIZE = fontSize - 2)
 ytitle = text(0.03, 0.5, 'Pointing Error [º]', ALIGNMENT = 0.5, ORIENTATION = 90, FONT_SIZE = fontSize - 2)
-c3 = ellipse(0, 0, MAJOR = 3 * ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'tomato')
+c3 = ellipse(0, 0, MAJOR = 3 * ysigma, MINOR = 3 * zsigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'tomato')
 c4 = ellipse(0, 0, MAJOR = 0.265, MINOR = 0.265, /DATA, THICK = 2, FILL_COLOR = 'gold', COLOR = 'gold')
 c4.Order, /SEND_TO_BACK
 l1 = text(0.85, 0.89, 'Sun', COLOR = c4.color, FONT_SIZE = fontSize - 4)
-l2 = text(0.85, 0.85, '3$\sigma$', COLOR = c3.color, FONT_SIZE = fontSize - 4)
+l2 = text(0.85, 0.85, JPMPrintNumber(percentOfPointsIn3Sigma, /NO_DECIMALS) + '%', COLOR = c3.color, FONT_SIZE = fontSize - 4)
 p3.save, saveloc + 'Jitter Wide.png'
 
 END
