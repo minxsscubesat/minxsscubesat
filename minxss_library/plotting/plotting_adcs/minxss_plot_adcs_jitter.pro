@@ -29,6 +29,7 @@
 ; MODIFICATION HISTORY:
 ;   2017-05-19: James Paul Mason: Wrote script.
 ;   2017-05-26: James Paul Mason: Updated to generate a histogram rather than a time series.
+;   2018-04-24: James Paul Mason: Added an additional plot based on the format used by JPL's ASTERIA CubeSat. https://www.jpl.nasa.gov/news/news.php?feature=7097 slide 2.
 ;-
 PRO minxss_plot_adcs_jitter, saveloc = saveloc
 
@@ -42,6 +43,7 @@ smoothNumberOfPoints = 500
 rad2rpm = 9.54929659643
 fwhm2sigma = 2.355
 fontSize = 16
+xyrange = [-0.05, 0.05]
 
 ; Restore the level 0c data
 restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav'
@@ -53,13 +55,27 @@ adcs_mode = ISHFT(adcs3.adcs_info AND '01'X, 0) ; extract 1-bit flag
 fineRefIndices = where(adcs_mode EQ 1)
 adcs3 = adcs3[fineRefIndices]
 
-;; Filter out eclipse data
+; Filter out eclipse data
 ;insolatedIndices = where(adcs3.SUN_POINT_ANGLE_ERROR LT 180)
 ;adcs3 = adcs3[insolatedIndices]
-;
-;; Filter out bad tracker data
-;goodTrackerIndices = where(adcs3.TRACKER_ATTITUDE_STATUS EQ 0)
-;adcs3 = adcs3[goodTrackerIndices]
+;eclipseStateSwitchIndices = uniq(hk.ECLIPSE_STATE)
+;jdOfEclipseStateChange = hk[eclipseStateSwitchIndices].time_jd
+;insolatedIndices = !NULL
+;FOR i = 1, n_elements(jdOfEclipseStateChange) - 1 DO BEGIN
+;  t1 = jdOfEclipseStateChange[i-1]
+;  t2 = jdOfEclipseStateChange[i]
+;  IF hk[eclipseStateSwitchIndices[i-1] + 1].eclipse_state EQ 0 THEN BEGIN
+;    tmp = where(adcs3.time_jd GT t1 AND adcs3.time_jd LT t2)
+;    IF tmp NE [-1] THEN BEGIN
+;      insolatedIndices = insolatedIndices EQ !NULL ? tmp : [insolatedIndices, tmp]
+;    ENDIF
+;  ENDIF
+;ENDFOR
+;adcs3 = adcs3[insolatedIndices]
+
+; Filter out bad tracker data
+goodTrackerIndices = where(adcs3.TRACKER_ATTITUDE_STATUS EQ 0)
+adcs3 = adcs3[goodTrackerIndices]
 
 ; Determine jitter over 10-second period (MinXSS requirement)
 timeJd = !NULL
@@ -132,5 +148,39 @@ t3 = text(0.25, 0.21, '3$\sigma$ = ' + JPMPrintNumber(3 * zSigma, NUMBER_OF_DECI
 
 ; Save plot to disk
 p1.save, saveloc + 'Jitter Histogram.png'
+
+
+; Solar pointing error in degrees
+yError = adcs3.attitude_error1 * !RADEG ; MinXSS +Y = XACT +X
+zError = adcs3.attitude_error3 * !RADEG ; MinXSS +Z = XACT +Z
+
+; Plot just like ASTERIA from JPL: https://www.jpl.nasa.gov/news/news.php?feature=7097
+p2 = scatterplot(yError, zError, FONT_SIZE = fontSize, AXIS_STYLE = 3, $
+                 SYMBOL = 'circle', SYM_SIZE = 0.7, /SYM_FILLED, SYM_TRANSPARENCY = 80, $
+                 XRANGE = xyrange, XTICKVALUES = [-0.04, -0.02, 0.02, 0.04], $
+                 YRANGE = xyrange, YTICKVALUES = [-0.04, -0.02, 0.02, 0.04])
+xtitle = text(0.5, 0.02, 'Pointing Error [º]', ALIGNMENT = 0.5, FONT_SIZE = fontSize - 2)
+ytitle = text(0.03, 0.5, 'Pointing Error [º]', ALIGNMENT = 0.5, ORIENTATION = 90, FONT_SIZE = fontSize - 2)
+c1 = ellipse(0, 0, MAJOR = ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'lime green', NAME = '1')
+c2 = ellipse(0, 0, MAJOR = 2 * ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'gold', NAME = '2')
+c3 = ellipse(0, 0, MAJOR = 3 * ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'tomato', NAME = '3')
+l1 = text(0.85, 0.89, '1$\sigma$', COLOR = c1.color, FONT_SIZE = fontSize - 4)
+l2 = text(0.85, 0.85, '2$\sigma$', COLOR = c2.color, FONT_SIZE = fontSize - 4)
+l3 = text(0.85, 0.81, '3$\sigma$', COLOR = c3.color, FONT_SIZE = fontSize - 4)
+p2.save, saveloc + 'Jitter Zoom.png'
+
+; Same plot but with whole sun size shown for scale
+p3 = scatterplot(yError, zError, FONT_SIZE = fontSize, AXIS_STYLE = 3, ASPECT_RATIO = 1, $
+                 SYMBOL = 'circle', SYM_SIZE = 0.7, /SYM_FILLED, SYM_TRANSPARENCY = 80, $
+                 XRANGE = [-0.5, 0.5], XCOLOR = 'dark grey', $
+                 YRANGE = [-0.5, 0.5], YCOLOR = 'dark grey')
+xtitle = text(0.5, 0.02, 'Pointing Error [º]', ALIGNMENT = 0.5, FONT_SIZE = fontSize - 2)
+ytitle = text(0.03, 0.5, 'Pointing Error [º]', ALIGNMENT = 0.5, ORIENTATION = 90, FONT_SIZE = fontSize - 2)
+c3 = ellipse(0, 0, MAJOR = 3 * ysigma, /DATA, THICK = 2, FILL_BACKGROUND = 0, COLOR = 'tomato')
+c4 = ellipse(0, 0, MAJOR = 0.265, MINOR = 0.265, /DATA, THICK = 2, FILL_COLOR = 'gold', COLOR = 'gold')
+c4.Order, /SEND_TO_BACK
+l1 = text(0.85, 0.89, 'Sun', COLOR = c4.color, FONT_SIZE = fontSize - 4)
+l2 = text(0.85, 0.85, '3$\sigma$', COLOR = c3.color, FONT_SIZE = fontSize - 4)
+p3.save, saveloc + 'Jitter Wide.png'
 
 END
