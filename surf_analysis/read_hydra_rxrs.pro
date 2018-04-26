@@ -818,8 +818,8 @@ junk = temporary(hexdump)
     sci = JPMAddTagsToStructure(sci, 'iso', 'string')
     sci = JPMAddTagsToStructure(sci, 'human', 'string')
     sci.jd = gps2jd(sci.time)
-    ;sci.iso = JPMjd2iso(gps2jd(sci.time))
-    ;sci.human = JPMjd2iso(gps2jd(sci.time), /NO_T_OR_Z)
+    sci.iso = JPMjd2iso(gps2jd(sci.time))
+    sci.human = JPMjd2iso(gps2jd(sci.time), /NO_T_OR_Z)
   endif
 
   return    ; end of reading packets
