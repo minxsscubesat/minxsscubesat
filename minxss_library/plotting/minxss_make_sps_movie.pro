@@ -45,11 +45,9 @@ IF fm EQ !NULL THEN fm = 1
 IF dimensions EQ !NULL THEN dimensions = [700, 700]
 IF keyword_set(DARK_BACKGROUND) THEN BEGIN
   foregroundBlackOrWhite = 'white'
-  bubbleColor = 'gold'
   backgroundColor = 'black'
 ENDIF ELSE BEGIN
   foregroundBlackOrWhite = 'black'
-  bubbleColor = 'gold'
   backgroundColor = 'white'
 ENDELSE
 
@@ -71,6 +69,12 @@ time_jd = hk.time_jd
 sps_y = hk.sps_x / 10000. * 3.0
 sps_z = hk.sps_y / 10000. * 3.0
 sps_sum = hk.sps_sum
+adcs_mode = hk.adcs_mode
+
+; Set bubble color to gold when in fine reference mode and blue when in coarse sun point mode
+bubble_color = strarr(n_elements(adcs_mode))
+bubble_color[where(adcs_mode EQ 0)] = 'dodger blue'
+bubble_color[where(adcs_mode EQ 1)] = 'gold'
 
 ; Setup movie
 movieObject = IDLffVideoWrite('SPS Movie.mp4')
@@ -78,7 +82,7 @@ vidStream = movieObject.AddVideoStream(dimensions[0], dimensions[1], 30, BIT_RAT
 
 w = window(DIMENSIONS = dimensions, BACKGROUND_COLOR = backgroundColor, /BUFFER)
 p1 = bubbleplot(sps_y[0], sps_z[0], MAGNITUDE = sps_sum[0], EXPONENT = 0.5, MAX_VALUE = 2E6, /SHADED, AXIS_STYLE = 3, /CURRENT, $ 
-                COLOR = bubbleColor, FONT_COLOR = foregroundBlackOrWhite, FONT_SIZE = 20, $
+                COLOR = 'gold', FONT_COLOR = foregroundBlackOrWhite, FONT_SIZE = 20, $
                 TITLE = 'Relative Sun Position [º]', $
                 YRANGE = [-6, 6], YCOLOR = foregroundBlackOrWhite, YTICKFONT_SIZE = 16, $
                 XRANGE = [-6, 6], XCOLOR = foregroundBlackOrWhite, XTICKFONT_SIZE = 16)
@@ -86,10 +90,13 @@ t1a = text(-6, 6, 'Total = ' + strtrim(round(sps_sum[0]), 2) + ' fC', /DATA, FON
 t1b = text(6, 6, 'X = ' + JPMPrintNumber(sps_y[0]) + 'º', /DATA, FONT_SIZE = 16, FONT_COLOR = foregroundBlackOrWhite, VERTICAL_ALIGNMENT = 1.0, ALIGNMENT = 1.0, TARGET = p1)
 t1c = text(6, 5.5, 'Y = ' + JPMPrintNumber(sps_z[0]) + 'º', /DATA, FONT_SIZE = 16, FONT_COLOR = foregroundBlackOrWhite, VERTICAL_ALIGNMENT = 1.0, ALIGNMENT = 1.0, TARGET = p1)
 t1d = text(6, -6, time_human[0], /DATA, FONT_SIZE = 16, FONT_COLOR = foregroundBlackOrWhite, ALIGNMENT = 1.0, TARGET = p1)
+t1e = text(-6, -5.5, 'Fine Point Mode', /DATA, FONT_SIZE = 16, FONT_COLOR = 'gold', TARGET = p1)
+t1f = text(-6, -6, 'Coarse Point Mode', /DATA, FONT_SIZE = 16, FONT_COLOR = 'dodger blue', TARGET = p1)
 
 tic
 FOR timeIndex = 0, n_elements(sps_y) - 1 DO BEGIN
   p1.SetData, sps_y[timeIndex], sps_z[timeIndex]
+  p1.color = bubble_color[timeIndex]
   p1.MAGNITUDE = sps_sum[timeIndex]
   t1a.STRING = 'Total = ' + strtrim(round(sps_sum[timeIndex]), 2) + ' fC'
   t1b.STRING = 'X = ' + JPMPrintNumber(sps_y[timeIndex]) + 'º'
