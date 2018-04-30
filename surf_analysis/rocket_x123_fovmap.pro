@@ -95,8 +95,8 @@ endif
   diff = fltarr(4)
 ;  diff[0] = max(fovdata.surfx) - min(fovdata.surfx)
 ;  diff[1] = max(fovdata.surfy) - min(fovdata.surfy)
-  diff[2] = max(surferData.yaw_deg) - min(surferData.yaw_deg)
-  diff[3] = max(surferData.pitch_deg) - min(surferData.pitch_deg)
+  diff[2] = max(fovData.surf_yaw_deg) - min(fovData.surf_yaw_deg)
+  diff[3] = max(fovData.surf_pitch_deg) - min(fovData.surf_pitch_deg)
   ;  Get First Maximum Range
   temp = max(diff, wdiff)
   case wdiff of
@@ -139,8 +139,6 @@ endif
 ;       sdata2_fine = surferData[isurfv,*]
       end
   endcase
-tdata = fovdata.sec_since_start
-tdata_fine = surferData.sec_since_start
 
 if ((wdiff ne 2) or (wdiff2 ne 3)) and ((wdiff ne 3) or (wdiff2 ne 2)) then begin
     message, /info, 'ERROR: invalid map type: ' + type + '; expected Yaw (U) & Pitch (V)'
@@ -154,28 +152,22 @@ print, 'Doing FOV map plots for ', type
 ; Changed Raster labview VI so does Yaw first and then Pitch (before did them at same time)
 ; so need to verify adjacent points didn't change either
 ;
-sdata_x_fine = surferData.x_pos_inches
-sdata_y_fine = surferData.y_pos_inches
-sdata_yaw = surferData.yaw_deg ;fovdata.yaw_deg ; FIXME: 
-sdata_u_fine = surferData.yaw_deg
-sdata_pitch = surferData.pitch_deg ;fovdata.pitch_deg ; FIXME: 
-sdata_v_fine = surferData.pitch_deg
+surf_x_pos_inches_shift = fovData.surf_x_pos_inches - shift(fovData.surf_x_pos_inches,1)  &  surf_x_pos_inches_shift[0] = -999
+surf_y_pos_inches_shift = fovData.surf_y_pos_inches - shift(fovData.surf_y_pos_inches,1)  &  surf_y_pos_inches_shift[0] = -999
+surf_yaw_deg_shift = fovData.surf_yaw_deg - shift(fovData.surf_yaw_deg,1)  &  surf_yaw_deg_shift[0] = -999
+surf_pitch_deg_shift = fovData.surf_pitch_deg - shift(fovData.surf_pitch_deg,1)  &  surf_pitch_deg_shift[0] = -999
 
-sdiff_x = sdata_x_fine - shift(sdata_x_fine,1)  &  sdiff_x[0] = -999
-sdiff_y = sdata_y_fine - shift(sdata_y_fine,1)  &  sdiff_y[0] = -999
-sdiff_u = sdata_u_fine - shift(sdata_u_fine,1)  &  sdiff_u[0] = -999
-sdiff_v = sdata_v_fine - shift(sdata_v_fine,1)  &  sdiff_v[0] = -999
-
-; @TODO: change line below to allow small moves, e.g. gimbal settling... WHAT EPSILON TO USE?  This should also affect the number of stable points (line 310)
+; Figure out when different scans occurred
 epsilon = 0.005
-wgood = where( (abs(sdiff_x) le epsilon) and (abs(sdiff_y) le epsilon) and (abs(sdiff_u) le epsilon) and (abs(sdiff_v) le epsilon), ngood )
+stableIndices = where((abs(surf_x_pos_inches_shift) le epsilon) and (abs(surf_y_pos_inches_shift) le epsilon) and $
+                      (abs(surf_yaw_deg_shift)      le epsilon) and (abs(surf_pitch_deg_shift)    le epsilon), ngood)
 if (ngood lt 15) then begin
   message, /info, 'ERROR: not enough stable map data points'
   return
 endif
-gooddiff = [wgood - shift(wgood,1), -999]
-runstarts = where( gooddiff ne 1 )
-integtime = mean(fovdata.x123_real_time) / 1000 ; convert ms to s
+gooddiff = [stableIndices - shift(stableIndices,1), -999] ; Find the indices where a map step occurred
+runStartOfStableIndices = where(gooddiff ne 1)
+integtime = mean(fovdata.x123_real_time) ; [seconds]
 
 title = 'FOV Uniformity: ' + 'X123' + ', '+string(round(orientation*180./!pi), format='(I+0)')+string(176b)+')'
 if (n_elements(sig_labels) ne 0) then begin
@@ -201,10 +193,10 @@ endif else begin ; For XP and SPS, use total signal
 endelse ; cdata now contains the correct signal(s) to use
 
 ; Find all the science data during stable periods, and mark it
-for k = 1, n_elements(runstarts)-1 do begin
-  tmax = (tdata_fine[wgood[runstarts[k]-1]])[0]
-  tmin = (tdata_fine[wgood[runstarts[k-1]]])[0]
-  tgood = where( (tdata ge (tmin + integtime/2.)) and (tdata le (tmax - integtime/2.)), ngood )
+for k = 1, n_elements(runStartOfStableIndices)-1 do begin
+  tmax = (fovdata[stableIndices[runStartOfStableIndices[k]-1]].sec_since_start)[0]
+  tmin = (fovdata[stableIndices[runStartOfStableIndices[k-1]]].sec_since_start)[0]
+  tgood = where((fovdata.sec_since_start ge (tmin + integtime/2.)) and (fovdata.sec_since_start le (tmax - integtime/2.)), ngood)
   ; If sufficient good data exists during this stable period, average it and accumulate
   if (ngood ge 3) then begin
     ctemp = dblarr(n_elements(cdata))   &   ectemp = ctemp
@@ -213,22 +205,15 @@ for k = 1, n_elements(runstarts)-1 do begin
     ctemp = mean(cdata[tgood[tgood2]])  ; Average all points
     ectemp = stddev(cdata[tgood[tgood2]])/sqrt(ngood2)  ; Estimated error
     ; Error estimate is lower limit, does NOT properly propagate errors from dark subtraction or other summing
-    stemp_u = sdata_yaw[tgood[0]] ; Save SURF value (no need to average since it's the same for all points in this run)
-    stemp_v = sdata_pitch[tgood[0]]
     cdata_avg = (n_elements(cdata_avg) eq 0) ? ctemp : [[cdata_avg], [ctemp]]
     ecdata_avg = (n_elements(ecdata_avg) eq 0) ? ectemp : [[ecdata_avg], [ectemp]]
-    sdata_u_avg = (n_elements(sdata_u_avg) eq 0) ? stemp_u : [sdata_u_avg, stemp_u]
-    sdata_v_avg = (n_elements(sdata_v_avg) eq 0) ? stemp_v : [sdata_v_avg, stemp_v]
+    yaws = (n_elements(yaws) eq 0) ? fovdata[tgood[0]].surf_yaw_deg : [yaws, fovdata[tgood[0]].surf_yaw_deg]
+    pitches = (n_elements(pitches) eq 0) ? fovdata[tgood[0]].surf_pitch_deg : [pitches, fovdata[tgood[0]].surf_pitch_deg]
   endif else if keyword_set(debug) then print, "No good data for time interval: ", strtrim(tmin, 2), + ' : ' + strtrim(tmax, 2)
 endfor
-
-;
 ;	save only the non-moving data for the plots
-;
 cmap = transpose(cdata_avg)
 ecmap = transpose(ecdata_avg)
-yaws = sdata_u_avg
-pitches = sdata_v_avg
 
 ;	Calculate instrument ALPHA and BETA angles based on BL-2 gimbal PITCH and YAW
 ;	Yaws are NEGATIVE compared to the usual (sane) direction...
@@ -236,12 +221,13 @@ pitches = sdata_v_avg
 ;betas = -sqrt(1/2.) * yaws + sqrt(1/2.) * pitches
 alphas = cos(orientation) * (-yaws) + sin(orientation) * pitches
 betas = -sin(orientation) * (-yaws) + cos(orientation) * pitches
+
 ; If mapstep not given, find most common step size of alpha and beta (ASSUMES row/col scanning) and ROUND to nearest 0.1 degree
 if not keyword_set(mapstep) then begin
   alphaUnique = alphas[uniq(alphas, sort(alphas))]
   betaUnique = betas[uniq(betas, sort(betas))]
   mapstep = median(abs((alphaUnique+betaUnique)-shift(alphaUnique+betaUnique,1)))
-  mapstep = round(mapstep/.1d)*.1d
+  mapstep = round(mapstep * 1000.0d) / 1000.0d
 endif
 
 ; Re-grid cmap to 2D array based on alpha, beta positions (average points with identical position)
@@ -249,19 +235,16 @@ alpha_rnd = round(alphas/mapstep)*mapstep  &  alphas = alpha_rnd[uniq(alpha_rnd,
 n_alpha = n_elements(alphas)
 beta_rnd = round(betas/mapstep)*mapstep  &  betas = beta_rnd[uniq(beta_rnd,sort(beta_rnd))]
 n_beta = n_elements(betas)
-cmap_regrid = fltarr(n_alpha, n_beta, n_elements(cmap))   &   ecmap_regrid = cmap_regrid
-
+cmap_regrid = dblarr(n_alpha, n_beta)   &   ecmap_regrid = cmap_regrid
 for i=0,n_alpha-1 do begin
   for j=0,n_beta-1 do begin
     wgood = where((alpha_rnd eq alphas[i]) and (beta_rnd eq betas[j]), ngood)
     if (ngood ne 0) then begin
-      ; Ignore first and last center-point measurements...
-;      if ((i eq n_alpha/2) and (j eq n_beta/2)) then wgood = wgood[where((wgood ge 2) and (wgood le n_elements(cmap_regrid)))]
-      cmap_regrid[i,j,*] = mean(cmap[wgood],dim=1)
-      ecmap_regrid[i,j,*] = sqrt(total(ecmap[wgood]^2,1))/sqrt(ngood)
+      cmap_regrid[i,j] = mean(cmap[wgood],dim=1)
+      ecmap_regrid[i,j] = sqrt(total(ecmap[wgood]^2,1))/sqrt(ngood)
     endif else begin
-      cmap_regrid[i,j,*] = !values.f_nan
-      ecmap_regrid[i,j,*] = !values.f_nan
+      cmap_regrid[i,j] = !values.f_nan
+      ecmap_regrid[i,j] = !values.f_nan
       if keyword_set(debug) then print,"DEBUG: No good data for (alpha,beta) = ("+string(alphas[i],format='(F4.1)')+','+string(betas[j],format='(F4.1)')+')'
     endelse
   endfor
@@ -272,49 +255,45 @@ a0 = where(alphas eq 0)
 b0 = where(betas eq 0)
 pct_factor = keyword_set(multiplier) ? 1. : 100.
 add_factor = keyword_set(multiplier) ? 0. : 1.
-for k=0,n_elements(cmap)-1 do begin
-  ecmap_regrid[*,*,k] *= pct_factor/(cmap_regrid[a0,b0,k])[0] ; Must do errors first because of reassignment below...
-  cmap_regrid[*,*,k] = ((cmap_regrid[*,*,k]/(cmap_regrid[a0,b0,k])[0]) - add_factor) * pct_factor
-endfor
+ecmap_regrid *= pct_factor/(cmap_regrid[a0,b0])[0] ; Must do errors first because of reassignment below...
+cmap_regrid = ((cmap_regrid / (cmap_regrid[a0,b0])[0]) - add_factor) * pct_factor
 
 if not keyword_set(noplot) then begin
   ; Bilinearly interpolate on 5x finer grid
   alphas = interpol(alphas, findgen(n_alpha), findgen((n_alpha-1)*5+1)/5.)
   betas = interpol(betas, findgen(n_beta), findgen((n_beta-1)*5+1)/5.)
-  cmap_regrid_bilinear = fltarr(n_elements(alphas), n_elements(betas), n_elements(cmap_regrid[0, 0, *]))
-  FOR timeIndex = 0, n_elements(cmap_regrid[0, 0, *]) - 1 DO BEGIN
-    cmap_regrid_bilinear[*, *, timeIndex] = bilinear(cmap_regrid[*, *, timeIndex], findgen((n_alpha-1)*5+1)/5., findgen((n_beta-1)*5+1)/5.)
-  ENDFOR
+  cmap_regrid_bilinear = bilinear(cmap_regrid, findgen((n_alpha-1)*5+1)/5., findgen((n_beta-1)*5+1)/5.)
   cmap_regrid = cmap_regrid_bilinear
   
   neg_thresh = keyword_set(multiplier) ? 1. : 0.
   format_str = keyword_set(multiplier) ? '(F5.3)' : '(F+4.1)'
   pct_str = keyword_set(multiplier) ? '' : '%'
   
-  contour, cmap_regrid[*, *, 0], alphas, betas, /iso, /nodata, /xs, /ys, xtitle = 'Alpha [deg]', ytitle = 'Beta [deg]', title = title, xr=plotrange(alphas), yr=plotrange(betas)
+  window, 0, xsize=700, ysize=700
+  contour, cmap_regrid, alphas, betas, /iso, /nodata, /xs, /ys, xtitle = 'Alpha [deg]', ytitle = 'Beta [deg]', title = title, xr=plotrange(alphas), yr=plotrange(betas)
+  
   device,decomp=0
   loadct, 1, /silent ; Blue/White
   wgood = where(cmap_regrid lt neg_thresh, ngood) ; Plot negative deviations in blue...
   percentstep = (('X123' eq 'XP') ? 0.5 : (('X123' eq 'SPS') ? 0.5 : 0.5)) / (keyword_set(multiplier) ? 100. : 1.)
   
-  FOR timeIndex = 0, n_elements(cmap_regrid[0, 0, *]) - 1 DO BEGIN
-    if (ngood ne 0) then begin
-      minval = floor(min(cmap_regrid[wgood])/percentstep)*percentstep ; minimum contour level needed in tenths of a percent (NEGATIVE)
-      levels = findgen(abs(minval-neg_thresh)/percentstep+1)*percentstep + minval ; contours from minval up to 0, in tenths of a percent
-      colors = indgen(n_elements(levels))*100/(n_elements(levels)-1)+155 ; darker blue = more negative
-      contour, cmap_regrid[*, *, timeIndex], alphas, betas, levels=levels, c_colors=colors, /iso, /cell_fill, /over
-      contour, cmap_regrid[*, *, timeIndex], alphas, betas, levels=levels, /iso, /over, c_charsize=2, c_annotation=string(levels[0:n_elements(levels)-2],format=format_str)+pct_str
-    endif
-    loadct, 3, /silent ; Red Temperature
-    wgood = where(cmap_regrid gt neg_thresh, ngood) ; Plot positive deviations in red...
-    if (ngood ne 0) then begin
-      minval = ceil(max(cmap_regrid[wgood])/percentstep)*percentstep ; maximum contour level needed in tenths of a percent (POSITIVE)
-      levels = findgen(round(abs(minval-neg_thresh)/percentstep+1))*percentstep + neg_thresh; contours from 0 up to minval, in tenths of a percent
-      colors = reverse(indgen(n_elements(levels))*100/(n_elements(levels)-1)+135) ; reversed so darker red = more positive
-      contour,cmap_regrid[*, *, timeIndex],alphas,betas,levels=levels,c_colors=colors,/iso,/cell_fill,/over,/noerase
-      contour,cmap_regrid[*, *, timeIndex],alphas,betas,levels=levels,/iso,/over,c_charsize=2,c_annotation=string(levels,format=format_str)+pct_str
-    endif
-  ENDFOR
+  if (ngood ne 0) then begin
+    minval = floor(min(cmap_regrid[wgood])/percentstep)*percentstep ; minimum contour level needed in tenths of a percent (NEGATIVE)
+    levels = findgen(abs(minval-neg_thresh)/percentstep+1)*percentstep + minval ; contours from minval up to 0, in tenths of a percent
+    colors = indgen(n_elements(levels))*100/(n_elements(levels)-1)+155 ; darker blue = more negative
+    contour, cmap_regrid, alphas, betas, levels=levels, c_colors=colors, /iso, /cell_fill, /over
+    contour, cmap_regrid, alphas, betas, levels=levels, /iso, /over, c_charsize=2, c_annotation=string(levels[0:n_elements(levels)-2],format=format_str)+pct_str
+    
+  endif
+  loadct, 3, /silent ; Red Temperature
+  wgood = where(cmap_regrid gt neg_thresh, ngood) ; Plot positive deviations in red...
+  if (ngood ne 0) then begin
+    minval = ceil(max(cmap_regrid[wgood])/percentstep)*percentstep ; maximum contour level needed in tenths of a percent (POSITIVE)
+    levels = findgen(round(abs(minval-neg_thresh)/percentstep+1))*percentstep + neg_thresh; contours from 0 up to minval, in tenths of a percent
+    colors = reverse(indgen(n_elements(levels))*100/(n_elements(levels)-1)+135) ; reversed so darker red = more positive
+    contour,cmap_regrid,alphas,betas,levels=levels,c_colors=colors,/iso,/cell_fill,/over,/noerase
+    contour,cmap_regrid,alphas,betas,levels=levels,/iso,/over,c_charsize=2,c_annotation=string(levels,format=format_str)+pct_str
+  endif
   
   ; Overplot circle at +/- 20 arcmin to show PORD requirements
   circle_points = transpose([[(20./60.) * cos((2 * !PI / 99.0) * FINDGEN(100))], [(20./60.) * sin((2 * !PI / 99.0) * FINDGEN(100))]])
@@ -323,7 +302,7 @@ if not keyword_set(noplot) then begin
   oplot, circle_points[0,*], circle_points[1,*], thick=4
   circle_points = transpose([[(27./60.) * cos((2 * !PI / 99.0) * FINDGEN(100))], [(27./60.) * sin((2 * !PI / 99.0) * FINDGEN(100))]])
   oplot, circle_points[0,*], circle_points[1,*], thick=4, color=125
-  STOP
+  
 endif ; if not noplot
 
 return
