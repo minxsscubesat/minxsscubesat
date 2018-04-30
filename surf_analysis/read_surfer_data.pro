@@ -44,6 +44,7 @@ ENDIF
 ; Get the template for reading the SURFER file
 IF keyword_set(GENERATE_NEW_TEMPLATE) THEN BEGIN
   surfer_template = ascii_template(filename)
+  message, /INFO, 'WARNING: Make sure that all your negative signs were captured. James noticed that pitch_deg cut off the negative sign. Solution was to manually change surfer_template.fieldlocations[6] = 58 instead of 59 to recapture that negative sign.'
   save, surfer_template, FILENAME = template_filename
 ENDIF ELSE BEGIN
   restore, template_filename
