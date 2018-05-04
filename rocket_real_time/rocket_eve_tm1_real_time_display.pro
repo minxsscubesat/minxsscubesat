@@ -11,8 +11,7 @@
 ;                   of needing to call the code from the command line each time. However, a known port is really is necessary.
 ;
 ; OPTIONAL INPUTS:
-;   windowSize [integer, integer]:     Set this to the pixel dimensions in [x, y] that you want the display. Default is [1600, 900],
-;                                      which works well on a Macbook Pro Retina with [1920, 1200] resolution.
+;   windowSize [integer, integer]:     Set this to the pixel dimensions in [x, y] that you want the display. Default is [1000, 800].
 ;   frequencyOfImageDisplay [integer]: The refresh rate of images in the fun units of number of DEWESoftPackets per refresh. 
 ;
 ; KEYWORD PARAMETERS:
@@ -28,7 +27,7 @@
 ;   None
 ;   
 ; COMMON BLOCK VARIABLES: 
-;   See eve_xri_read_tm2_packets for a detailed description. And yes, I know common blocks are bad practice. However, we wanted socket reader / data interpreter modularity but still
+;   See rocket_eve_tm1_read_packets for a detailed description. And yes, I know common blocks are bad practice. However, we wanted socket reader / data interpreter modularity but still
 ;   require persistent data between the two. Passing variables back and forth between two functions is done by reference, but would result in messy code. So here we are with common blocks. 
 ;
 ; RESTRICTIONS:
@@ -74,7 +73,7 @@ COMMON MONITORS_PERSISTENT_DATA, monitorsBuffer
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = XRI
 
 ; Defaults
-port = read_csv('/Users/jmason86/Dropbox/Development/IDLWorkspace/Rocket/test_port.txt')
+port = read_csv('~/Dropbox/Development/IDLWorkspace/Rocket/test_port.txt')
 port = (uint(byte(port.field1[0]), 0, 2))[1] ; Just for testing
 IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
