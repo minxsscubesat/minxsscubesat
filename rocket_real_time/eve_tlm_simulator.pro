@@ -37,7 +37,7 @@
 ;-
 PRO eve_tlm_simulator, port = port
   ; Defaults
-  port = read_csv('/Users/jmason86/Dropbox/minxss_dropbox/code/rocket_real_time/test_port.txt')
+  port = read_csv('~/Dropbox/minxss_dropbox/code/rocket_real_time/test_port.txt')
   port = swap_endian((uint(byte(port.field1[0]), 0, 2))[1], /SWAP_IF_BIG_ENDIAN) ; Just for testing
   IF ~keyword_set(port) THEN port = swap_endian((uint(byte('pony'), 0, 2))[1], /SWAP_IF_BIG_ENDIAN)
 
