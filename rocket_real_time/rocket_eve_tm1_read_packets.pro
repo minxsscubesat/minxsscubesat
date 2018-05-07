@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Stripped down code with similar purpose as read_tm1_cd.pro, designed to return the data via a common buffer rather than save to disk as a .dat.
-;   Designed to work in conjunction with eve_tm1_real_time_socket_read_wrapper.pro, which shares the COMMON blocks. That code is responsible for 
+;   Designed to work in conjunction with rocket_eve_tm1_real_time_display.pro, which shares the COMMON blocks. That code is responsible for 
 ;   initializing many of the variables in the common blocks.
 ;
 ; INPUTS:
@@ -18,13 +18,13 @@
 ;   DEBUG: Set to print out additional information useful for debugging.
 ;
 ; COMMON BUFFER VARIABLES:
-;   monitorsBuffer [uintarr] [input/output]: A 112???? array to be filled in. This program updates the buffer with the current socketData. TODO: How many bytes/elements are there of analog data?
-;   sampleSizeDeweSoft [integer] [input]:    This is =2 if using synchronous data in DeweSoft for instrument channels, or =10 if using asynchronous. The additional bytes
-;                                            are from timestamps on every sample.
-;   offsetP1 [long] [input]:                 How far into the DEWESoftPacket to get to the "Data Samples" bytes of the DEWESoft channel definitions according to the binary
-;                                            data format documentation. P1 corresponds to MEGS-A. Note that another 4 bytes need to be skipped to get to the actual data.
-;                                            The bytes of instrument samples range from [offsetP1 + 4, (offsetP1 + 4) + (numberOfDataSamplesP1 * sampleSizeDeweSoft)]
-;   numberOfDataSamplesP1 [ulong] [input]:   The number of instrument samples contained in the complete DEWESoft packet for the P1 (MEGS-A for EVE) defined stream.
+;   monitorsBuffer [uintarr] [input/output]:               A 112???? array to be filled in. This program updates the buffer with the current socketData. 
+;   TODO: How many bytes/elements are there of analog data?
+;   sampleSizeDeweSoft [integer] [input]:                  This is =2 if using synchronous data in DeweSoft for instrument channels, or =10 if using asynchronous. The additional bytes
+;                                                          are from timestamps on every sample.
+;   offsetsTm1 [structure of longs] [input]:               How far into the DEWESoftPacket to get to the "Data Samples" bytes of the DEWESoft channel definitions according to the binary
+;                                                          data format documentation. Each tag/value is an offset for a different telemetry point.
+;   numbersOfDataSamplesTm1 [structure of ulongs] [input]: The number of instrument samples contained in the complete DEWESoft packet for each of the telmetry points in the defined stream.
 ; 
 ; OUTPUTS:
 ;   No direct outputs. See common buffer variables above. 
@@ -34,7 +34,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires JPMPrintNumber.
-;   Requires StripDeweSoftHeaderAndTrailer.
+;   Requires strip_dewesoft_header_and_trailer.
 ;
 ; PROCEDURE:
 ;   TASK 1: Strip DEWESoft headers and trailers to get raw instrument data. Should end up with xriPacketDataWithFiller, megsAPacketDataWithFiller, megsBPacketDataWithFiller.
@@ -53,7 +53,7 @@ FUNCTION rocket_eve_tm1_read_packets, socketData, $
 
 ; COMMON blocks for use with rocket_eve_tm1_real_time_display. The blocks are defined here and there to allow them to be called independently.
 COMMON MONITORS_PERSISTENT_DATA, monitorsBuffer
-COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = XRI
+COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetsTm1, numbersOfDataSamplesTm1
 
 ; Telemetry stream packet structure
 telemetryStreamPacketNumberOfWords = 82L ; 85L if reading a binary file, because WSMR includes 3 words of time information
