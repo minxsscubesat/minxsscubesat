@@ -1,10 +1,10 @@
 ;+
 ; NAME:
-;   eve_tlm_simulator
+;   eve_tm_simulator
 ;
 ; PURPOSE:
-;   Reformat raw EVE binary data to emulate the White Sands Missile Range TLM1 format and pipe it to a network port. 
-;   This will enable testing of other code designed to interpret and display the data from TLM1. 
+;   Reformat raw EVE binary data to emulate the White Sands Missile Range TM1 format and pipe it to a network port. 
+;   This will enable testing of other code designed to interpret and display the data from TM1. 
 ;   Server code based on an exelis blog post because this functionality is not included in main IDL documentation 
 ;   http://harrisgeospatial.com/Learn/Blogs/Blog-Details/TabId/2716/ArtMID/10198/ArticleID/15743/Serializing-Objects-Between-IDL-Sessions-Using-TCPIP-for-Remote-Plot-Display.aspx
 ;
@@ -29,13 +29,13 @@
 ; EXAMPLE:
 ;   This code won't actually do anything other than wait for IP connections and then receive and respond to commands over the socket to do something specific. 
 ;   So, first run this code. 
-;   Then run something else to connect to it, e.g., test_eve_tlm_simulator. 
+;   Then run something else to connect to it, e.g., test_eve_tm_simulator. 
 ;
 ; MODIFICATION HISTORY:
 ;   2015-02-26: James Paul Mason: Wrote script.
 ;   2017-08-04: James Paul Mason: Updated to have a separate command and telemetry stream socket
 ;-
-PRO eve_tlm_simulator, port = port
+PRO eve_tm_simulator, port = port
   ; Defaults
   port = read_csv('~/Dropbox/minxss_dropbox/code/rocket_real_time/test_port.txt')
   port = swap_endian((uint(byte(port.field1[0]), 0, 2))[1], /SWAP_IF_BIG_ENDIAN) ; Just for testing
@@ -211,7 +211,7 @@ PRO justSendTm1PacketOverPort
   responseToSend = binaryAllPackets[syncIndices[0] : syncIndices[1] - 1]
 
   ; Set up the socket
-  port = read_csv('/Users/jama6159/Dropbox/Development/IDLWorkspace/Rocket/test_port.txt')
+  port = read_csv('~/Dropbox/minxss_dropbox/code/real_time_rocket/test_port.txt')
   port = (uint(byte(port.field1[0]), 0, 2))[1] ; Just for testing
   socket, connectionCheckLUN, '10.201.203.136', port, /GET_LUN, CONNECT_TIMEOUT = 10., READ_TIMEOUT = 10., WRITE_TIMEOUT = 10., /RAWIO, /SWAP_IF_BIG_ENDIAN ; That IP is James's laptop at the moment
   
