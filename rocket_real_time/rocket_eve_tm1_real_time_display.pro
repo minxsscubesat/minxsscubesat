@@ -70,7 +70,7 @@ PRO rocket_eve_tm1_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYN
 ; COMMON blocks for use with rocket_eve_tm1_read_packets. The blocks are defined here and there to allow them to be called independently.
 ; TODO: Common buffers may not be needed at all since that function returns a structure directly
 COMMON MONITORS_PERSISTENT_DATA, monitorsBuffer
-COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = XRI
+COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetsTm1, numbersOfDataSamplesTm1
 
 ; Defaults
 port = read_csv('~/Dropbox/Development/IDLWorkspace/Rocket/test_port.txt')
