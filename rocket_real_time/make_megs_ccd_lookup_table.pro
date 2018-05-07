@@ -28,7 +28,7 @@
 ;   Just run it! 
 ;
 ; MODIFICATION HISTORY:
-;   2015/04/19: James Paul Mason: Wrote script.
+;   2015-04-19: James Paul Mason: Wrote script.
 ;-
 PRO make_megs_ccd_lookup_table
 
