@@ -200,7 +200,7 @@ END
 
 PRO justSendTm1PacketOverPort
   ; File to read from
-  filename = '/Users/jama6159/Dropbox/Research/Postdoc_LASP/Rocket/TM1_Raw_Data_05_06_16_16-57_SequenceAllFire-2_DataViewTimeStampRemoved.dat'
+  filename = '~/Dropbox/Research/Postdoc_NASA/Rocket/36.318/TM Sample Data/TM1_Raw_Data_05_06_16_16-57_SequenceAllFire-2_DataViewTimeStampRemoved.dat'
   syncBytes = 1003
 
   ; Read binary data from file
@@ -211,7 +211,7 @@ PRO justSendTm1PacketOverPort
   responseToSend = binaryAllPackets[syncIndices[0] : syncIndices[1] - 1]
 
   ; Set up the socket
-  port = read_csv('~/Dropbox/minxss_dropbox/code/real_time_rocket/test_port.txt')
+  port = read_csv('~/Dropbox/minxss_dropbox/code/rocket_real_time/test_port.txt')
   port = (uint(byte(port.field1[0]), 0, 2))[1] ; Just for testing
   socket, connectionCheckLUN, '10.201.203.136', port, /GET_LUN, CONNECT_TIMEOUT = 10., READ_TIMEOUT = 10., WRITE_TIMEOUT = 10., /RAWIO, /SWAP_IF_BIG_ENDIAN ; That IP is James's laptop at the moment
   
