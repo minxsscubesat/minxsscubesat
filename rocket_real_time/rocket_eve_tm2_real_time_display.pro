@@ -32,7 +32,7 @@
 ;   None
 ;   
 ; COMMON BLOCK VARIABLES: 
-;   See eve_xri_read_tm2_packets for a detailed description. And yes, I know common blocks are bad practice. However, we wanted socket reader / data interpreter modularity but still
+;   See rocket_eve_tm2_read_packets for a detailed description. And yes, I know common blocks are bad practice. However, we wanted socket reader / data interpreter modularity but still
 ;   require persistent data between the two. Passing variables back and forth between two functions is done by reference, but would result in messy code. So here we are with common blocks. 
 ;
 ; RESTRICTIONS:
@@ -71,6 +71,7 @@
 ;                                 rather than White Sands Misile Range Chapter 10.
 ;   2015-04-25: James Paul Mason: More extensive edits to the same purpose. Now tested and functioning. Improved code effiency with where's instead of for's and the temporary function. 
 ;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
+;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code. 
 ;-
 PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYNCHRONOUSDATA, windowSize = windowSize, $
                                       megsAStatisticsBox = megsAStatisticsBox, megsBStatisticsBox = megsBStatisticsBox, $
@@ -82,13 +83,14 @@ PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYN
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON XRI_PERSISTENT_DATA, xriImageBuffer, xriImageIndex, xriRowBuffer, xriFrameNumberInStart, xriRowNumberInStart, xriRowNumberInEnd, xriFrameNumberInEnd, xriTotalPixelsFound
-COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = XRI
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowBuffer, csolFrameNumberInStart, csolRowNumberInStart, csolTotalPixelsFound
+COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Defaults
 IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
 IF ~keyword_set(windowSize) THEN windowSize = [1240, 350] * 2
+IF ~keyword_set(windowSizeCsol) THEN windowSizeCsol = [1000, 440]
 IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511]  ; Corresponds to He II 304 Å line
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
@@ -98,14 +100,16 @@ IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
   backgroundColor = 'white'
   boxColor = 'light steel blue'
-  blueColor = 'blue'
-  redColor = 'red'
+  blueColor = 'dodger blue'
+  redColor = 'tomato'
+  greenColor = 'lime green'
 ENDIF ELSE BEGIN
   fontColor = 'white'
   backgroundColor = 'black'
   boxColor = 'midnight blue'
-  blueColor = 'light sky blue'
-  redColor = 'salmon'
+  blueColor = 'dodger blue'
+  redColor = 'tomato'
+  greenColor = 'lime green'
 ENDELSE
 fontSize = 20
 
@@ -160,29 +164,29 @@ megsBMinText =         text(0, statsYPositions[6], 'Min [DN]: 205', FONT_SIZE = 
 megsBMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel index]: (1301, 305)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 megsBRefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = redColor, ALIGNMENT = 1.0)
 
-; XRI
-;p3 = image(findgen(1024L, 1024L), TITLE = 'XRI', WINDOW_TITLE = 'XRI', DIMENSIONS = [windowSize[0]/2., windowSize[1]], /NO_TOOLBAR, LOCATION = [windowSize[0] + 5, 0], RGB_TABLE = 'Rainbow')
-;readArrowXRI = arrow([-50, 0], [0, 0], /DATA, COLOR = 'green', THICK = 3, /CURRENT)
-;xriRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = 'green', ALIGNMENT = 1.0)
+; CSOL
+wc = window(DIMENSIONS = windowSizeCsol, /NO_TOOLBAR, LOCATION = [0, windowSize[1] + 100], BACKGROUND_COLOR = backgroundColor)
+p3 = image(findgen(1024L, 1024L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, DIMENSIONS = [windowSize[0]/2., windowSize[1]], /NO_TOOLBAR, $
+           LOCATION = [windowSize[0] + 5, 0], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+readArrowCSOL = arrow([-50, 0], [0, 0], /DATA, COLOR = greenColor, THICK = 3, /CURRENT)
+csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; Initialize COMMON buffer variables
 restore, getenv('codepath') + 'MegsCcdLookupTable.sav'
 megsAImageBuffer = uintarr(2048L, 1024L)
 megsBImageBuffer = uintarr(2048L, 1024L)
-xriImageBuffer =   uintarr(1024L, 1024L)
-xriRowBuffer = uintarr(1024L)
+csolImageBuffer =   uintarr(1024L, 1024L)
+csolRowBuffer = uintarr(1024L)
 megsAImageIndex = 0L
 megsBImageIndex = 0L
-xriImageIndex = 0L
+csolImageIndex = 0L
 megsAPixelIndex = -1LL
 megsBPixelIndex = -1LL
 megsATotalPixelsFound = 0
 megsBTotalPixelsFound = 0
-xriTotalPixelsFound = 0
-xriFrameNumberInStart = -1
-xriRowNumberInStart = -1 
-xriRowNumberInEnd = -1 
-xriFrameNumberInEnd = -1
+csolTotalPixelsFound = 0
+csolFrameNumberInStart = -1
+csolRowNumberInStart = -1 
 
 ; Open a port that the DEWESoft computer will be commanded to stream to (see PROCEDURE in this code's header)
 socket, connectionCheckLUN, port, /LISTEN, /GET_LUN, /RAWIO
@@ -211,8 +215,7 @@ displayImagesCounterMegsB = 0
 WHILE 1 DO BEGIN
 
   ; Start a timer
-  IF !version.release GT '8.2.2' THEN wrapperClock = TIC() ELSE $
-                                      wrapperClock = JPMsystime(/SECONDS)
+  wrapperClock = TIC()
   
   ; Store how many bytes are on the socket
   socketDataSize = (fstat(socketLun)).size
@@ -296,7 +299,7 @@ WHILE 1 DO BEGIN
         ; Prepare for comparisons before and after interpretation
         megsAPixelIndexBefore = megsAPixelIndex
         megsBPixelIndexBefore = megsBPixelIndex
-        xriRowBufferBefore = xriRowBuffer
+        csolRowBufferBefore = csolRowBuffer
 
         rocket_eve_tm2_read_packets, singleFullDeweSoftPacket, DEBUG = DEBUG ; Output and additional inputs via COMMON buffers
 
@@ -317,7 +320,7 @@ WHILE 1 DO BEGIN
             displayImagesCounterMegsB = 0
           ENDIF
         ENDIF
-        IF xriRowBuffer[-1] EQ xriRowBufferBefore[-1] THEN doXriProcessing = 0 ELSE doXriProcessing = 1
+        IF csolRowBuffer[-1] EQ csolRowBufferBefore[-1] THEN doXriProcessing = 0 ELSE doXriProcessing = 1
 
         ; -= MANIPULATE DATA AS NECESSARY =- ;
         doXriProcessing = 0
@@ -390,12 +393,12 @@ WHILE 1 DO BEGIN
         !Except = 0 ; Disable annoying divide by 0 messages
         IF doXriProcessing THEN BEGIN
           ; Update image
-          p3.SetData, xriImageBuffer
+          p3.SetData, csolImageBuffer
 
           ; Update read indicator arrow
-          readArrowXRI.SetData, [-50, 0], [xriRowNumberInEnd, xriRowNumberInEnd]
+          readArrowCSOL.SetData, [-50, 0], [csolRowNumberInStart, csolRowNumberInStart]
 
-          xriRefreshText.String = 'Last refresh: ' + JPMsystime()
+          csolRefreshText.String = 'Last refresh: ' + JPMsystime()
         ENDIF ; doXriProcessing
 
         IF doMegsAProcessing THEN BEGIN
@@ -453,10 +456,9 @@ WHILE 1 DO BEGIN
     ENDIF ; IF numSync7s GE 2
   ENDIF ;ELSE IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime() + ' Socket connected but 0 bytes on socket.' ; If socketDataSize GT 0
 
-  ;IF keyword_set(DEBUG) THEN BEGIN
-    ;IF !version.release GT '8.2.2' THEN message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(TOC(wrapperClock)) ELSE $
-  ;                                      message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(JPMsystime(/SECONDS) - wrapperClock)
-  ;ENDIF
+  IF keyword_set(DEBUG) THEN BEGIN
+    message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(TOC(wrapperClock))
+  ENDIF
 ENDWHILE ; Infinite loop
 
 ; These lines never get called since the only way to exit the above infinite loop is to stop the code
