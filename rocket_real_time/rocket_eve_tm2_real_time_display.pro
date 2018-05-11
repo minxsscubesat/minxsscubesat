@@ -37,6 +37,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires that the data pipe computer IS NOT YET RUNNING. See procedure below for the critical step-by-step to get the link up. 
+;   Requires the rocket_real_time path environment variable. Can do this in an IDL startup file or in shell. 
 ;   Requires JPMRange.pro
 ;   Requires JPMPrintNumber.pro
 ;
@@ -83,7 +84,7 @@ PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYN
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowBuffer, csolFrameNumberInStart, csolRowNumberInStart, csolTotalPixelsFound
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowBuffer, csolFrameNumberInStart, csolRowNumberInStart, csolTotalPixelsFound, csolNumberGapPixels
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Defaults
@@ -95,6 +96,7 @@ IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
 IF ~keyword_set(megsBExpectedCentroid) THEN megsBExpectedCentroid = [120., 120.]
+IF ~keyword_set(csolNumberGapPixels) THEN csolNumberGapPixels = 10
 IF ~keyword_set(frequencyOfImageDisplay) THEN frequencyOfImageDisplay = 8
 IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
@@ -165,17 +167,17 @@ megsBMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel inde
 megsBRefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = redColor, ALIGNMENT = 1.0)
 
 ; CSOL
-wc = window(DIMENSIONS = windowSizeCsol, /NO_TOOLBAR, LOCATION = [0, windowSize[1] + 100], BACKGROUND_COLOR = backgroundColor)
-p3 = image(findgen(1024L, 1024L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, DIMENSIONS = [windowSize[0]/2., windowSize[1]], /NO_TOOLBAR, $
-           LOCATION = [windowSize[0] + 5, 0], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+wc = window(DIMENSIONS = windowSizeCsol, /NO_TOOLBAR, LOCATION = [0, windowSizeCsol[1] + 100], BACKGROUND_COLOR = backgroundColor)
+p3 = image(findgen(1000L, 440L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, MARGIN = [0.1, 0.02, 0.1, 0.02], /NO_TOOLBAR, $
+           LOCATION = [windowSizeCsol[0] + 5, 0], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 readArrowCSOL = arrow([-50, 0], [0, 0], /DATA, COLOR = greenColor, THICK = 3, /CURRENT)
 csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; Initialize COMMON buffer variables
-restore, getenv('codepath') + 'MegsCcdLookupTable.sav'
+restore, getenv('rocket_real_time') + 'MegsCcdLookupTable.sav'
 megsAImageBuffer = uintarr(2048L, 1024L)
 megsBImageBuffer = uintarr(2048L, 1024L)
-csolImageBuffer =   uintarr(1024L, 1024L)
+csolImageBuffer =   uintarr(2000L, (5L * 88L) + (csolNumberGapPixels * 4L))
 csolRowBuffer = uintarr(1024L)
 megsAImageIndex = 0L
 megsBImageIndex = 0L
@@ -187,6 +189,7 @@ megsBTotalPixelsFound = 0
 csolTotalPixelsFound = 0
 csolFrameNumberInStart = -1
 csolRowNumberInStart = -1 
+csolNumberGapPixels = 10
 
 ; Open a port that the DEWESoft computer will be commanded to stream to (see PROCEDURE in this code's header)
 socket, connectionCheckLUN, port, /LISTEN, /GET_LUN, /RAWIO
@@ -210,6 +213,7 @@ socketDataBuffer = !NULL
 ; Prepare image counter for how often to refresh the images
 displayImagesCounterMegsA = 0
 displayImagesCounterMegsB = 0
+displayImagesCounterCsol = 0
 
 ; Start an infinite loop to check the socket for data
 WHILE 1 DO BEGIN
@@ -299,7 +303,7 @@ WHILE 1 DO BEGIN
         ; Prepare for comparisons before and after interpretation
         megsAPixelIndexBefore = megsAPixelIndex
         megsBPixelIndexBefore = megsBPixelIndex
-        csolRowBufferBefore = csolRowBuffer
+        csolPixelIndexBefore = csolPixelIndex
 
         rocket_eve_tm2_read_packets, singleFullDeweSoftPacket, DEBUG = DEBUG ; Output and additional inputs via COMMON buffers
 
@@ -320,11 +324,16 @@ WHILE 1 DO BEGIN
             displayImagesCounterMegsB = 0
           ENDIF
         ENDIF
-        IF csolRowBuffer[-1] EQ csolRowBufferBefore[-1] THEN doXriProcessing = 0 ELSE doXriProcessing = 1
+        doCsolProcessing = 0
+        IF csolPixelIndex NE csolPixelIndexBefore THEN BEGIN
+          displayImagesCounterCsol++
+          IF displayImagesCounterCsol GT frequencyOfImageDisplay THEN BEGIN
+            doCsolProcessing = 1
+            displayImagesCounterCsol = 0
+          ENDIF
+        ENDIF
 
-        ; -= MANIPULATE DATA AS NECESSARY =- ;
-        doXriProcessing = 0
-        
+        ; -= MANIPULATE DATA AS NECESSARY =- ;        
         IF doMegsAProcessing THEN BEGIN
           megsAStatsPixels = megsAImageBuffer[megsAStatisticsBox[0]:megsAStatisticsBox[2], megsAStatisticsBox[1]:megsAStatisticsBox[3]]
 
@@ -391,15 +400,6 @@ WHILE 1 DO BEGIN
         ; -= UPDATE PLOT WINDOWS WITH REASONABLE REFRESH RATE =- ;
 
         !Except = 0 ; Disable annoying divide by 0 messages
-        IF doXriProcessing THEN BEGIN
-          ; Update image
-          p3.SetData, csolImageBuffer
-
-          ; Update read indicator arrow
-          readArrowCSOL.SetData, [-50, 0], [csolRowNumberInStart, csolRowNumberInStart]
-
-          csolRefreshText.String = 'Last refresh: ' + JPMsystime()
-        ENDIF ; doXriProcessing
 
         IF doMegsAProcessing THEN BEGIN
           ; Update image
@@ -444,6 +444,17 @@ WHILE 1 DO BEGIN
 
           megsBRefreshText.String = 'Last refresh: ' + JPMsystime()
         ENDIF ; doMegsBProcessing
+        
+        IF doCsolProcessing THEN BEGIN
+          ; Update image
+          p3.SetData, csolImageBuffer
+
+          ; Update read indicator arrow
+          readArrowCSOL.SetData, [-50, 0], [csolRowNumberInStart, csolRowNumberInStart]
+
+          csolRefreshText.String = 'Last refresh: ' + JPMsystime()
+        ENDIF ; doCsolProcessing        
+        
         !Except = 1 ; Re-enable math error logging
 
         ; Set the index of this verified sync pattern for use in the next iteration of the DEWESoft sync7Loop
@@ -453,8 +464,8 @@ WHILE 1 DO BEGIN
       ; Now that all processable data has been processed, overwrite the buffer to contain only bytes from the beginning of 
       ; last sync pattern to the end of socketDataBuffer
       socketDataBuffer = socketDataBuffer[verifiedSync7Index - 7:-1]
-    ENDIF ; IF numSync7s GE 2
-  ENDIF ;ELSE IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime() + ' Socket connected but 0 bytes on socket.' ; If socketDataSize GT 0
+    ENDIF ; If numSync7s GE 2
+  ENDIF ; If socketDataSize GT 0
 
   IF keyword_set(DEBUG) THEN BEGIN
     message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(TOC(wrapperClock))
