@@ -134,14 +134,14 @@ IF numberOfFoundMegsAPixels NE 0 THEN BEGIN
     ENDIF
   ENDFOR
   megsATotalPixelsFound += n_elements(megsAPacketData)
-  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime() + ' MEGS-A total pixels found in this image so far: ' + JPMPrintNumber(megsATotalPixelsFound)
+  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime() + ' MEGS-A total pixels found in this image so far: ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
   
   ;
   ;   TASK 4: Check limits:
   ;      4.1: If totalPixels GT imageSize, issue warning.
   ;
   IF megsATotalPixelsFound GT 2048LL * 1024LL THEN BEGIN
-    message, /INFO, JPMsystime() + ' MEGS A image has accumulated too many pixels. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound)
+    message, /INFO, JPMsystime() + ' MEGS A image has accumulated too many pixels. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
     megsAPixelIndex = 0LL
     megsATotalPixelsFound = 0L
     megsAImageIndex++
@@ -154,8 +154,10 @@ ENDIF ELSE BEGIN ; End of numberOfFoundMegsAPixels NE 0
   ;
   ; TASK 4.2: If totalPixels LE imageSize, issue warning.
   ;
-  IF megsATotalPixelsFound LT 2048L * 1024L - 2L AND megsATotalPixelsFound NE 0 THEN message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
-    'Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound)
+  IF megsATotalPixelsFound LT 2048L * 1024L - 2L AND megsATotalPixelsFound NE 0 THEN BEGIN
+    message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+                    ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+  ENDIF
   
   ; Reset image pointers for a new image
   megsAPixelIndex = 0LL
@@ -190,14 +192,14 @@ IF numberOfFoundMegsBPixels NE 0 THEN BEGIN
     ENDIF
   ENDFOR
   megsBTotalPixelsFound += n_elements(megsBPacketData)
-  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'MEGS-B total pixels found in this image so far: ' + JPMPrintNumber(megsBTotalPixelsFound)
+  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'MEGS-B total pixels found in this image so far: ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
   
   ;
   ;   TASK 4: Check limits:
   ;      4.1: If totalPixels GT imageSize, issue warning.
   ;
   IF megsBTotalPixelsFound GT 2048L * 1024L THEN BEGIN
-    message, /INFO, JPMsystime() + ' MEGS B image has accumulated too many pixels. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound)
+    message, /INFO, JPMsystime() + ' MEGS B image has accumulated too many pixels. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
     megsBPixelIndex = 0LL
     megsBTotalPixelsFound = 0L
     megsBImageIndex++
@@ -208,8 +210,10 @@ ENDIF ELSE BEGIN ; End of numberOfFoundMegsBPixels NE 0
   ; the remaining bandwidth (10 Mbps) of the telemetry link with filler. 
   
   ; TASK 4.2: If totalPixels LE imageSize, issue warning. 
-  IF megsBTotalPixelsFound LT 2048L * 1024L - 2L AND megsBTotalPixelsFound NE 0 THEN message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose to pixels due to including fiducials
-    ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound)
+  IF megsBTotalPixelsFound LT 2048L * 1024L - 2L AND megsBTotalPixelsFound NE 0 THEN BEGIN
+    message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+                    ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+  ENDIF
   
   ; Reset image pointers for a new image
   megsBPixelIndex = 0LL
@@ -241,14 +245,14 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
   csolFrameStartFiducial2Index = where(csolPacketData EQ csolFrameStartFiducialValue2)
   IF keyword_set(DEBUG) THEN BEGIN
     IF n_elements(csolFrameStartFiducial2Index) GT 1 THEN BEGIN
-      message, /INFO, JPMsystime() + ' Only expected to find one CSOL start sync byte but found ' + JPMPrintNumber(n_elements(csolFrameStartFiducial2Index))
-      STOP
+      message, /INFO, JPMsystime() + ' Only expected to find one CSOL start sync byte but found ' + JPMPrintNumber(n_elements(csolFrameStartFiducial2Index), /NO_DECIMALS)
     ENDIF
   ENDIF
   
   ; Extract the row number and columns that contain the desired measurements 
   IF csolFrameStartFiducial2Index NE [-1] THEN BEGIN
-    rowNumber = uint(csolPacketData[csolFrameStartFiducial2Index + 1]) ; TODO: Is uint the right casting? Is any casting needed at all?
+    csolFrameStartSyncFound = 1
+    rowNumber = uint(csolPacketData[csolFrameStartFiducial2Index + 1]) ; TODO: Is any casting needed at all?
     
     ; Regions of interest
     darkTopData = csolPacketData[csolFrameStartFiducial2Index + 1 + 301: csolFrameStartFiducial2Index + 1 + 388]
@@ -258,102 +262,58 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
     darkBottomData = csolPacketData[csolFrameStartFiducial2Index + 1 + 1201: csolFrameStartFiducial2Index + 1 + 1288]
     
     ; Reformat and stuff into COMMON buffer variable -- swapping rows and columns to make the image wide rather than tall
-    ; TOOD: The indices here aren't quite right... want darkTopData first 88 columns, then 10 columns gap, then fuv data, then 10 columns gap, etc
+    ; There's a gap between each of these that need not be manually populated -- can just be left 0
     csolImageBuffer[rowNumber, 0:88] = darkTopData
-    csolImageBuffer[rowNumber, 88 + csolNumberGapPixels: 2 * 88 + csolNumberGapPixels] = fuvData
-    csolImageBuffer[rowNumber, 2 * 88 + 2 * csolNumberGapPixels: 3 * 88 + 2 * csolNumberGapPixels] = darkMiddleData
-    csolImageBuffer[rowNumber, 3 * 88 + 3 * csolNumberGapPixels: 4 * 88 + 3 * csolNumberGapPixels] = muvData
-    csolImagebuffer[rowNumber, 4 * 88 + 4 * csolNumberGapPixels: 5 * 88 + 4 * csolNumberGapPixels] = darkBottomData
+    csolImageBuffer[rowNumber, 1 * 88 + 1 * csolNumberGapPixels + 1: 2 * 88 + 1 * csolNumberGapPixels] = fuvData
+    csolImageBuffer[rowNumber, 2 * 88 + 2 * csolNumberGapPixels + 1: 3 * 88 + 2 * csolNumberGapPixels] = darkMiddleData
+    csolImageBuffer[rowNumber, 3 * 88 + 3 * csolNumberGapPixels + 1: 4 * 88 + 3 * csolNumberGapPixels] = muvData
+    csolImageBuffer[rowNumber, 4 * 88 + 4 * csolNumberGapPixels + 1: 5 * 88 + 4 * csolNumberGapPixels] = darkBottomData
     
+    csolTotalPixelsFound += 5L * 8L
+    IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
   ENDIF ELSE BEGIN ; Didn't find csolFrameStartFiducialValue2
-    
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + ' Did not find CSOL frame start sync byte 2: 0x' + csolFrameStartFiducialValue2.ToHex()
+    ENDIF
   ENDELSE
   
+  ; Find the end sync
+  csolFrameEndFiducial1Index = where(csolPacketData EQ csolFrameEndFiducialValue1)
+  IF keyword_set(DEBUG) THEN BEGIN
+    IF n_elements(csolFrameEndFiducial1Index) GT 1 THEN BEGIN
+      message, /INFO, JPMsystime() + ' Only expected to find one CSOL end sync byte but found ' + JPMPrintNumber(n_elements(csolFrameStartFiducial2Index), /NO_DECIMALS)
+      STOP
+    ENDIF
+  ENDIF
   
-  
-  ;
-  ; TASK 4: Search for instrument-dependent fiducials. If found, set instrumentPixelIndex = 0. (Note: CSOL has csolRowIndex as well as pixelIndex).
-  ;
-  FOR i = startingIndex, n_elements(concatenatedCsolPacketData) - 8 DO BEGIN ; - 8 because indexing up to i + 7 in loop
-    ; Frame start sync
-    IF concatenatedCsolPacketData[i + 0] EQ csolFrameStartFiducialValue1 AND concatenatedCsolPacketData[i + 1] EQ csolFrameStartFiducialValue2 AND concatenatedCsolPacketData[i + 2] EQ csolFrameStartFiducialValue3 AND $
-      concatenatedCsolPacketData[i + 3] EQ csolFrameStartFiducialValue4 AND concatenatedCsolPacketData[i + 4] EQ csolFrameStartFiducialValue5 AND concatenatedCsolPacketData[i + 5] EQ csolFrameStartFiducialValue6 THEN BEGIN
-      csolFrameNumberInStart = concatenatedCsolPacketData[i + 6:i + 7]
-      csolFrameStartSyncFound = 1
-      IF keyword_set(DEBUG) THEN message, /INFO, 'Found CSOL frame start fiducial at: ' + JPMsystime()
-      BREAK
-    ENDIF ELSE csolFrameStartSyncFound = 0
-  
-    ; Row start sync
-    IF concatenatedCsolPacketData[i + 0] EQ csolRowStartFiducialValue1 AND concatenatedCsolPacketData[i + 1] EQ csolRowStartFiducialValue2 AND concatenatedCsolPacketData[i + 2] EQ csolRowStartFiducialValue3 AND $
-      concatenatedCsolPacketData[i + 3] EQ csolRowStartFiducialValue4 AND concatenatedCsolPacketData[i + 4] EQ csolRowStartFiducialValue5 THEN BEGIN
-      csolRowNumberInStart = concatenatedCsolPacketData[i + 5:i + 7]
-      csolRowStartSyncFound = 1
-      csolDataStartIndex = i - startingIndex + 5 ; - startingIndex for referencing inside csolPacketData, not concatenatedCsolPacketData
-      csolTotalPixelsFound = 0
-      IF keyword_set(DEBUG) THEN message, /INFO, 'Found CSOL row start fiducial at: ' + JPMsystime()
-      BREAK
-    ENDIF ELSE csolRowStartSyncFound = 0
-  
-    ; Row end sync
-    IF concatenatedCsolPacketData[i + 0] EQ csolRowEndFiducialValue1 AND concatenatedCsolPacketData[i + 1] EQ csolRowEndFiducialValue2 AND concatenatedCsolPacketData[i + 2] EQ csolRowEndFiducialValue3 AND $
-      concatenatedCsolPacketData[i + 3] EQ csolRowEndFiducialValue4 AND concatenatedCsolPacketData[i + 4] EQ csolRowEndFiducialValue5 THEN BEGIN
-      csolRowNumberInEnd = concatenatedCsolPacketData[i + 5: i + 7]
-      csolRowEndSyncFound = 1
-      csolDataEndIndex = i - startingIndex - 1 ; - startingIndex for referencing inside csolPacketData, not concatenatedCsolPacketData
-      IF keyword_set(DEBUG) THEN message, /INFO, 'Found CSOL row end fiducial at: ' + JPMsystime()
-      BREAK
-    ENDIF ELSE csolRowEndSyncFound = 0
-  
-    ; Frame end sync
-    IF concatenatedCsolPacketData[i + 0] EQ csolFrameEndFiducialValue1 AND concatenatedCsolPacketData[i + 1] EQ csolFrameEndFiducialValue2 AND concatenatedCsolPacketData[i + 2] EQ csolFrameEndFiducialValue3 AND $
-      concatenatedCsolPacketData[i + 3] EQ csolFrameEndFiducialValue4 AND concatenatedCsolPacketData[i + 4] EQ csolFrameEndFiducialValue5 AND concatenatedCsolPacketData[i + 5] EQ csolFrameEndFiducialValue6 THEN BEGIN
-      csolFrameNumberInEnd = concatenatedCsolPacketData[i + 6:i + 7]
-      csolFrameEndSyncFound = 1
-      IF keyword_set(DEBUG) THEN message, /INFO, 'Found CSOL frame end fiducial at: ' + JPMsystime()
-      BREAK
-    ENDIF ELSE csolFrameEndSyncFound = 0
-  ENDFOR
-  
-  ; Responses based on whether fiducials were found or not
-  IF csolFrameStartSyncFound EQ !NULL THEN GOTO, SKIP_CSOL
-  IF csolFrameStartSyncFound THEN BEGIN
+  ; Increment the image counter if found the start and end syncs
+  IF csolFrameStartFiducial2Index NE [-1] AND csolFrameEndFiducial1Index NE [-1] THEN BEGIN
     csolImageIndex++
-    csolRowIndex = 0
   ENDIF
-  IF csolRowIndex EQ !NULL THEN GOTO, SKIP_CSOL
-  IF csolFrameEndSyncFound AND csolRowIndex LT 1023 THEN message, /INFO, 'Some CSOL data in previous image was lost.'
-  IF csolRowStartSyncFound THEN BEGIN
-    csolColumnIndex = 0
-    csolRowBuffer = !NULL
-  ENDIF
-  IF csolRowEndSyncFound THEN BEGIN
-    IF csolColumnIndex LT 1023 THEN message, /INFO, 'Some CSOL data in previous row was lost. Expected 1024 columns but received ' + JPMPrintNumber(csolColumnIndex)
-    IF csolRowNumberInEnd NE csolRowNumberInStart THEN message, /INFO, 'CSOL row # mismatch between start and end syncs.'
-    IF csolRowNumberInEnd   NE csolRowIndex THEN message, /INFO, 'CSOL row # mismatch between end sync and program counter.'
-    IF csolRowNumberInStart NE csolRowIndex THEN message, /INFO, 'CSOL row # mismatch between start sync and program counter.'
-  ENDIF
-  IF ~csolRowStartSyncFound THEN csolDataStartIndex = 0
-  IF ~csolRowEndSyncFound THEN csolDataEndIndex = -1
   
   ;
-  ; TASK 5: Store pixels in common buffer. (Note: CSOL will have to first fill a rowBuffer, then move that full row into the imageBuffer).
+  ; TASK 4: Check limits:
+  ;      4.1: If totalPixels GT imageSize, issue warning.
+  ;      4.2: If totalPixels LE imageSize, issue warning.
   ;
-  csolRowBuffer = [csolRowBuffer, csolPacketData[csolDataStartIndex:csolDataEndIndex]]
-  csolColumnIndex += n_elements(csolPacketData[csolDataStartIndex:csolDataEndIndex])
-  IF csolRowEndSyncFound THEN BEGIN
-    csolImageBuffer[*, csolRowNumberInEnd] = csolRowBuffer
-    csolRowIndex++
-    csolTotalPixelsFound += n_elements(csolPacketData[csolDataStartIndex:csolDataEndIndex])
-  ENDIF ELSE IF n_elements(csolRowBuffer) EQ 1024 THEN csolImageBuffer[*, csolRowNumberInEnd] = csolRowBuffer
   
-  ;
-  ;   TASK 6: Check limits:
-  ;      6.1: If totalPixels GT imageSize, issue warning.
-  ;      6.2: If totalPixels LE imageSize then instrumentPixelindex += numberOfNewPixels.
-  ;
-  IF csolTotalPixelsFound GT 1024L * 1024L THEN message, /INFO, 'CSOL image has accumulated too many pixels. Expected 1024x1024 = 1,048,576 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound)
-  IF csolFrameEndSyncFound AND csolTotalPixelsFound LT 1024L * 1024L THEN message, /INFO, 'Some CSOL data in previous image was lost. Expected 1024x1024 = 1,048,576 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound)
-ENDIF ; CSOL data found
-SKIP_CSOL:
+  IF csolTotalPixelsFound GT 2000L * (5L * 88L) THEN message, /INFO, 'CSOL image has accumulated too many pixels. Expected 2000x(5*8) = 80,000 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+  IF csolFrameEndSyncFound AND csolTotalPixelsFound LT 1024L * 1024L THEN message, /INFO, 'Some CSOL data in previous image was lost. Expected 2000x(5*8) = 80,000  pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+ENDIF ELSE BEGIN ; End CSOL data found
+  
+  ; Getting to this point implies that all data in the packet was 0 or 0x7e7e (filler), which only (should) happen when the image is finished being dumped and WSMR is filling
+  ; the remaining bandwidth (10 Mbps) of the telemetry link with filler.
+
+  ; TASK 4.2: If totalPixels LE imageSize, issue warning.
+  IF csolTotalPixelsFound LT 2000L * (5L * 88L) AND csolTotalPixelsFound NE 0 THEN BEGIN
+    message, /INFO, JPMsystime() + ' Some CSOL data in previous image was lost. Expected 2000x(5*8) = 80,000 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+  ENDIF
+  
+  ; Reset image pointers for a new image
+  csolTotalPixelsFound = 0L
+
+  ; Increment the number of image read
+  csolImageIndex++
+ENDELSE
+
 END
