@@ -13,6 +13,8 @@
 ; OPTIONAL INPUTS:
 ;   windowSize [integer, integer]:                           Set this to the pixel dimensions in [x, y] that you want the display. Default is [1600, 900],
 ;                                                            which works well on a Macbook Pro Retina with [1920, 1200] resolution.
+;   windowSizeCsol [integer, integer]:                       Same idea as windowSize, but for CSOL science data.
+;   windowSizeCsolHk [integer, integer]:                     Same idea as windowSizeCsol, but for the housekeeping data.
 ;   megsAStatisticsBox [integer, integer, integer, integer]: Hard-coded pixel indices for computing statistics. Default is arbitrary at the moment but should be around the 304 Å line. 
 ;                                                            Format is [column1, row1, column2, row2] to define the square box. Ditto for megsB. 
 ;   megsAExpectedCentroid: [float, float]:                   The expected pixel index location of the centroid in the bounding statistics box. Expected in format [X, Y]. 
@@ -74,7 +76,7 @@
 ;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
 ;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code. 
 ;-
-PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYNCHRONOUSDATA, windowSize = windowSize, $
+PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYNCHRONOUSDATA, windowSize = windowSize, windowSizeCsol = windowSizeCsol, windowSizeCsolHk = windowSizeCsolHk, $
                                       megsAStatisticsBox = megsAStatisticsBox, megsBStatisticsBox = megsBStatisticsBox, $
                                       megsAExpectedCentroid = megsAExpectedCentroid, megsBExpectedCentroid = megsBExpectedCentroid, $
                                       frequencyOfImageDisplay = frequencyOfImageDisplay, noMod256 = noMod256, $
@@ -84,7 +86,7 @@ PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYN
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowBuffer, csolFrameNumberInStart, csolRowNumberInStart, csolTotalPixelsFound, csolNumberGapPixels
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowNumberInStart, csolTotalPixelsFound, csolNumberGapPixels, csolHk
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Defaults
@@ -92,11 +94,11 @@ IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
 IF ~keyword_set(windowSize) THEN windowSize = [1240, 350] * 2
 IF ~keyword_set(windowSizeCsol) THEN windowSizeCsol = [1000, 440]
+IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsol = [400, 400]
 IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511]  ; Corresponds to He II 304 Å line
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
 IF ~keyword_set(megsBExpectedCentroid) THEN megsBExpectedCentroid = [120., 120.]
-IF ~keyword_set(csolNumberGapPixels) THEN csolNumberGapPixels = 10
 IF ~keyword_set(frequencyOfImageDisplay) THEN frequencyOfImageDisplay = 8
 IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
@@ -114,6 +116,7 @@ ENDIF ELSE BEGIN
   greenColor = 'lime green'
 ENDELSE
 fontSize = 20
+fontSizeHk = 14
 
 ; Mission specific setup. Edit this to tailor data.
 ; e.g., instrument calibration arrays such as gain to be used in the MANIPULATE DATA section below
@@ -124,6 +127,8 @@ fontSize = 20
 statsTextSpacing = 0.03
 statsBoxHeight = statsTextSpacing * 20
 statsYPositions = reverse(JPMRange(0.005, statsBoxHeight - 0.05, npts = 8))
+hkVSpacing = 0.07 ; Vertical spacing
+topLinePosition = 0.90
 
 ; MEGS-A
 wa = window(DIMENSIONS = windowSize, /NO_TOOLBAR, LOCATION = [0, 0], BACKGROUND_COLOR = backgroundColor)
@@ -173,10 +178,27 @@ p3 = image(findgen(1000L, 440L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT
 readArrowCSOL = arrow([-50, 0], [0, 0], /DATA, COLOR = greenColor, THICK = 3, /CURRENT)
 csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
+; CSOL housekeeping data
+wchk = window(DIMENSIONS = windowSizeCsolHk, /NO_TOOLBAR, LOCATION = [0, windowSizeCsol[1] + 150], BACKGROUND_COLOR = backgroundColor, WINDOW_TITLE = 'CSOL Housekeeping Data')
+t          = text(0.5, topLinePosition - (0  * hkVSpacing), 'Temperatures', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+tThermDet0 = text(0.1, topLinePosition - (1  * hkVSpacing), 'Detector 0 [ºC] = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet1 = text(0.1, topLinePosition - (2  * hkVSpacing), 'Detector 1 [ºC] = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermFPGA = text(0.1, topLinePosition - (3  * hkVSpacing), 'FPGA [ºC]         = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5, topLinePosition - (4  * hkVSpacing), 'Power', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+tCurrent5v = text(0.1, topLinePosition - (5  * hkVSpacing), 'Current [mA] = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tVoltage5v = text(0.1, topLinePosition - (6  * hkVSpacing), 'Voltage [V]    = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5, topLinePosition - (7  * hkVSpacing), 'Enables', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+tTecEnable = text(0.1, topLinePosition - (8  * hkVSpacing), 'TEC Enable         = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tFFLEnable = text(0.1, topLinePosition - (9  * hkVSpacing), 'FF Lamp Enable = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5, topLinePosition - (10 * hkVSpacing), 'SD Card', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+tSdStart   = text(0.1, topLinePosition - (11  * hkVSpacing), 'SD Start Frame     = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdCurrent = text(0.1, topLinePosition - (12  * hkVSpacing), 'SD Current Frame = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+
 ; Initialize COMMON buffer variables
 restore, getenv('rocket_real_time') + 'MegsCcdLookupTable.sav'
 megsAImageBuffer = uintarr(2048L, 1024L)
 megsBImageBuffer = uintarr(2048L, 1024L)
+csolNumberGapPixels = 10
 csolImageBuffer =   uintarr(2000L, (5L * 88L) + (csolNumberGapPixels * 4L))
 csolRowBuffer = uintarr(1024L)
 megsAImageIndex = 0L
@@ -187,9 +209,7 @@ megsBPixelIndex = -1LL
 megsATotalPixelsFound = 0
 megsBTotalPixelsFound = 0
 csolTotalPixelsFound = 0
-csolFrameNumberInStart = -1
 csolRowNumberInStart = -1 
-csolNumberGapPixels = 10
 
 ; Open a port that the DEWESoft computer will be commanded to stream to (see PROCEDURE in this code's header)
 socket, connectionCheckLUN, port, /LISTEN, /GET_LUN, /RAWIO
