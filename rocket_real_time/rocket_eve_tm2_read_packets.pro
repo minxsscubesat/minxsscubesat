@@ -15,7 +15,7 @@
 ;   
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set to print out additional information about how the processing is proceeding. 
-;   DEBUG: Set to print out additional information useful for debugging. 
+;   DEBUG:   Set to print out additional information useful for debugging. 
 ;
 ; COMMON BUFFER VARIABLES: 
 ;   megsCcdLookupTable [fltarr] [input]:          A 3 x 2 million array containing pixel indices 0-2,097,151 and their corresponding column and row in the MEGS CCD.
@@ -27,14 +27,11 @@
 ;   megsAPixelIndex [long] [input/output]:        A single number indicating the pixel index in the CCD. This program updates it with the number of pixels read in socketData. 
 ;                                                 Ditto for megsBPixelIndex.
 ;   megsATotalPixelsFound [long] [input/output]:  Incremements by the number of pixels found in socketData. Used for checking whether too much or too little data were
-;                                                 collected for an image, which should be 2048 * 1024 pixels. Ditto for megsBTotalPixelsFound and csolTotalPixelsFound.
-;   csolRowBuffer [bytarr] [input/output]:        Same idea as the image buffers but just for CSOL rows. CSOL packet metadata includes a row number and frame (image) number. 
-;                                                 Once a full row is buffered, can store it in the correct row of the csolImageBuffer using that metadata. 
-;   csolFrameNumberInStart [long] [input/output]: If the frame (image) number is found at the start of a new image, this program updates it. It's used for checking 
-;                                                 image validity by comparing its value to csolFrameNumberInEnd. 
-;   csolRowNumberInStart [long] [input/output]:   Same idea as csolFrameNumberInStart, but for the row number. 
-;   csolRowNumberInEnd [long] [input/output]:     The complement to csolRowNumberInStart, but found at the end of an image row. 
-;   csolFrameNumberInEnd [long] [input/output]:   The complement to csolFrameNumberInStart, but found at the end of an image.
+;                                                 collected for an image, which should be 2048 * 1024 pixels. Ditto for megsBTotalPixelsFound and csolTotalPixelsFound. 
+;   csolRowNumberInStart [long] [input/output]:   Same idea as csolFrameNumberInStart, but for the row number. f the frame (image) number is found at the start of a new image, this program updates it. It's used for checking
+;                                                 image validity by comparing its value to csolFrameNumberInEnd.
+;   csolNumberGapPixels [long] [input]:           The number of gap pixels to insert between the regions of interest of the image.
+;   csolHk [structure] [output]:                  An anonymous structure with tags for telemetry points of interest, e.g., housekeeping (hk) data. 
 ;   sampleSizeDeweSoft [integer] [input]:         This is =2 if using synchronous data in DeweSoft for instrument channels, or =10 if using asynchronous. The additional bytes
 ;                                                 are from timestamps on every sample. 
 ;   offsetP1 [long] [input]:                      How far into the DEWESoftPacket to get to the "Data Samples" bytes of the DEWESoft channel definitions according to the binary
@@ -79,7 +76,7 @@ PRO rocket_eve_tm2_read_packets, socketData, VERBOSE = VERBOSE, DEBUG = DEBUG
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowBuffer, csolFrameNumberInStart, csolRowNumberInStart, csolTotalPixelsFound, csolNumberGapPixels
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowNumberInStart, csolTotalPixelsFound, csolNumberGapPixels, csolHk
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Telemetry stream packet structure
@@ -254,23 +251,27 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
     csolFrameStartSyncFound = 1
     rowNumber = uint(csolPacketData[csolFrameStartFiducial2Index + 1]) ; TODO: Is any casting needed at all?
     
-    ; Regions of interest
-    darkTopData = csolPacketData[csolFrameStartFiducial2Index + 1 + 301: csolFrameStartFiducial2Index + 1 + 388]
-    fuvData = csolPacketData[csolFrameStartFiducial2Index + 1 + 547: csolFrameStartFiducial2Index + 1 + 634]
-    darkMiddleData = csolPacketData[csolFrameStartFiducial2Index + 1 + 757: csolFrameStartFiducial2Index + 1 + 844]
-    muvData = csolPacketData[csolFrameStartFiducial2Index + 1 + 965: csolFrameStartFiducial2Index + 1 + 1052]
-    darkBottomData = csolPacketData[csolFrameStartFiducial2Index + 1 + 1201: csolFrameStartFiducial2Index + 1 + 1288]
-    
-    ; Reformat and stuff into COMMON buffer variable -- swapping rows and columns to make the image wide rather than tall
-    ; There's a gap between each of these that need not be manually populated -- can just be left 0
-    csolImageBuffer[rowNumber, 0:88] = darkTopData
-    csolImageBuffer[rowNumber, 1 * 88 + 1 * csolNumberGapPixels + 1: 2 * 88 + 1 * csolNumberGapPixels] = fuvData
-    csolImageBuffer[rowNumber, 2 * 88 + 2 * csolNumberGapPixels + 1: 3 * 88 + 2 * csolNumberGapPixels] = darkMiddleData
-    csolImageBuffer[rowNumber, 3 * 88 + 3 * csolNumberGapPixels + 1: 4 * 88 + 3 * csolNumberGapPixels] = muvData
-    csolImageBuffer[rowNumber, 4 * 88 + 4 * csolNumberGapPixels + 1: 5 * 88 + 4 * csolNumberGapPixels] = darkBottomData
-    
-    csolTotalPixelsFound += 5L * 8L
-    IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+    IF rowNumber NE 2000 THEN BEGIN
+      ; Regions of interest
+      darkTopData = csolPacketData[csolFrameStartFiducial2Index + 1 + 301: csolFrameStartFiducial2Index + 1 + 388]
+      fuvData = csolPacketData[csolFrameStartFiducial2Index + 1 + 547: csolFrameStartFiducial2Index + 1 + 634]
+      darkMiddleData = csolPacketData[csolFrameStartFiducial2Index + 1 + 757: csolFrameStartFiducial2Index + 1 + 844]
+      muvData = csolPacketData[csolFrameStartFiducial2Index + 1 + 965: csolFrameStartFiducial2Index + 1 + 1052]
+      darkBottomData = csolPacketData[csolFrameStartFiducial2Index + 1 + 1201: csolFrameStartFiducial2Index + 1 + 1288]
+      
+      ; Reformat and stuff into COMMON buffer variable -- swapping rows and columns to make the image wide rather than tall
+      ; There's a gap between each of these that need not be manually populated -- can just be left 0
+      csolImageBuffer[rowNumber, 0:88] = darkTopData
+      csolImageBuffer[rowNumber, 1 * 88 + 1 * csolNumberGapPixels + 1: 2 * 88 + 1 * csolNumberGapPixels] = fuvData
+      csolImageBuffer[rowNumber, 2 * 88 + 2 * csolNumberGapPixels + 1: 3 * 88 + 2 * csolNumberGapPixels] = darkMiddleData
+      csolImageBuffer[rowNumber, 3 * 88 + 3 * csolNumberGapPixels + 1: 4 * 88 + 3 * csolNumberGapPixels] = muvData
+      csolImageBuffer[rowNumber, 4 * 88 + 4 * csolNumberGapPixels + 1: 5 * 88 + 4 * csolNumberGapPixels] = darkBottomData
+      
+      csolTotalPixelsFound += 5L * 8L
+      IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+    ENDIF ELSE BEGIN ; End rows 0-1999 and now handle metadata in row 2000
+      csolHk = rocket_csol_extract_hk(csolPacketData)
+    ENDELSE
   ENDIF ELSE BEGIN ; Didn't find csolFrameStartFiducialValue2
     IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
       message, /INFO, JPMsystime() + ' Did not find CSOL frame start sync byte 2: 0x' + csolFrameStartFiducialValue2.ToHex()
