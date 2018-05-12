@@ -73,7 +73,7 @@ COMMON MONITORS_PERSISTENT_DATA, monitorsBuffer
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetsTm1, numbersOfDataSamplesTm1
 
 ; Defaults
-port = read_csv('~/Dropbox/Development/IDLWorkspace/Rocket/test_port.txt')
+port = read_csv('/Users/jmason86/Dropbox/minxss_dropbox/code/rocket_real_time/test_port.txt')
 port = (uint(byte(port.field1[0]), 0, 2))[1] ; Just for testing
 IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
@@ -83,14 +83,14 @@ IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
   backgroundColor = 'white'
   boxColor = 'light steel blue'
-  blueColor = 'blue'
-  redColor = 'red'
+  blueColor = 'dodger blue'
+  redColor = 'tomato'
 ENDIF ELSE BEGIN
   fontColor = 'white'
   backgroundColor = 'black'
   boxColor = 'midnight blue'
-  blueColor = 'light sky blue'
-  redColor = 'salmon'
+  blueColor = 'dodger blue'
+  redColor = 'tomato'
 ENDELSE
 fontSize = 14
 
