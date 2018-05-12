@@ -94,7 +94,7 @@ IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
 IF ~keyword_set(windowSize) THEN windowSize = [1240, 350] * 2
 IF ~keyword_set(windowSizeCsol) THEN windowSizeCsol = [1000, 440]
-IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsol = [400, 400]
+IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsolHk = [400, 400]
 IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511]  ; Corresponds to He II 304 Å line
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
@@ -182,27 +182,27 @@ topLinePosition = 0.90
 ; CSOL housekeeping data
 wchk = window(DIMENSIONS = windowSizeCsolHk, /NO_TOOLBAR, LOCATION = [0, windowSizeCsol[1] + 150], BACKGROUND_COLOR = backgroundColor, WINDOW_TITLE = 'CSOL Housekeeping Data')
 t          = text(0.5,              topLinePosition - (0   * hkVSpacing), 'Temperatures', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.4,              topLinePosition - (1   * hkVSpacing), 'Detector 0 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermDet0 = text(0.4 + hkHSpacing, topLinePosition - (1   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.4,              topLinePosition - (2   * hkVSpacing), 'Detector 1 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermDet1 = text(0.4 + hkHSpacing, topLinePosition - (2   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.4,              topLinePosition - (3   * hkVSpacing), 'FPGA [ºC]         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermFPGA = text(0.4 + hkHSpacing, topLinePosition - (3   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (1   * hkVSpacing), 'Detector 0 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet0 = text(0.5 + hkHSpacing, topLinePosition - (1   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (2   * hkVSpacing), 'Detector 1 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet1 = text(0.5 + hkHSpacing, topLinePosition - (2   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (3   * hkVSpacing), 'FPGA [ºC]         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermFPGA = text(0.5 + hkHSpacing, topLinePosition - (3   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.5,              topLinePosition - (4   * hkVSpacing), 'Power', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.4,              topLinePosition - (5   * hkVSpacing), 'Current [mA] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tCurrent5v = text(0.4 + hkHSpacing, topLinePosition - (5   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.4,              topLinePosition - (6   * hkVSpacing), 'Voltage [V]    = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tVoltage5v = text(0.4 + hkHSpacing, topLinePosition - (6   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (5   * hkVSpacing), 'Current [mA] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tCurrent5v = text(0.5 + hkHSpacing, topLinePosition - (5   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (6   * hkVSpacing), 'Voltage [V]    = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tVoltage5v = text(0.5 + hkHSpacing, topLinePosition - (6   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.5,              topLinePosition - (7   * hkVSpacing), 'Enables', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.4,              topLinePosition - (8   * hkVSpacing), 'TEC Enable         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tTecEnable = text(0.4 + hkHSpacing, topLinePosition - (8   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.4,              topLinePosition - (9   * hkVSpacing), 'FF Lamp Enable = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tFFLEnable = text(0.4 + hkHSpacing, topLinePosition - (9   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (8   * hkVSpacing), 'TEC Enable         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tTecEnable = text(0.5 + hkHSpacing, topLinePosition - (8   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (9   * hkVSpacing), 'FF Lamp Enable = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tFFLEnable = text(0.5 + hkHSpacing, topLinePosition - (9   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.5,              topLinePosition - (10  * hkVSpacing), 'SD Card', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.4,              topLinePosition - (11  * hkVSpacing), 'SD Start Frame     = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tSdStart   = text(0.4 + hkHSpacing, topLinePosition - (11  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.4,              topLinePosition - (12  * hkVSpacing), 'SD Current Frame = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tSdCurrent = text(0.4 + hkHSpacing, topLinePosition - (12  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (11  * hkVSpacing), 'SD Start Frame     = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdStart   = text(0.5 + hkHSpacing, topLinePosition - (11  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (12  * hkVSpacing), 'SD Current Frame = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdCurrent = text(0.5 + hkHSpacing, topLinePosition - (12  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 csolHkRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; Initialize COMMON buffer variables
