@@ -42,21 +42,21 @@ IF n_elements(csolRow2000) NE 439 THEN BEGIN
 ENDIF
 
 ; Set up structure 
-csolHk = {hkThermDet0: 0.0, hkThermDet1: 0.0, hkThermFPGA: 0.0, $
-          hkCurrent5V: 0.0, hkVoltage5V: 0.0, $
-          setTECEnable: 0, setFFLEnable: 0, $ ; Treat as booleans
+csolHk = {thermDet0: 0.0, thermDet1: 0.0, thermFPGA: 0.0, $
+          current5V: 0.0, voltage5V: 0.0, $
+          tecEnable: 0, fflEnable: 0, $ ; Treat as booleans
           sdStartFrameAddress: 0L, sdCurrentFrameAddress: 0}
 
 ; Extract telemetry points, convert to engineering units, and store in structure
 ; Note: Each word (element of the csolRow2000 array) is 16 bits (i.e., 2 bytes)
 ; TODO: Do I need to do ishft() on csolRow2000[] ? 
-csolHk.hkThermDet0 = (csolRow2000[10] + 0.5) * 10000. / (4095.5 - csolRow2000[10]) ; [ºC] TODO: Is this really ºC?
-csolHk.hkThermDet1 = csolRow2000[11] ; TODO: Need conversion equation for this thermistor
-csolHk.hkThermFPGA = (csolRow2000[12] + 0.5) * 10000. / (4095.5 - csolRow2000[12]) ; [ºC] TODO Is this really ºC? Same kind of thermistor as ThermDet0
-csolHk.hkCurrent5V = 2500. * csolRow2000[13] / 8192. ; [mA]
-csolHk.hkVoltage5V = 10. * csolRow2000[14] / 4096. ; [V]
-csolHk.setTECEnable = csolRow2000[18] ; [bool] 1 = on, 0 = off
-csolhk.setFFLEnable = csolRow2000[19] ; [bool] 1 = on, 0 = off
+csolHk.thermDet0 = (csolRow2000[10] + 0.5) * 10000. / (4095.5 - csolRow2000[10]) ; [ºC] TODO: Is this really ºC?
+csolHk.thermDet1 = csolRow2000[11] ; TODO: Need conversion equation for this thermistor
+csolHk.thermFPGA = (csolRow2000[12] + 0.5) * 10000. / (4095.5 - csolRow2000[12]) ; [ºC] TODO Is this really ºC? Same kind of thermistor as ThermDet0
+csolHk.current5V = 2500. * csolRow2000[13] / 8192. ; [mA]
+csolHk.voltage5V = 10. * csolRow2000[14] / 4096. ; [V]
+csolHk.tecEnable = csolRow2000[18] ; [bool] 1 = on, 0 = off
+csolhk.fflEnable = csolRow2000[19] ; [bool] 1 = on, 0 = off
 csolhk.sdStartFrameAddress = csolRow2000[21] ; First frame address of the data recording for the current power cycle
 csolhk.sdCurrentFrameAddress = csolRow2000[22] ; Current frame address for data recording
 
