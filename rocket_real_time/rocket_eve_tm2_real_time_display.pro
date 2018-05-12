@@ -127,80 +127,90 @@ fontSizeHk = 14
 statsTextSpacing = 0.03
 statsBoxHeight = statsTextSpacing * 20
 statsYPositions = reverse(JPMRange(0.005, statsBoxHeight - 0.05, npts = 8))
+hkHSpacing = 0.02 ; Horizontal spacing
 hkVSpacing = 0.07 ; Vertical spacing
 topLinePosition = 0.90
 
 ; MEGS-A
-wa = window(DIMENSIONS = windowSize, /NO_TOOLBAR, LOCATION = [0, 0], BACKGROUND_COLOR = backgroundColor)
-p0 = image(findgen(2048L, 1024L), TITLE = 'EVE MEGS A', WINDOW_TITLE = 'EVE MEGS A', /CURRENT, MARGIN = [0.1, 0.02, 0., 0.02], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-c0 = colorbar(TARGET = p0, ORIENTATION = 1, POSITION = [0.85, 0.03, 0.87, 0.98], TEXTPOS = 1, FONT_SIZE = fontSize - 2, TEXT_COLOR = fontColor)
-readArrowMegsALeft = arrow([-50., 0], [1023., 1023.], /DATA, COLOR = blueColor, THICK = 3, /CURRENT)
-readArrowMegsARight = arrow([2098., 2048], [0, 0], /DATA, COLOR = blueColor, THICK = 3, /CURRENT)
-statsTextBoxCoords = [[0, 0], [0., statsBoxHeight], [0.26, statsBoxHeight], [0.26, 0]]
-statsTextBox = polygon(statsTextBoxCoords, /FILL_BACKGROUND, FILL_COLOR = boxColor, THICK = 2)
-megsAStatsBoxCoords = [[megsAStatisticsBox[0], megsAStatisticsBox[1]], [megsAStatisticsBox[0], megsAStatisticsBox[3]], [megsAStatisticsBox[2], megsAStatisticsBox[3]], [megsAStatisticsBox[2], megsAStatisticsBox[1]]] ; Polygon uses different structure, so convert
-megsAStatsBox = polygon(megsAStatsBoxCoords, THICK = 2, FILL_TRANSPARENCY = 100, /DATA)
-t = text(0.26/2, statsBoxHeight + 0.005, 'MEGS-A Statistics', ALIGNMENT = 0.5, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsACentroidText =    text(0, statsYPositions[0], 'X:Y Centroid [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsAOffsetText =      text(0, statsYPositions[1], 'X:Y Offset Angles [arcmin]: (0.431, 1.403)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsAMeanText =        text(0, statsYPositions[2], 'Mean [DN]: 32041', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsATotalText =       text(0, statsYPositions[3], 'Total [DN]: 593013', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsAMaxText =         text(0, statsYPositions[4], 'Max [DN]: 30252', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsAMaxLocationText = text(0, statsYPositions[5], 'X:Y Max Location [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsAMinText =         text(0, statsYPositions[6], 'Min [DN]: 205', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsAMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel index]: (1301, 305)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsARefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = blueColor, ALIGNMENT = 1.0)
-
-; MEGS-B
-wb = window(DIMENSIONS = windowSize, /NO_TOOLBAR, LOCATION = [0, windowSize[1] + 50], BACKGROUND_COLOR = backgroundColor)
-p1 = image(findgen(2048L, 1024L), TITLE = 'EVE MEGS B', WINDOW_TITLE = 'EVE MEGS B', /CURRENT, MARGIN = [0.1, 0.02, 0., 0.02], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-c1 = colorbar(TARGET = p1, ORIENTATION = 1, POSITION = [0.85, 0.03, 0.87, 0.98], TEXTPOS = 1, FONT_SIZE = fontSize - 2, TEXT_COLOR = fontColor)
-readArrowMegsBLeft = arrow([-50., 0], [1023., 1023.], /DATA, COLOR = redColor, THICK = 3, /CURRENT)
-readArrowMegsBRight = arrow([2098., 2048], [0, 0], /DATA, COLOR = redColor, THICK = 3, /CURRENT)
-statsTextBox = polygon(statsTextBoxCoords, /FILL_BACKGROUND, FILL_COLOR = boxColor, THICK = 2)
-megsBStatsBoxCoords = [[megsBStatisticsBox[0], megsBStatisticsBox[1]], [megsBStatisticsBox[0], megsBStatisticsBox[3]], [megsBStatisticsBox[2], megsBStatisticsBox[3]], [megsBStatisticsBox[2], megsBStatisticsBox[1]]] ; Polygon uses different structure, so convert
-megsBStatsBox = polygon(megsBStatsBoxCoords, THICK = 2, FILL_TRANSPARENCY = 100, /DATA)
-t = text(0.26/2, statsBoxHeight + 0.005, 'MEGS-B Statistics', ALIGNMENT = 0.5, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBCentroidText =    text(0, statsYPositions[0], 'X:Y Centroid [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBOffsetText =      text(0, statsYPositions[1], 'X:Y Offset Angles [arcmin]: (0.431, 1.403)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBMeanText =        text(0, statsYPositions[2], 'Mean [DN]: 32041', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBTotalText =       text(0, statsYPositions[3], 'Total [DN]: 593013', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBMaxText =         text(0, statsYPositions[4], 'Max [DN]: 30252', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBMaxLocationText = text(0, statsYPositions[5], 'X:Y Max Location [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBMinText =         text(0, statsYPositions[6], 'Min [DN]: 205', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel index]: (1301, 305)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-megsBRefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = redColor, ALIGNMENT = 1.0)
-
-; CSOL
-wc = window(DIMENSIONS = windowSizeCsol, /NO_TOOLBAR, LOCATION = [0, windowSizeCsol[1] + 100], BACKGROUND_COLOR = backgroundColor)
-p3 = image(findgen(1000L, 440L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, MARGIN = [0.1, 0.02, 0.1, 0.02], /NO_TOOLBAR, $
-           LOCATION = [windowSizeCsol[0] + 5, 0], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-readArrowCSOL = arrow([-50, 0], [0, 0], /DATA, COLOR = greenColor, THICK = 3, /CURRENT)
-csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
+;wa = window(DIMENSIONS = windowSize, /NO_TOOLBAR, LOCATION = [0, 0], BACKGROUND_COLOR = backgroundColor)
+;p0 = image(findgen(2048L, 1024L), TITLE = 'EVE MEGS A', WINDOW_TITLE = 'EVE MEGS A', /CURRENT, MARGIN = [0.1, 0.02, 0., 0.02], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;c0 = colorbar(TARGET = p0, ORIENTATION = 1, POSITION = [0.85, 0.03, 0.87, 0.98], TEXTPOS = 1, FONT_SIZE = fontSize - 2, TEXT_COLOR = fontColor)
+;readArrowMegsALeft = arrow([-50., 0], [1023., 1023.], /DATA, COLOR = blueColor, THICK = 3, /CURRENT)
+;readArrowMegsARight = arrow([2098., 2048], [0, 0], /DATA, COLOR = blueColor, THICK = 3, /CURRENT)
+;statsTextBoxCoords = [[0, 0], [0., statsBoxHeight], [0.26, statsBoxHeight], [0.26, 0]]
+;statsTextBox = polygon(statsTextBoxCoords, /FILL_BACKGROUND, FILL_COLOR = boxColor, THICK = 2)
+;megsAStatsBoxCoords = [[megsAStatisticsBox[0], megsAStatisticsBox[1]], [megsAStatisticsBox[0], megsAStatisticsBox[3]], [megsAStatisticsBox[2], megsAStatisticsBox[3]], [megsAStatisticsBox[2], megsAStatisticsBox[1]]] ; Polygon uses different structure, so convert
+;megsAStatsBox = polygon(megsAStatsBoxCoords, THICK = 2, FILL_TRANSPARENCY = 100, /DATA)
+;t = text(0.26/2, statsBoxHeight + 0.005, 'MEGS-A Statistics', ALIGNMENT = 0.5, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsACentroidText =    text(0, statsYPositions[0], 'X:Y Centroid [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsAOffsetText =      text(0, statsYPositions[1], 'X:Y Offset Angles [arcmin]: (0.431, 1.403)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsAMeanText =        text(0, statsYPositions[2], 'Mean [DN]: 32041', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsATotalText =       text(0, statsYPositions[3], 'Total [DN]: 593013', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsAMaxText =         text(0, statsYPositions[4], 'Max [DN]: 30252', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsAMaxLocationText = text(0, statsYPositions[5], 'X:Y Max Location [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsAMinText =         text(0, statsYPositions[6], 'Min [DN]: 205', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsAMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel index]: (1301, 305)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsARefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = blueColor, ALIGNMENT = 1.0)
+;
+;; MEGS-B
+;wb = window(DIMENSIONS = windowSize, /NO_TOOLBAR, LOCATION = [0, windowSize[1] + 50], BACKGROUND_COLOR = backgroundColor)
+;p1 = image(findgen(2048L, 1024L), TITLE = 'EVE MEGS B', WINDOW_TITLE = 'EVE MEGS B', /CURRENT, MARGIN = [0.1, 0.02, 0., 0.02], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;c1 = colorbar(TARGET = p1, ORIENTATION = 1, POSITION = [0.85, 0.03, 0.87, 0.98], TEXTPOS = 1, FONT_SIZE = fontSize - 2, TEXT_COLOR = fontColor)
+;readArrowMegsBLeft = arrow([-50., 0], [1023., 1023.], /DATA, COLOR = redColor, THICK = 3, /CURRENT)
+;readArrowMegsBRight = arrow([2098., 2048], [0, 0], /DATA, COLOR = redColor, THICK = 3, /CURRENT)
+;statsTextBox = polygon(statsTextBoxCoords, /FILL_BACKGROUND, FILL_COLOR = boxColor, THICK = 2)
+;megsBStatsBoxCoords = [[megsBStatisticsBox[0], megsBStatisticsBox[1]], [megsBStatisticsBox[0], megsBStatisticsBox[3]], [megsBStatisticsBox[2], megsBStatisticsBox[3]], [megsBStatisticsBox[2], megsBStatisticsBox[1]]] ; Polygon uses different structure, so convert
+;megsBStatsBox = polygon(megsBStatsBoxCoords, THICK = 2, FILL_TRANSPARENCY = 100, /DATA)
+;t = text(0.26/2, statsBoxHeight + 0.005, 'MEGS-B Statistics', ALIGNMENT = 0.5, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBCentroidText =    text(0, statsYPositions[0], 'X:Y Centroid [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBOffsetText =      text(0, statsYPositions[1], 'X:Y Offset Angles [arcmin]: (0.431, 1.403)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBMeanText =        text(0, statsYPositions[2], 'Mean [DN]: 32041', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBTotalText =       text(0, statsYPositions[3], 'Total [DN]: 593013', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBMaxText =         text(0, statsYPositions[4], 'Max [DN]: 30252', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBMaxLocationText = text(0, statsYPositions[5], 'X:Y Max Location [pixel index]: (1350, 400)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBMinText =         text(0, statsYPositions[6], 'Min [DN]: 205', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel index]: (1301, 305)', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;megsBRefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = redColor, ALIGNMENT = 1.0)
+;
+;; CSOL
+;wc = window(DIMENSIONS = windowSizeCsol, /NO_TOOLBAR, LOCATION = [0, windowSizeCsol[1] + 100], BACKGROUND_COLOR = backgroundColor)
+;p3 = image(findgen(1000L, 440L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, MARGIN = [0.1, 0.02, 0.1, 0.02], /NO_TOOLBAR, $
+;           LOCATION = [windowSizeCsol[0] + 5, 0], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+;readArrowCSOL = arrow([-50, 0], [0, 0], /DATA, COLOR = greenColor, THICK = 3, /CURRENT)
+;csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; CSOL housekeeping data
 wchk = window(DIMENSIONS = windowSizeCsolHk, /NO_TOOLBAR, LOCATION = [0, windowSizeCsol[1] + 150], BACKGROUND_COLOR = backgroundColor, WINDOW_TITLE = 'CSOL Housekeeping Data')
-t          = text(0.5, topLinePosition - (0  * hkVSpacing), 'Temperatures', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-tThermDet0 = text(0.1, topLinePosition - (1  * hkVSpacing), 'Detector 0 [ºC] = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermDet1 = text(0.1, topLinePosition - (2  * hkVSpacing), 'Detector 1 [ºC] = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermFPGA = text(0.1, topLinePosition - (3  * hkVSpacing), 'FPGA [ºC]         = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5, topLinePosition - (4  * hkVSpacing), 'Power', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-tCurrent5v = text(0.1, topLinePosition - (5  * hkVSpacing), 'Current [mA] = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tVoltage5v = text(0.1, topLinePosition - (6  * hkVSpacing), 'Voltage [V]    = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5, topLinePosition - (7  * hkVSpacing), 'Enables', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-tTecEnable = text(0.1, topLinePosition - (8  * hkVSpacing), 'TEC Enable         = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tFFLEnable = text(0.1, topLinePosition - (9  * hkVSpacing), 'FF Lamp Enable = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5, topLinePosition - (10 * hkVSpacing), 'SD Card', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-tSdStart   = text(0.1, topLinePosition - (11  * hkVSpacing), 'SD Start Frame     = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tSdCurrent = text(0.1, topLinePosition - (12  * hkVSpacing), 'SD Current Frame = ', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (0   * hkVSpacing), 'Temperatures', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+t          = text(0.4,              topLinePosition - (1   * hkVSpacing), 'Detector 0 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet0 = text(0.4 + hkHSpacing, topLinePosition - (1   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.4,              topLinePosition - (2   * hkVSpacing), 'Detector 1 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet1 = text(0.4 + hkHSpacing, topLinePosition - (2   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.4,              topLinePosition - (3   * hkVSpacing), 'FPGA [ºC]         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermFPGA = text(0.4 + hkHSpacing, topLinePosition - (3   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (4   * hkVSpacing), 'Power', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+t          = text(0.4,              topLinePosition - (5   * hkVSpacing), 'Current [mA] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tCurrent5v = text(0.4 + hkHSpacing, topLinePosition - (5   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.4,              topLinePosition - (6   * hkVSpacing), 'Voltage [V]    = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tVoltage5v = text(0.4 + hkHSpacing, topLinePosition - (6   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (7   * hkVSpacing), 'Enables', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+t          = text(0.4,              topLinePosition - (8   * hkVSpacing), 'TEC Enable         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tTecEnable = text(0.4 + hkHSpacing, topLinePosition - (8   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.4,              topLinePosition - (9   * hkVSpacing), 'FF Lamp Enable = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tFFLEnable = text(0.4 + hkHSpacing, topLinePosition - (9   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.5,              topLinePosition - (10  * hkVSpacing), 'SD Card', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+t          = text(0.4,              topLinePosition - (11  * hkVSpacing), 'SD Start Frame     = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdStart   = text(0.4 + hkHSpacing, topLinePosition - (11  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.4,              topLinePosition - (12  * hkVSpacing), 'SD Current Frame = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdCurrent = text(0.4 + hkHSpacing, topLinePosition - (12  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+csolHkRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; Initialize COMMON buffer variables
 restore, getenv('rocket_real_time') + 'MegsCcdLookupTable.sav'
 megsAImageBuffer = uintarr(2048L, 1024L)
 megsBImageBuffer = uintarr(2048L, 1024L)
 csolNumberGapPixels = 10
-csolImageBuffer =   uintarr(2000L, (5L * 88L) + (csolNumberGapPixels * 4L))
-csolRowBuffer = uintarr(1024L)
+csolImageBuffer = uintarr(2000L, (5L * 88L) + (csolNumberGapPixels * 4L))
 megsAImageIndex = 0L
 megsBImageIndex = 0L
 csolImageIndex = 0L
@@ -473,6 +483,19 @@ WHILE 1 DO BEGIN
           readArrowCSOL.SetData, [-50, 0], [csolRowNumberInStart, csolRowNumberInStart]
 
           csolRefreshText.String = 'Last refresh: ' + JPMsystime()
+          
+          ; Update hk telemetry
+          tThermDet0.String = JPMPrintNumber(csolHk.thermDet0)
+          tThermDet1.String = JPMPrintNumber(csolHk.thermDet1)
+          tThermFPGA.String = JPMPrintNumber(csolHk.thermFPGA)
+          tCurrent5v.String = JPMPrintNumber(csolHk.current5v)
+          tVoltage5v.String = JPMPrintNumber(csolHk.voltage5v)
+          IF csolHk.tecEnable THEN tTecEnable.String = 'True' ELSE tTecEnable.String = 'False'
+          IF csolHk.fflEnable THEN tFFLEnable.String = 'True' ELSE tTecEnable.String = 'False'
+          tSdStart.String = JPMPrintNumber(csolHk.sdStartFrameAddress, /NO_DECIMALS)
+          tSdCurrent.String = JPMPrintNumber(csolHk.sdCurrentFrameAddress, /NO_DECIMALS)          
+          
+          csolHkRefreshText.String = 'Last refresh: ' + JPMsystime()
         ENDIF ; doCsolProcessing        
         
         !Except = 1 ; Re-enable math error logging
