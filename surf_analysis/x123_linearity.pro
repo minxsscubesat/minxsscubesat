@@ -676,26 +676,26 @@ oplot,surfbc[smlow],sdelta,psym=1,color=cc[0]
 print," "
 
 
-;chisqd=[]
-;
-;for j=0, N_elements(tauarrays)-1 do begin
-;  chisqnumd=0
-;  chisqdend=0
-;  sdelta2=(fast[smlow]-darkvalf)*Exp(-2*(fast[smlow]-darkvalf)*tauarrays[j])
-;  for i=52, 219 do begin
-;    chisqnumd=chisqnumd+((slow[smlow[i]]-darkval-sdelta2[i])^2)
-;    chisqdend=chisqdend+(1)
-;  endfor
-;  chisqd=[chisqd,chisqnumd/chisqdend]
-;
-;endfor
-;
-;chisqmind=where(chisqd eq min(chisqd))
-;taud=tauarrays[chisqmind[0]]
-;
-;oplot,surfbc[smlow],(fast[smlow]-darkvalf)*Exp(-2*(fast[smlow]-darkvalf)*taud)
-;
-;print,taud,chisqmind
+chisqd=[]
+
+for j=0, N_elements(tauarrays)-1 do begin
+  chisqnumd=0
+  chisqdend=0
+  sdelta2=(fast[smlow]-darkvalf)*Exp(-2*(fast[smlow]-darkvalf)*tauarrays[j])
+  for i=52, 219 do begin
+    chisqnumd=chisqnumd+((slow[smlow[i]]-darkval-sdelta2[i])^2)
+    chisqdend=chisqdend+(1)
+  endfor
+  chisqd=[chisqd,chisqnumd/chisqdend]
+
+endfor
+
+chisqmind=where(chisqd eq min(chisqd))
+taud=tauarrays[chisqmind[0]]
+
+oplot,surfbc[smlow[0:datathreshold]],(fast[smlow[0:datathreshold]]-darkvalf)*Exp(-2*(fast[smlow[0:datathreshold]]-darkvalf)*taud)
+
+print,taud,chisqmind
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
