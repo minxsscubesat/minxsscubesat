@@ -36,9 +36,9 @@ FUNCTION rocket_csol_extract_hk, csolRow2000, $
                                  VERBOSE = VERBOSE, DEBUG = DEBUG
 
 ; Input check
-IF n_elements(csolRow2000) NE 439 THEN BEGIN
-  message, /INFO, JPMsystime() + ' Expected to get only the 439 words from CSOL row 2000 but input contained ' + JPMPrintNumber(n_elements(csolRow2000), /NO_DECIMALS) + ' words.'
-  return, -1
+IF n_elements(csolRow2000) NE 434 THEN BEGIN
+  message, /INFO, JPMsystime() + ' Expected to get only the 434 words from CSOL row 2000 but input contained ' + JPMPrintNumber(n_elements(csolRow2000), /NO_DECIMALS) + ' words.'
+  return, !NULL
 ENDIF
 
 ; Set up structure 
@@ -48,11 +48,9 @@ csolHk = {thermDet0: 0.0, thermDet1: 0.0, thermFPGA: 0.0, $
           sdStartFrameAddress: 0L, sdCurrentFrameAddress: 0}
 
 ; Extract telemetry points, convert to engineering units, and store in structure
-; Note: Each word (element of the csolRow2000 array) is 16 bits (i.e., 2 bytes)
-; TODO: Do I need to do ishft() on csolRow2000[] ? 
-csolHk.thermDet0 = (csolRow2000[10] + 0.5) * 10000. / (4095.5 - csolRow2000[10]) ; [ºC] TODO: Is this really ºC?
-csolHk.thermDet1 = csolRow2000[11] ; TODO: Need conversion equation for this thermistor
-csolHk.thermFPGA = (csolRow2000[12] + 0.5) * 10000. / (4095.5 - csolRow2000[12]) ; [ºC] TODO Is this really ºC? Same kind of thermistor as ThermDet0
+csolHk.thermDet0 = rocket_csol_convert_temperatures(csolRow2000[10], /COEFF_SET_0) ; [ºC]
+csolHk.thermDet1 = rocket_csol_convert_temperatures(csolRow2000[11], /COEFF_SET_1) ; [ºC]
+csolHk.thermFPGA = rocket_csol_convert_temperatures(csolRow2000[12], /COEFF_SET_0) ; [ºC]
 csolHk.current5V = 2500. * csolRow2000[13] / 8192. ; [mA]
 csolHk.voltage5V = 10. * csolRow2000[14] / 4096. ; [V]
 csolHk.tecEnable = csolRow2000[18] ; [bool] 1 = on, 0 = off
