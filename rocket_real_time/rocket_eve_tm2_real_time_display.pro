@@ -3,7 +3,7 @@
 ;   rocket_eve_tm2_real_time_display
 ;
 ; PURPOSE:
-;   Wrapper script for reading from a remote socket. Calls rocket_eve_tm2_read_packets (the interpreter) when new data comes over the pipe. 
+;   Wraps around a read function and displays the interpreted telemetry for rocket EVE. Calls rocket_eve_tm2_read_packets (the interpreter) when new data comes over the pipe. 
 ;
 ; INPUTS:
 ;   port [integer]: The port number to open that DEWESoft will be commanded to stream data to. This requires that both machines are running on the same network.
@@ -11,11 +11,11 @@
 ;                   of needing to call the code from the command line each time. However, a known port is really is necessary.
 ;
 ; OPTIONAL INPUTS:
-;   windowSize [integer, integer]:                           Set this to the pixel dimensions in [x, y] that you want the display. Default is [1600, 900],
-;                                                            which works well on a Macbook Pro Retina with [1920, 1200] resolution.
+;   windowSize [integer, integer]:                           Set this to the pixel dimensions in [x, y] that you want the display. Default is [1984, 530],
+;                                                            which works well on a 5K iMac with [3200, 1800] resolution.
 ;   windowSizeCsol [integer, integer]:                       Same idea as windowSize, but for CSOL science data.
 ;   windowSizeCsolHk [integer, integer]:                     Same idea as windowSizeCsol, but for the housekeeping data.
-;   megsAStatisticsBox [integer, integer, integer, integer]: Hard-coded pixel indices for computing statistics. Default is arbitrary at the moment but should be around the 304 Å line. 
+;   megsAStatisticsBox [integer, integer, integer, integer]: Hard-coded pixel indices for computing statistics. Default around the 304 Å line. 
 ;                                                            Format is [column1, row1, column2, row2] to define the square box. Ditto for megsB. 
 ;   megsAExpectedCentroid: [float, float]:                   The expected pixel index location of the centroid in the bounding statistics box. Expected in format [X, Y]. 
 ;                                                            Default is [1350, 400]. Ditto for megsB. 
@@ -29,7 +29,7 @@
 ;   LIGHT_BACKGROUND:    Set this to use a white background and dark font instead of the default (black background and white font)
 ;   
 ; OUTPUTS:
-;   Produces 3 plot panes with all the most important data in the world, displayed in real time from a remote socket.
+;   Produces 3 plot panes and a telemetry window with all the most important data in the world, displayed in real time from a remote socket.
 ;
 ; OPTIONAL OUTPUTS:
 ;   None
@@ -39,32 +39,33 @@
 ;   require persistent data between the two. Passing variables back and forth between two functions is done by reference, but would result in messy code. So here we are with common blocks. 
 ;
 ; RESTRICTIONS:
-;   Requires that the data pipe computer IS NOT YET RUNNING. See procedure below for the critical step-by-step to get the link up. 
+;   Requires that the data pipe computer is not yet running. See procedure below for the critical step-by-step to get the link up. 
 ;   Requires the rocket_real_time path environment variable. Can do this in an IDL startup file or in shell. 
 ;   Requires JPMRange.pro
 ;   Requires JPMPrintNumber.pro
 ;
 ; PROCEDURE: 
 ;   Prior to running this code: 
-;   0) Make sure your computer is on only one network i.e. turn off wifi if connected to the DEWESoft machine with ethernet (crossover cable)
 ;   1) Connect this machine to a network with the machine running DEWESoft. This can be done with a crossover cable connecting their two ethernet ports. 
+;   
+;   The following steps have been scripted so you can just hit the Run button on rocket_tm2_start.scpt. 
 ;   2) Open a terminal (e.g., terminal.app in OSX)
 ;   3) type: telnet ipAddress 8999 (where ipAddress is the IP address (duh) of the DEWESoft machine e.g., telnet 192.168.1.90 8999. 
 ;            8999 is the commanding port and should not need to be changed). You should get an acknowledgement: +CONNECTED DEWESoft TCP/IP server. 
 ;   4) type: listusedchs (This should return a list of all channels being used. EVE data is in three parallel streams, P1, P2, and P3. 
-;            Note the corresponding channel numbers. For EVE these are ch 13, 14, and 12, respectively).
+;            Note the corresponding channel numbers. For EVE these are presently ch 13, 14, and 12, respectively).
 ;   5) type: /stx preparetransfer
 ;   6) type: ch 13
 ;            ch 14
 ;            ch 12 (or whatever your relevant channel number/s are).
 ;   7) type: /etx You should get an acknowledgement: +OK
-;   8) NOW you can start this code. It will open the port specified in the input parameter, or use the hard-coded default if not provided in the call. Then it will STOP. Don't continue yet. 
+;   8) Now you can start this code. It will open the port specified in the input parameter, or use the hard-coded default if not provided in the call. Then it will STOP. Don't continue yet. 
 ;   Back to the terminal window
 ;   9) type: starttransfer port (where port is the same port IDL is using in step 8 above, e.g., starttransfer 8002)
 ;   10) type: setmode 1 You'll either see +ERR Already in this mode or +OK Mode 1 (control) selected, 
 ;             depending on if you've already done this step during debugging this when it inevitably doesn't work the first time. 
 ;   11) type: startacq You should get an acknowledgement: +OK Acquiring
-;   12) NOW you can continue running this code
+;   12) Now you can continue running this code
 ;
 ; EXAMPLE:
 ;   See PROCEDURE above for examples of each step. 
@@ -75,7 +76,8 @@
 ;                                 rather than White Sands Misile Range Chapter 10.
 ;   2015-04-25: James Paul Mason: More extensive edits to the same purpose. Now tested and functioning. Improved code effiency with where's instead of for's and the temporary function. 
 ;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
-;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code. 
+;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code.
+;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working. 
 ;-
 PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYNCHRONOUSDATA, windowSize = windowSize, windowSizeCsol = windowSizeCsol, windowSizeCsolHk = windowSizeCsolHk, $
                                       megsAStatisticsBox = megsAStatisticsBox, megsBStatisticsBox = megsBStatisticsBox, $

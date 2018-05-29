@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Stripped down code with similar purpose as read_tm2_all_cd.pro, designed to return the data via a common buffer rather than save to disk as a .dat.
-;   Designed to work in conjunction with eve_csol_real_time_socket_read_wrapper.pro, which shares the COMMON blocks. That code is responsible for initializing
+;   Designed to work in conjunction with rocket_eve_tm2_real_time_dislay.pro, which shares the COMMON blocks. That code is responsible for initializing
 ;   many of the variables in the common blocks.
 ;
 ; INPUTS:
@@ -21,14 +21,15 @@
 ;   megsCcdLookupTable [fltarr] [input]:          A 3 x 2 million array containing pixel indices 0-2,097,151 and their corresponding column and row in the MEGS CCD.
 ;                                                 Passed via common buffer so that it uses a pointer rather than copying the whole array as it would with an optional input. 
 ;   megsAImageBuffer [uintarr] [input/output]:    A 2048 * 1024 image to be filled in. This program updates the buffer with the current socketData. 
-;                                                 Ditto for megsBImageBuffer. Ditto for csolImageBuffer, except its a 1024 * 1024 image. 
+;                                                 Ditto for megsBImageBuffer. Ditto for csolImageBuffer, except its a 2000 * (5 * 88) image. There wasn't room in the telmetry
+;                                                 stream to fit the entire CSOL image, so instead 5 rows with 88 columns are extracted in flight and sent down via telemetry.
 ;   megsAImageIndex [long] [input/output]:        The number of images received so far. This program updates the value if a fiducial for MEGS is found. 
 ;                                                 Ditto for megsBImageIndex.
 ;   megsAPixelIndex [long] [input/output]:        A single number indicating the pixel index in the CCD. This program updates it with the number of pixels read in socketData. 
 ;                                                 Ditto for megsBPixelIndex and csolPixelIndex.
 ;   megsATotalPixelsFound [long] [input/output]:  Incremements by the number of pixels found in socketData. Used for checking whether too much or too little data were
 ;                                                 collected for an image, which should be 2048 * 1024 pixels. Ditto for megsBTotalPixelsFound and csolTotalPixelsFound. 
-;   csolcsolRowNumberLatestLatest [long] [input/output]:    The most recent row number found in the CSOL stream.
+;   csolRowNumberLatest [long] [input/output]:    The most recent row number found in the CSOL stream.
 ;   csolNumberGapPixels [long] [input]:           The number of gap pixels to insert between the regions of interest of the image.
 ;   csolHk [structure] [output]:                  An anonymous structure with tags for telemetry points of interest, e.g., housekeeping (hk) data. 
 ;   sampleSizeDeweSoft [integer] [input]:         This is =2 if using synchronous data in DeweSoft for instrument channels, or =10 if using asynchronous. The additional bytes
@@ -68,6 +69,7 @@
 ;   2015-04-13: James Paul Mason: Wrote script.
 ;   2015-04-25: James Paul Mason: The last few days have seen extensive edits to this code to get it work in the field where real debugging could be done. 
 ;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code. 
+;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working. 
 ;-
 PRO rocket_eve_tm2_read_packets, socketData, VERBOSE = VERBOSE, DEBUG = DEBUG
 

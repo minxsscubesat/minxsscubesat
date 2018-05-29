@@ -17,7 +17,7 @@
 ;   DEBUG:   Set to print out additional information useful for debugging.
 ;
 ; OUTPUTS:
-;   hkCsol [stucture]: An anonymous structure that contains the hk of interest in engineering units (e.g., temperatures in ºC].
+;   hkCsol [stucture]: An anonymous structure that contains the hk of interest in engineering units (e.g., temperatures in ºC).
 ;                      May also contain the metadata.
 ;
 ; OPTIONAL OUTPUTS:
@@ -31,6 +31,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   2018-05-11: James Paul Mason: Wrote script.
+;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working.
 ;-
 FUNCTION rocket_csol_extract_hk, csolRow2000, $
                                  VERBOSE = VERBOSE, DEBUG = DEBUG
