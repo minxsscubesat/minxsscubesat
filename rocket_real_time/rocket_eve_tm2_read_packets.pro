@@ -23,7 +23,7 @@
 ;   megsAImageBuffer [uintarr] [input/output]:    A 2048 * 1024 image to be filled in. This program updates the buffer with the current socketData. 
 ;                                                 Ditto for megsBImageBuffer. Ditto for csolImageBuffer, except its a 1024 * 1024 image. 
 ;   megsAImageIndex [long] [input/output]:        The number of images received so far. This program updates the value if a fiducial for MEGS is found. 
-;                                                 Ditto for megsBImageIndex and csolImageIndex.
+;                                                 Ditto for megsBImageIndex.
 ;   megsAPixelIndex [long] [input/output]:        A single number indicating the pixel index in the CCD. This program updates it with the number of pixels read in socketData. 
 ;                                                 Ditto for megsBPixelIndex and csolPixelIndex.
 ;   megsATotalPixelsFound [long] [input/output]:  Incremements by the number of pixels found in socketData. Used for checking whether too much or too little data were
@@ -75,7 +75,7 @@ PRO rocket_eve_tm2_read_packets, socketData, VERBOSE = VERBOSE, DEBUG = DEBUG
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowIndex, csolPixelIndex, csolRowNumberLatest, csolTotalPixelsFound, csolNumberGapPixels, csolHk
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolPixelIndex, csolRowNumberLatest, csolTotalPixelsFound, csolNumberGapPixels, csolHk
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Telemetry stream packet structure
@@ -151,8 +151,10 @@ ENDIF ELSE BEGIN ; End of numberOfFoundMegsAPixels NE 0
   ; TASK 4.2: If totalPixels LE imageSize, issue warning.
   ;
   IF megsATotalPixelsFound LT 2048L * 1024L - 2L AND megsATotalPixelsFound NE 0 THEN BEGIN
-    message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
-                    ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+                      ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+    ENDIF
   ENDIF
   
   ; Reset image pointers for a new image
@@ -207,8 +209,10 @@ ENDIF ELSE BEGIN ; End of numberOfFoundMegsBPixels NE 0
   
   ; TASK 4.2: If totalPixels LE imageSize, issue warning. 
   IF megsBTotalPixelsFound LT 2048L * 1024L - 2L AND megsBTotalPixelsFound NE 0 THEN BEGIN
-    message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
-                    ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+                      ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+    ENDIF
   ENDIF
   
   ; Reset image pointers for a new image
@@ -298,12 +302,6 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
     message, /INFO, JPMsystime() + ' Found ' + JPMPrintNumber(n_elements(csolFrameEndFiducial1Indices), /NO_DECIMALS) + ' rows of CSOL image data.'
   ENDIF
   
-  ; Increment the row counter if found the start and end syncs
-  IF csolFrameStartFiducial2Indices NE [-1] AND csolFrameEndFiducial1Indices NE [-1] THEN BEGIN
-    ; Could have more starts than stops if it's cut off, so only add complete rows
-    csolRowIndex += n_elements(csolFrameStartFiducial2Indices) < n_elements(csolFrameEndFiducial1Indices) 
-  ENDIF
-  
   ;
   ; TASK 4: Check limits:
   ;      4.1: If totalPixels GT imageSize, issue warning.
@@ -330,9 +328,6 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
   ; Reset image pointers for a new image
   csolPixelIndex = 0L
   csolTotalPixelsFound = 0L
-
-  ; Increment the number of image read
-  csolImageIndex++
 ENDELSE
 
 END

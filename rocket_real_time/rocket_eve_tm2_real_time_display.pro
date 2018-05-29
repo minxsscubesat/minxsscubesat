@@ -87,7 +87,7 @@ PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYN
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowIndex, csolPixelIndex, csolRowNumberLatest, csolTotalPixelsFound, csolNumberGapPixels, csolHk
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolPixelIndex, csolRowNumberLatest, csolTotalPixelsFound, csolNumberGapPixels, csolHk
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Defaults
@@ -95,7 +95,7 @@ IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
 IF ~keyword_set(windowSize) THEN windowSize = [1984, 530]
 IF ~keyword_set(windowSizeCsol) THEN windowSizeCsol = [1984, 565]
-IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsolHk = [400, 400]
+IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsolHk = [300, 400]
 IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511]  ; Corresponds to He II 304 Å line
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
@@ -208,28 +208,27 @@ csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = g
 ; CSOL housekeeping data
 wchk = window(DIMENSIONS = windowSizeCsolHk, /NO_TOOLBAR, LOCATION = [windowSizeCsol[0] + 5, 2 * windowSize[1] + 78], BACKGROUND_COLOR = backgroundColor, WINDOW_TITLE = 'CSOL Housekeeping Data')
 t          = text(0.5,              topLinePosition - (0   * hkVSpacing), 'Temperatures', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.5,              topLinePosition - (1   * hkVSpacing), 'Detector 0 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermDet0 = text(0.5 + hkHSpacing, topLinePosition - (1   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5,              topLinePosition - (2   * hkVSpacing), 'Detector 1 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermDet1 = text(0.5 + hkHSpacing, topLinePosition - (2   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5,              topLinePosition - (3   * hkVSpacing), 'FPGA [ºC]         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tThermFPGA = text(0.5 + hkHSpacing, topLinePosition - (3   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (1   * hkVSpacing), 'Detector 0 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet0 = text(0.7 + hkHSpacing, topLinePosition - (1   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (2   * hkVSpacing), 'Detector 1 [ºC] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermDet1 = text(0.7 + hkHSpacing, topLinePosition - (2   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (3   * hkVSpacing), 'FPGA [ºC]         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tThermFPGA = text(0.7 + hkHSpacing, topLinePosition - (3   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.5,              topLinePosition - (4   * hkVSpacing), 'Power', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.5,              topLinePosition - (5   * hkVSpacing), 'Current [mA] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tCurrent5v = text(0.5 + hkHSpacing, topLinePosition - (5   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5,              topLinePosition - (6   * hkVSpacing), 'Voltage [V]    = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tVoltage5v = text(0.5 + hkHSpacing, topLinePosition - (6   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (5   * hkVSpacing), 'Current [mA] = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tCurrent5v = text(0.7 + hkHSpacing, topLinePosition - (5   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (6   * hkVSpacing), 'Voltage [V]    = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tVoltage5v = text(0.7 + hkHSpacing, topLinePosition - (6   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.5,              topLinePosition - (7   * hkVSpacing), 'Enables', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.5,              topLinePosition - (8   * hkVSpacing), 'TEC Enable         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tTecEnable = text(0.5 + hkHSpacing, topLinePosition - (8   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5,              topLinePosition - (9   * hkVSpacing), 'FF Lamp Enable = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tFFLEnable = text(0.5 + hkHSpacing, topLinePosition - (9   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (8   * hkVSpacing), 'TEC Enable         = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tTecEnable = text(0.7 + hkHSpacing, topLinePosition - (8   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (9   * hkVSpacing), 'FF Lamp Enable = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tFFLEnable = text(0.7 + hkHSpacing, topLinePosition - (9   * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.5,              topLinePosition - (10  * hkVSpacing), 'SD Card', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
-t          = text(0.5,              topLinePosition - (11  * hkVSpacing), 'SD Start Frame     = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tSdStart   = text(0.5 + hkHSpacing, topLinePosition - (11  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-t          = text(0.5,              topLinePosition - (12  * hkVSpacing), 'SD Current Frame = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-tSdCurrent = text(0.5 + hkHSpacing, topLinePosition - (12  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
-csolRowText = text(0.0, 0.0, 'Current row: --', COLOR = greenColor)
+t          = text(0.7,              topLinePosition - (11  * hkVSpacing), 'Start Frame     = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdStart   = text(0.7 + hkHSpacing, topLinePosition - (11  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (12  * hkVSpacing), 'Current Frame = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tSdCurrent = text(0.7 + hkHSpacing, topLinePosition - (12  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 csolHkRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; Initialize COMMON buffer variables
@@ -240,8 +239,6 @@ csolNumberGapPixels = 10
 csolImageBuffer = uintarr(2000L, (5L * 88L) + (csolNumberGapPixels * 4L))
 megsAImageIndex = 0L
 megsBImageIndex = 0L
-csolImageIndex = 0L
-csolRowIndex = 0L
 megsAPixelIndex = -1LL
 megsBPixelIndex = -1LL
 csolpixelindex = -1LL
@@ -514,8 +511,17 @@ WHILE 1 DO BEGIN
             IF csolHk.fflEnable THEN tFFLEnable.String = 'True' ELSE IF csolHk.fflEnable EQ 0 THEN tFFLEnable.String = 'False' ELSE tFFLEnable.String = JPMPrintNumber(csolHk.fflEnable, /NO_DECIMALS)
             tSdStart.String = JPMPrintNumber(csolHk.sdStartFrameAddress, /NO_DECIMALS)
             tSdCurrent.String = JPMPrintNumber(csolHk.sdCurrentFrameAddress, /NO_DECIMALS)
+            
+            ; Limit check / red/green coloring
+            IF csolHk.thermDet0 LT 20 OR csolHk.thermDet0 GT 0 THEN tThermDet0.Color = greenColor ELSE tThermDet0.Color = redColor
+            IF csolHk.thermDet1 LT 20 OR csolHk.thermDet1 GT 0 THEN tThermDet1.Color = greenColor ELSE tThermDet1.Color = redColor
+            IF csolHk.thermFPGA LT 60 OR csolHk.thermFPGA GT 15 THEN tThermFPGA.Color = greenColor ELSE tThermFPGA.Color = redColor
+            IF csolHk.current5v LT 380 OR csolHk.current5v GT 300 THEN tCurrent5v.Color = greenColor ELSE tCurrent5v.Color = redColor
+            IF csolHk.voltage5v LT 5.5 OR csolHk.voltage5v GT 4.5 THEN tVoltage5v.Color = greenColor ELSE tVoltage5v.Color = redColor
+            IF csolHk.tecEnable EQ 1 THEN tTecEnable.Color = greenColor ELSE tTecEnable.Color = redColor
+            IF csolHk.fflEnable EQ 0 THEN tFFLEnable.Color = greenColor ELSE tFFLEnable.Color = redColor
+            
           ENDIF
-          csolRowText.String = 'Current row: ' + JPMprintnumber(csolRowNumberLatest, /NO_DECIMALS)
           csolHkRefreshText.String = 'Last refresh: ' + JPMsystime()
         ENDIF ; doCsolProcessing        
         
