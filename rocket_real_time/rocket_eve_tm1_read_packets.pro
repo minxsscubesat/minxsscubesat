@@ -3,178 +3,158 @@
 ;   rocket_eve_tm1_read_packets
 ;
 ; PURPOSE:
-;   Stripped down code with similar purpose as read_tm1_cd.pro, designed to return the data via a common buffer rather than save to disk as a .dat.
-;   Designed to work in conjunction with rocket_eve_tm1_real_time_display.pro, which shares the COMMON blocks. That code is responsible for 
-;   initializing many of the variables in the common blocks.
+;   Stripped down code with similar purpose as rocket_eve_tm2_read_packets, designed to return the data via a struct rather than a common buffer.
+;   Designed to work in conjunction with rocket_eve_tm1_real_time_display.pro to parse Dewesoft packets to be passed back for displaying.
 ;
 ; INPUTS:
-;   socketData [bytarr]: Data retrieved from an IP socket. 
+;   socketData [bytarr]: Data retrieved from an IP socket.
+;   analogMonitorsStructure: Initialized struct in rocket_eve_tm1_real_time_display that will hold the parsed data
+;   offsets: Array of indicies where the channel stream offsets are located in a Dewesoft packet. Determining these offsets is handled
+;            in rocket_eve_tm1_real_time_display
+;   packetsize: Array of channel data sizes in Dewesoft packet corresponding to its given offset 
+;   monitorsRefreshText: Struct for the refresh text at the bottom of the analog display windows in rocket_eve_tm1_real_time_display
+;   monitorsSerialRefreshText: Same as above but for serial data
+;   stale_a: Int counter for invalid analog data
+;   stale_s: Same as above but for serial data
 ;
 ; OPTIONAL INPUTS:
 ;   None
 ;
 ; KEYWORD PARAMETERS:
-;   VERBOSE: Set to print out additional information about how the processing is proceeding.
-;   DEBUG: Set to print out additional information useful for debugging.
 ;
-; COMMON BUFFER VARIABLES:
-;   monitorsBuffer [uintarr] [input/output]: A 112???? array to be filled in. This program updates the buffer with the current socketData. 
-;   TODO: How many bytes/elements are there of analog data?
-;   sampleSizeDeweSoft [integer] [input]:    This is =2 if using synchronous data in DeweSoft for instrument channels, or =10 if using asynchronous. The additional bytes
-;                                            are from timestamps on every sample.
-;   offsetTm1 [long] [input]:                How far into the DEWESoftPacket to get to the "Data Samples" bytes of the DEWESoft channel definitions according to the binary
-;                                            data format documentation. Each tag/value is an offset for a different telemetry point.
-;   numberOfDataSamplesTm1 [ulong] [input]:  The number of instrument samples contained in the complete DEWESoft packet for each of the telmetry points in the defined stream.
-; 
+; COMMON BLOCKS:
+;
 ; OUTPUTS:
-;   No direct outputs. See common buffer variables above. 
+;   Returns analogMonitorsStructure with updated telemetry
 ;
 ; OPTIONAL OUTPUTS:
 ;   None
 ;
 ; RESTRICTIONS:
-;   Requires JPMPrintNumber.
-;   Requires strip_dewesoft_header_and_trailer.
+;   Requires JPMsystime.
 ;
 ; PROCEDURE:
-;   TASK 1: Strip DEWESoft headers and trailers to get raw instrument data.
-;   TASK 2: Remove filler. WSMR stuffs in 0x7E7E.
-;   TASK 3: Decode analog monitors and instrument observations and stuff into structure to return. 
-;      
+;   TASK 1: Process Analog Telemetry 
+;   TASK 2: Process ESP Serial Data
+;   TASK 3: Process MEGSP Serial Data
+;
 ; EXAMPLE:
-;   rocket_eve_tm1_read_packets, socketData
+;   rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s
 ;
 ; MODIFICATION HISTORY:
-;   2017-07-27: James Paul Mason: Wrote script based on rocket_eve_tm2_read_packets.
+;   2018-05-29: Robert Sewell: Wrote script for rocket_eve_tm1_real_time_display updates and 36.336 Altair changes
 ;-
-FUNCTION rocket_eve_tm1_read_packets, socketData, $
-                                      VERBOSE = VERBOSE, DEBUG = DEBUG
 
-; COMMON blocks for use with rocket_eve_tm1_real_time_display. The blocks are defined here and there to allow them to be called independently.
-COMMON MONITORS_PERSISTENT_DATA, monitorsBuffer
-COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetTm1, numberOfDataSamplesTm1
+FUNCTION rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s
 
-; Telemetry stream packet structure
-telemetryStreamPacketNumberOfWords = 80L ; 83L if reading a binary file, because WSMR includes 3 words of time information
-telemetryStreamPacketNumberOfRows = 8L
-nbytes = telemetryStreamPacketNumberOfWords * 2L * telemetryStreamPacketNumberOfRows
-nint = nbytes / 2L
+;Conversion factors for each individual monitor. Found in DataView
+conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023*34.5,5./1023*34.45,$
+             5./1023,5./1023*10,5./1023,5./1023,$
+             0.05,0.055,5./1023,5./1023,5./1023,5./1023,0.00918]
+             
+;Byte offsets for each individual monitor. Also found in DataView
+shift=[0,0,0,0,0,0,0,0,-143,-156.6,0,0,0,0,0,0,0,0,0,0,21.7]
 
-; WSMR telemetry packet sync words
-wordMask = 'FFFF'X      ; Tom: don't need to mask
-sync1Value = '03EB'X
-sync1Offset = nint - 1L ; 0L if reading binary file, because WSMR moves this syncbyte to the beginning of the packet
-sync2Value = '0333'X
-sync2Offset = nint - 2L ; 1L if reading binary file, because WSMR moves sync1 to beginning of packet, making sync2 the end of the packet
-sync3Value = '0100'X
-sync3Offset = nint - 3L ; 2L if reading binary file, because WSMR moves sync1 to beginning of packet, making sync3... where? 
+channel_num=23;We should have 23 offsets in a valid Dewesoft packet. One for each pulled channel
 
-; Instrument packet fiducial values (sync words)
-espFiducialValue1 = '037E'X ; TODO: Get Tom to input these values in the spreadsheet, then verify that they are correct
-espFiducialValue2 = '0045'X
-megsPFiducialValue1 = '037E'X
-megsPFiducialValue2 = '004D'X
-xpsFiducialValue1 = '037E'X
-xpsFiducialValue2 = '0058'X
+serial_num=14;Number of serial data points in our monitor structure
 
-; Define the packet structure
-; Definition for flight 36.318
-analogMonitorsStructure = {timeWhatFormat: 0.0D0, $ ; TODO: What time format?
-                           tm_28v_bus_voltage: 0.0, tm_28v_bus_current: 0.0, exp_28v_bus_voltage: 0.0, $
-                           camera_12v_voltage: 0.0, $
-                           fpga_5v_voltage: 0.0, $
-                           solar_section_pressure: 0.0, gate_valve_position: 0.0, cryo_hot_temp: 0.0, $
-                           megsa_ff: 0.0, megsb_ff: 0.0, $
-                           megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
-                           megsb_ccd_temp: 0.0, megsb_heater: 0.0, $
-                           xps_28v_voltage: 0.0, $
-                           xps_filter_position: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
-                           xrs_tempa: 0.0, xps_tempb: 0.0, xrs_5v_voltage: 0.0, $
-                           shutter_door_position: 0.0}
-
-; TODO: If telemetry does not include a timestamp, then just add the current time to analogMonitorsStructure.time_jd and analogMonitorsStructure.time_iso
-
-;
-; TASK 1: Strip DEWESoft headers and trailers to get raw instrument data.
-;
-monitorsPacketDataWithFiller = strip_dewesoft_header_and_trailer(socketData, offsetTm1, numberOfDataSamplesTm1, sampleSizeDeweSoft) ; [uintarr]
-
-;
-; TASK 2: Remove filler. WSMR stuffs in 0x7E7E.
-;
-monitorsPacketDataGoodIndices = where(monitorsPacketDataWithFiller NE '7E7E'X, numberOfFoundMonitorBytes) ; AND monitorsPacketDataWithFiller NE 0
-
-IF numberOfFoundMonitorBytes NE 0 THEN BEGIN
-  monitorsPacketData = monitorsPacketDataWithFiller[monitorsPacketDataGoodIndices]
+;If we have a valid Dewesoft packet then parse the packet for each channel
+if (channel_num eq n_elements(offsets)-1) then begin
   
-  ; Reform data into 2D array to be compatible with spreadsheet definition and analogMonitorsTelemetryPositionInPacket
-  IF n_elements(monitorsPacketData) LT telemetryStreamPacketNumberOfWords * telemetryStreamPacketNumberOfRows THEN BEGIN
-    IF keyword_set(VERBOSE) OR keyword_set(DEBUG) THEN BEGIN
-      message, /INFO, JPMsystime() + ' socket data had fewer than the expected number of bytes. Expected ' + $
-              strtrim(telemetryStreamPacketNumberOfWords, 2) + ' * ' + strtrim(telemetryStreamPacketNumberOfRows, 2) + ' = ' + $
-              strtrim(telemetryStreamPacketNumberOfWords * telemetryStreamPacketNumberOfRows, 2) + ' but received ' + n_elements(monitorsPacketData)
-      return, !NULL
-    ENDIF
-  ENDIF
-  monitorsPacketData = reform(monitorsPacketData, telemetryStreamPacketNumberOfWords, telemetryStreamPacketNumberOfRows)
+  ;Change the refresh string and reset our invalid counter now that we found a valid packet
+   monitorsRefreshText.String = 'Last full refresh: ' + JPMsystime()
+   stale_a=0
+   
+   ;
+   ;TASK 1: Process Analog Monitors
+   ;
+   
+   ;Loop over only the analog monitors in our struct
+   for i=0,n_tags(analogMonitorsStructure)-(1+serial_num) do begin
+    ;This is the data for an individual channel
+    packetdata=socketdata[offsets[i]+4:offsets[i+1]-1]
+    ;As analog values are just the same tlm point repeated in the channel data 
+    ;we can grap the first word and say thats our data 
+    tlm=byte2uint(packetdata[0:1])*conv_factor[i]+shift[i]
+    ;Store it to our struct
+    analogMonitorsStructure.(i)=tlm 
+   endfor
+   
+   ;Process esp channel data which comes next
+   sync_esp_ind=-1;Where we found the ESP sync word in the dewesoft channel
+   esp_ref=0;ESP refresh variable. This gets set to 1 if we find ESP data in the channel and are able to pull out all the monitors
+   
+   ;Grab the second to last channel data in the Dewesoft packet which is esp
+   packetdata_esp=socketdata[offsets[n_elements(offsets)-3]+4:offsets[n_elements(offsets)-3]+packetsize[n_elements(offsets)-3]*2-1]
+   
+   ;
+   ;TASK 2: Process ESP Serial Data
+   ;
+   
+   ;Loop through this channel data to find the correct sync words (0x037E, 0x0045 which translates to 126,3,69,0 in the channel stream)
+   ;Note: There actually four more sync bytes but it is enough to check for the first four
+   ;Sync bytes for ESP and MEGS-P goes 0x037E and then E S P for ESP or M G P for MEGS-P in ascii
+   for j=0,n_elements(packetdata_esp)-5 do begin
+      ;If we find the sync words update the index of where ESP data starts in the channel data
+      if((packetdata_esp[j] eq 126) and (packetdata_esp[j+1] eq 3) and (packetdata_esp[j+2] eq 69) and (packetdata_esp[j+3] eq 0)) then sync_esp_ind=j
+   endfor
   
-  ;
-  ; TASK 3: Decode analog monitors and stuff into structure to return. 
-  ;
-  monitorsPacketDataVolts = 0.00 + 5.0 * monitorsPacketData / 1023. ; [V] 10-bit A/D converter
-  
-  analogMonitorsStructure.tm_28v_bus_voltage = monitorsPacketDataVolts[41, 0] * 0.00918   ; +21.7 just for first byte ; [V]
-  analogMonitorsStructure.tm_28v_bus_current = monitorsPacketDataVolts[34, 0] * 0.005     ; [A]
-  analogMonitorsStructure.exp_28v_bus_voltage = monitorsPacketDataVolts[18, 0] * 0.005    ; [V]
-  analogMonitorsStructure.camera_12v_voltage = monitorsPacketDataVolts[68, 2] * 0.005     ; [V]
-  analogMonitorsStructure.fpga_5v_voltage = monitorsPacketDataVolts[68, 1] * 0.055        ; [V]
-  analogMonitorsStructure.solar_section_pressure = monitorsPacketDataVolts[56, 0] * 0.005 ; [?]
-  analogMonitorsStructure.gate_valve_position = monitorsPacketDataVolts[67, 5] * 0.005    ; [?]
-  analogMonitorsStructure.cryo_hot_temp = monitorsPacketDataVolts[57, 0] * 0.005          ; [?]
-  analogMonitorsStructure.xps_tempb = monitorsPacketDataVolts[61, 0] * 0.005              ; [?]
-  analogMonitorsStructure.megsa_ff = monitorsPacketDataVolts[68, 3] * 0.005               ; [V]
-  analogMonitorsStructure.megsb_ff = monitorsPacketDataVolts[68, 4] * 0.005               ; [V]
-  analogMonitorsStructure.megsa_ccd_temp = monitorsPacketDataVolts[62, 0] * 0.005         ; [?]
-  analogMonitorsStructure.megsa_heater = monitorsPacketDataVolts[45, 0] * 0.005           ; [V]
-  ;analogMonitorsStructure.megsp_temp = monitorsPacketDataVolts[43, 0] * 0.005            ; [V]
-  analogMonitorsStructure.megsp_temp = t_MEGSP                                            ; [C]
-  analogMonitorsStructure.megsb_ccd_temp = monitorsPacketDataVolts[67, 2] * 0.005         ; [?]
-  analogMonitorsStructure.megsb_heater = monitorsPacketDataVolts[58, 0] * 0.005           ; [V]
-  analogMonitorsStructure.xps_28v_voltage = monitorsPacketDataVolts[50, 0] * 0.005        ; TODO: Resolve discrepancy between spreadsheet and DataView [V]
-  analogMonitorsStructure.xps_filter_position = monitorsPacketDataVolts[46, 0] * 0.02     ; -3.6 just for first byte ; [V]
-  analogMonitorsStructure.xps_cw = monitorsPacketDataVolts[55, 0] * 0.005                 ; [V]
-  analogMonitorsStructure.xps_ccw = monitorsPacketDataVolts[54, 0] * 0.005                ; [V]
-  ;analogMonitorsStructure.xrs_tempa = monitorsPacketDataVolts[59, 0] * 0.005             ; [V]
-  analogMonitorsStructure.xrs_tempa = t_XRS1                                              ; [C]
-  analogMonitorsStructure.xps_tempb = monitorsPacketDataVolts[49, 0] * 0.005              ; [?]
-  analogMonitorsStructure.xrs_5v_voltage = monitorsPacketDataVolts[51, 0] * 0.005         ; [V]
-  analogMonitorsStructure.shutter_door_position = monitorsPacketDataVolts[74, 4] * 0.005  ; [?]
-  
-  return, analogMonitorsStructure
-ENDIF ELSE BEGIN ; numberOfFoundMonitorBytes ≠ 0
-  IF keyword_set(VERBOSE) THEN BEGIN
-    message, /INFO, JPMsystime() + ' No non-filler bytes found in socket data'
-  ENDIF
-  
-  return, !NULL
-ENDELSE
-
-END
-
-; Procedure to just send a tm1 packet into the read function for testing/debugging/development purposes
-PRO test_rocket_eve_tm1_read_packets
-
-; Define the COMMON blocks here to avoid dependence on rocket_eve_tm1_real_time_display.
-COMMON MONITORS_PERSISTENT_DATA, monitorsBuffer
-COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetTm1, numberOfDataSamplesTm1
-monitorsBuffer = uintarr(112)
-sampleSizeDeweSoft = 2
-offsetTm1 = 640 ; TODO: What should this be?
-numberOfDataSamplesTm1 = 640 ; TODO: What should this be?
-
-; Restore a single TM1 packet and send it to the read code
-binaryAllPackets = read_binary('~/Dropbox/Research/Postdoc_NASA/Rocket/36.318/TM Sample Data/TM1_Raw_Data_05_06_16_16-57_SequenceAllFire-2_DataViewTimeStampRemoved.dat', DATA_TYPE = 12) ; data_type 12 is uint
-;restore, '~/Dropbox/Research/Postdoc_NASA/Rocket/36.318/TM Sample Data/TestSingleTM1Packet.sav'
-junk = rocket_eve_tm1_read_packets(binaryAllPackets)
-
+   ;Check to see at that index if the channel stream is long enough to contain the ESP serial monitors
+   if ((sync_esp_ind+55 lt n_elements(packetdata_esp)) and sync_esp_ind ne -1) then begin
+    ;Pull the ESP monitors out of the stream
+    analogMonitorsStructure.esp_fpga_time=byte2ulong([packetdata_esp[sync_esp_ind+14],packetdata_esp[sync_esp_ind+12],packetdata_esp[sync_esp_ind+10],packetdata_esp[sync_esp_ind+8]])
+    analogMonitorsStructure.esp_rec_counter=byte2uint([packetdata_esp[sync_esp_ind+18],packetdata_esp[sync_esp_ind+16]])
+    analogMonitorsStructure.esp1=byte2uint([packetdata_esp[sync_esp_ind+22],packetdata_esp[sync_esp_ind+20]])
+    analogMonitorsStructure.esp2=byte2uint([packetdata_esp[sync_esp_ind+26],packetdata_esp[sync_esp_ind+24]])
+    analogMonitorsStructure.esp3=byte2uint([packetdata_esp[sync_esp_ind+30],packetdata_esp[sync_esp_ind+28]])
+    analogMonitorsStructure.esp4=byte2uint([packetdata_esp[sync_esp_ind+34],packetdata_esp[sync_esp_ind+32]])
+    analogMonitorsStructure.esp5=byte2uint([packetdata_esp[sync_esp_ind+38],packetdata_esp[sync_esp_ind+36]])
+    analogMonitorsStructure.esp6=byte2uint([packetdata_esp[sync_esp_ind+42],packetdata_esp[sync_esp_ind+40]])
+    analogMonitorsStructure.esp7=byte2uint([packetdata_esp[sync_esp_ind+46],packetdata_esp[sync_esp_ind+44]])
+    analogMonitorsStructure.esp8=byte2uint([packetdata_esp[sync_esp_ind+50],packetdata_esp[sync_esp_ind+48]])
+    analogMonitorsStructure.esp9=byte2uint([packetdata_esp[sync_esp_ind+54],packetdata_esp[sync_esp_ind+52]])
+    esp_ref=1;We have now refreshed the ESP monitors
+   endif
+   
+   ;
+   ;TASK 3: Process MEGSP Serial Data
+   ;
+   
+   ;Process megs-p channel which comes next
+   sync_megsp_ind=-1;Where we found the MEGS-P sync word in the dewesoft channel
+   megs_ref=0;MEGSP refresh variable. This gets set to 1 if we find MEGSP data in the channel and are able to pull out all the monitors
+   
+   ;Grab the last channel data in the Dewesoft packet which is megsp 
+   packetdata_megsp=socketdata[offsets[n_elements(offsets)-2]+4:offsets[n_elements(offsets)-2]+packetsize[n_elements(offsets)-2]*2-1]
+   
+   ;Loop through this channel data to find the correct sync words (0x037E, 0x004D which translates to 126,3,77,0 in the channel stream)
+   ;Note: There actually four more sync bytes but it is enough to check for the first four
+   for j=0,n_elements(packetdata_megsp)-5 do begin
+    ;If we find the sync words update the index of where MEGS-P data starts in the channel data
+     if((packetdata_megsp[j] eq 126) and (packetdata_megsp[j+1] eq 3) and (packetdata_megsp[j+2] eq 77) and (packetdata_megsp[j+3] eq 0)) then sync_megsp_ind=j
+   endfor
+   if ((sync_megsp_ind+23 lt n_elements(packetdata_megsp) and sync_megsp_ind ne -1)) then begin
+    ;Pull the MEGSP monitors out of the stream
+     analogMonitorsStructure.megsp_fpga_time=byte2ulong([packetdata_megsp[sync_megsp_ind+14],packetdata_megsp[sync_megsp_ind+12],packetdata_megsp[sync_megsp_ind+10],packetdata_megsp[sync_megsp_ind+8]])
+     analogMonitorsStructure.megsp1=byte2uint([packetdata_megsp[sync_megsp_ind+18],packetdata_megsp[sync_megsp_ind+16]])
+     analogMonitorsStructure.megsp2=byte2uint([packetdata_megsp[sync_megsp_ind+22],packetdata_megsp[sync_megsp_ind+20]])
+     megs_ref=1;We have now refreshed the MEGSP monitors
+   endif
+   
+   ;Only if we have refreshed ESP and MEGSP data can we update the full refresh string for the serial monitors window
+   if ((megs_ref ne 0) and (esp_ref ne 0)) then begin
+    monitorsSerialRefreshText.String = 'Last full refresh: ' + JPMsystime()
+    stale_s=0;reset the invalid serial data counter
+   endif else stale_s=stale_s+1;If we didn't get one of the serial monitors to refresh then increment the invalid serial packet counter
+   
+   return,analogMonitorsStructure;Return our updated struct
+   
+endif else begin
+  ;If we didn't see all the valid offsets than increment our invalid packets counters
+   stale_a=stale_a+1
+   stale_s=stale_s+1
+endelse
+;If we didn't see a valid packet then just pass back the struct we were passed (which will just be the last valid packet data)
+return,analogMonitorsStructure
 END
