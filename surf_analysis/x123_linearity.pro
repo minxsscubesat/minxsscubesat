@@ -225,12 +225,13 @@ bcrange=[1e-8,1.5e-6,2.5e-6,5.5e-6,1.5e-5,2.5e-5,5.5e-5,1.5e-4,2.5e-4,5.5e-4, $
 ;
 smlow=[]
 
+
 ;
 ; Find data points for each range corresponding to a change in beam current
 ;
 Smlow15=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[14]) and (surfbc lt bcrange[15]))
-if smlow15[0] eq -1 then begin
+if n_elements(smlow15) le 4 then begin
   print,'no smlow15'
 endif else begin
   Smlow15=Smlow15[2:n_elements(Smlow15)-2]
@@ -239,7 +240,7 @@ endelse
 
 Smlow14=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[13]) and (surfbc lt bcrange[14]))
-if smlow14[0] eq -1 then begin
+if n_elements(smlow14) le 3 then begin
   print,'no smlow14'
 endif else begin
   Smlow14=Smlow14[1:n_elements(Smlow14)-2]
@@ -248,7 +249,7 @@ endelse
 
 Smlow13=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[12]) and (surfbc lt bcrange[13]))
-if smlow13[0] eq -1 then begin
+if n_elements(smlow13) le 3 then begin
   print,'no smlow13'
 endif else begin
   Smlow13=Smlow13[1:n_elements(Smlow13)-2]
@@ -257,16 +258,16 @@ endelse
 
 Smlow12=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[11]) and (surfbc lt bcrange[12]))
-if smlow12[0] eq -1 then begin
+if n_elements(smlow12) le 4 then begin
   print,'no smlow12'
 endif else begin
-  Smlow12=Smlow12[1:n_elements(Smlow12)-2]
+  if index eq 4 then Smlow12=Smlow12[1:n_elements(Smlow12)-3] else Smlow12=Smlow12[1:n_elements(Smlow12)-2]
   smlow=[smlow,smlow12]
 endelse
 
 Smlow11=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[10]) and (surfbc lt bcrange[11]))
-if smlow11[0] eq -1 then begin
+if n_elements(smlow11) le 3 then begin
   print,'no smlow11'
 endif else begin
   Smlow11=Smlow11[1:n_elements(Smlow11)-2]
@@ -275,7 +276,7 @@ endelse
 
 Smlow10=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[9]) and (surfbc lt bcrange[10]))
-if smlow10[0] eq -1 then begin
+if n_elements(smlow10) le 3 then begin
   print,'no smlow10'
 endif else begin
   Smlow10=Smlow10[1:n_elements(Smlow10)-2]
@@ -284,7 +285,7 @@ endelse
 
 Smlow9=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[8]) and (surfbc lt bcrange[9]))
-if smlow9[0] eq -1 then begin
+if n_elements(smlow9) le 3 then begin
   print,'no smlow9'
 endif else begin
   Smlow9=Smlow9[1:n_elements(Smlow9)-2]
@@ -293,7 +294,7 @@ endelse
 
 Smlow8=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[7]) and (surfbc lt bcrange[8]))
-if smlow8[0] eq -1 then begin
+if n_elements(smlow8) le 3 then begin
   print,'no smlow8'
 endif else begin
   Smlow8=Smlow8[1:n_elements(Smlow8)-2]
@@ -302,16 +303,16 @@ endelse
 
 Smlow7=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[6]) and (surfbc lt bcrange[7]))
-if smlow7[0] eq -1 then begin
+if n_elements(smlow7) le 3 then begin
   print,'no smlow7'
 endif else begin
-  Smlow7=Smlow7[1:n_elements(Smlow7)-2]
+  if index eq 4 then Smlow7=[Smlow7[1:14],Smlow7[16:n_elements(Smlow7)-2]] else Smlow7=Smlow7[1:n_elements(Smlow7)-2]
   smlow=[smlow,smlow7]
 endelse
 
 Smlow6=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[5]) and (surfbc lt bcrange[6]))
-if smlow6[0] eq -1 then begin
+if n_elements(smlow6) le 3 then begin
   print,'no smlow6'
 endif else begin
   Smlow6=Smlow6[1:n_elements(Smlow6)-2]
@@ -320,7 +321,7 @@ endelse
 
 Smlow5=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[4]) and (surfbc lt bcrange[5]))
-if smlow5[0] eq -1 then begin
+if n_elements(smlow5) le 3 then begin
   print,'no smlow5'
 endif else begin
   Smlow5=Smlow5[1:n_elements(Smlow5)-2]
@@ -329,7 +330,7 @@ endelse
 
 Smlow4=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[3]) and (surfbc lt bcrange[4]))
-if smlow4[0] eq -1 then begin
+if n_elements(smlow4) le 3 then begin
   print,'no smlow4'
 endif else begin
   Smlow4=Smlow4[1:n_elements(Smlow4)-2]
@@ -338,7 +339,7 @@ endelse
 
 Smlow3=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[2]) and (surfbc lt bcrange[3]))
-if smlow3[0] eq -1 then begin
+if n_elements(smlow3) le 3 then begin
   print,'no smlow3'
 endif else begin
   Smlow3=Smlow3[1:n_elements(Smlow3)-2]
@@ -347,7 +348,7 @@ endelse
 
 Smlow2=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
   and (surfbc gt bcrange[1]) and (surfbc lt bcrange[2]))
-if smlow2[0] eq -1 then begin
+if n_elements(smlow2) le 3 then begin
   print,'no smlow2'
 endif else begin
   Smlow2=Smlow2[1:n_elements(Smlow2)-2]
@@ -356,7 +357,7 @@ endelse
 
 Smlow1=where( (slow gt (3.*median(slow))) and (fast gt (3.*median(fast))) $
    and (surfbc gt bcrange[0]) and (surfbc lt bcrange[1]))
-if smlow1[0] eq -1 then begin
+if n_elements(smlow1) le 3 then begin
    print,'no smlow1'
 endif else begin
   Smlow1=Smlow1[1:n_elements(Smlow1)-2]
@@ -437,96 +438,118 @@ weightedmeannumfast=meanratiofast[3]/stddevratiofast[3]+meanratiofast[4]/stddevr
 weightedmeandenfast=1/stddevratiofast[3]+1/stddevratiofast[4]+1/stddevratiofast[5]
 weightedmeanfast=weightedmeannumfast/weightedmeandenfast
 
-;
-;;
-;; Create an array of all the values of for the ranges of beam currents
-;;
-;smlow=[smlow15,smlow14,smlow13,smlow12,smlow11,smlow10,smlow9,smlow8,$
-;  smlow7,smlow6,smlow5,smlow4,smlow3,smlow2,smlow1]
-
 
 ;
-; Create one array with the standard deviation values corresponding to each value in smlow array
+; Create arrays with the standard deviation values corresponding to each value in smlow array
 ;
 stddevarr=[]
 stddevarrf=[]
 
-for i=0,n_elements(smlow1)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow1]-darkval)/surfbc[Smlow1])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow1]-darkvalf)/surfbc[Smlow1])]
-endfor
+if n_elements(smlow1) gt 1 then begin
+  for i=0,n_elements(smlow1)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow1]-darkval)/surfbc[Smlow1])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow1]-darkvalf)/surfbc[Smlow1])]
+  endfor
+endif
 
-for i=0,n_elements(smlow2)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow2]-darkval)/surfbc[Smlow2])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow2]-darkvalf)/surfbc[Smlow2])]
-endfor
+if n_elements(smlow2) gt 1 then begin
+  for i=0,n_elements(smlow2)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow2]-darkval)/surfbc[Smlow2])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow2]-darkvalf)/surfbc[Smlow2])]
+  endfor
+endif
 
-for i=0,n_elements(smlow3)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow3]-darkval)/surfbc[Smlow3])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow3]-darkvalf)/surfbc[Smlow3])]
-endfor
+if n_elements(smlow3) gt 1 then begin
+  for i=0,n_elements(smlow3)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow3]-darkval)/surfbc[Smlow3])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow3]-darkvalf)/surfbc[Smlow3])]
+  endfor
+endif
 
-for i=0,n_elements(smlow4)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow4]-darkval)/surfbc[Smlow4])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow4]-darkvalf)/surfbc[Smlow4])]
-endfor
+if n_elements(smlow4) gt 1 then begin
+  for i=0,n_elements(smlow4)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow4]-darkval)/surfbc[Smlow4])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow4]-darkvalf)/surfbc[Smlow4])]
+  endfor
+endif
 
-for i=0,n_elements(smlow5)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow5]-darkval)/surfbc[Smlow5])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow5]-darkvalf)/surfbc[Smlow5])]
-endfor
+if n_elements(smlow5) gt 1 then begin
+  for i=0,n_elements(smlow5)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow5]-darkval)/surfbc[Smlow5])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow5]-darkvalf)/surfbc[Smlow5])]
+  endfor
+endif
 
-for i=0,n_elements(smlow6)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow6]-darkval)/surfbc[Smlow6])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow6]-darkvalf)/surfbc[Smlow6])]
-endfor
+if n_elements(smlow6) gt 1 then begin
+  for i=0,n_elements(smlow6)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow6]-darkval)/surfbc[Smlow6])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow6]-darkvalf)/surfbc[Smlow6])]
+  endfor
+endif
 
-for i=0,n_elements(smlow7)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow7]-darkval)/surfbc[Smlow7])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow7]-darkvalf)/surfbc[Smlow7])]
-endfor
+if n_elements(smlow7) gt 1 then begin
+  for i=0,n_elements(smlow7)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow7]-darkval)/surfbc[Smlow7])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow7]-darkvalf)/surfbc[Smlow7])]
+  endfor
+endif
 
-for i=0,n_elements(smlow8)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow8]-darkval)/surfbc[Smlow8])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow8]-darkvalf)/surfbc[Smlow8])]
-endfor
+if n_elements(smlow8) gt 1 then begin
+  for i=0,n_elements(smlow8)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow8]-darkval)/surfbc[Smlow8])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow8]-darkvalf)/surfbc[Smlow8])]
+  endfor
+endif
 
-for i=0,n_elements(smlow9)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow9]-darkval)/surfbc[Smlow9])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow9]-darkvalf)/surfbc[Smlow9])]
-endfor
+if n_elements(smlow9) gt 1 then begin
+  for i=0,n_elements(smlow9)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow9]-darkval)/surfbc[Smlow9])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow9]-darkvalf)/surfbc[Smlow9])]
+  endfor
+endif
 
-for i=0,n_elements(smlow10)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow10]-darkval)/surfbc[Smlow10])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow10]-darkvalf)/surfbc[Smlow10])]
-endfor
+if n_elements(smlow10) gt 1 then begin
+  for i=0,n_elements(smlow10)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow10]-darkval)/surfbc[Smlow10])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow10]-darkvalf)/surfbc[Smlow10])]
+  endfor
+endif
 
-for i=0,n_elements(smlow11)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow11]-darkval)/surfbc[Smlow11])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow11]-darkvalf)/surfbc[Smlow11])]
-endfor
+if n_elements(smlow11) gt 1 then begin
+  for i=0,n_elements(smlow11)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow11]-darkval)/surfbc[Smlow11])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow11]-darkvalf)/surfbc[Smlow11])]
+  endfor
+endif
 
-for i=0,n_elements(smlow12)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow12]-darkval)/surfbc[Smlow12])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow12]-darkvalf)/surfbc[Smlow12])]
-endfor
+if n_elements(smlow12) gt 1 then begin
+  for i=0,n_elements(smlow12)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow12]-darkval)/surfbc[Smlow12])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow12]-darkvalf)/surfbc[Smlow12])]
+  endfor
+endif
 
-for i=0,n_elements(smlow13)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow13]-darkval)/surfbc[Smlow13])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow13]-darkvalf)/surfbc[Smlow13])]
-endfor
+if n_elements(smlow13) gt 1 then begin
+  for i=0,n_elements(smlow13)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow13]-darkval)/surfbc[Smlow13])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow13]-darkvalf)/surfbc[Smlow13])]
+  endfor
+endif
 
-for i=0,n_elements(smlow14)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow14]-darkval)/surfbc[Smlow14])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow14]-darkvalf)/surfbc[Smlow14])]
-endfor
+if n_elements(smlow14) gt 1 then begin
+  for i=0,n_elements(smlow14)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow14]-darkval)/surfbc[Smlow14])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow14]-darkvalf)/surfbc[Smlow14])]
+  endfor
+endif
 
-for i=0,n_elements(smlow15)-1 do begin
-  stddevarr=[stddevarr,stddev((slow[Smlow15]-darkval)/surfbc[Smlow15])]
-  stddevarrf=[stddevarrf,stddev((fast[Smlow15]-darkvalf)/surfbc[Smlow15])]
-endfor
+if n_elements(smlow15) gt 1 then begin
+  for i=0,n_elements(smlow15)-1 do begin
+    stddevarr=[stddevarr,stddev((slow[Smlow15]-darkval)/surfbc[Smlow15])]
+    stddevarrf=[stddevarrf,stddev((fast[Smlow15]-darkvalf)/surfbc[Smlow15])]
 
-
+  endfor
+endif
 
 
 
@@ -540,7 +563,7 @@ endfor
 ;
 ; Create an array for slow tau values
 ;
-tauarrays=(tau_slow[index]-1.0)*1.0e-6-(0.0000004e-07)+findgen(4001)/2.0e9
+tauarrays=(tau_slow[index]-1.0)*1.0e-6-(0.0000004e-07)+findgen(8001)/2.0e9
 
 
 ;
@@ -598,7 +621,7 @@ plot,surfbc[smlow],fast[smlow]-darkvalf,/xlog,/ylog,psym=1
 ;
 ; Create an array for fast tau values
 ;
-tauarrayf=(index-1.0)*1.0e-8+findgen(9001)/1.0e11
+tauarrayf=(tau_slow[index]-1.0)*1.0e-8+findgen(9001)/1.0e11
 
 ;
 ; Create an array that will be filled with the fast Chi-Squared values
@@ -606,7 +629,11 @@ tauarrayf=(index-1.0)*1.0e-8+findgen(9001)/1.0e11
 ;   then used to find the tau value that gives the minimum Chi-Squared value (and best fit)
 ;
 
-if index eq 2 then datathreshold = 219
+if index eq 1 then datathreshold = n_elements(smlow)-1
+if index eq 2 then datathreshold = n_elements(smlow)-1;219
+if index eq 3 then datathreshold = 215
+if index eq 4 then datathreshold = n_elements(smlow)-1
+if index eq 5 then datathreshold = n_elements(smlow)-1
 
 chisqf=[]
 
@@ -695,58 +722,11 @@ taud=tauarrays[chisqmind[0]]
 
 oplot,surfbc[smlow[0:datathreshold]],(fast[smlow[0:datathreshold]]-darkvalf)*Exp(-2*(fast[smlow[0:datathreshold]]-darkvalf)*taud)
 
-print,taud,chisqmind
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Rest of Dr. Woods's Code
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+print,"Lowest chi squared value for calculated and measured slow counts was found to be",chisqmind,$
+  "   for TauFast value of",taud,"   and TauSlow - TauFast =",tauslow-taufast
 
-
-print, 'Fast / BC Calibration = ', rate_per_bc
-print, ' '
-
-;
-; make plot
-;
-
-
-ratioslow=avgslow/avgbc
-ratiofast=avgfast/avgbc
-; normalize them to unity
-ratioslow=ratioslow/mean(ratioslow[k1:k2])
-ratiofast=ratiofast/mean(ratiofast[k1:k2])
-
-slow_calc_alt_ratio = slow_calc_alt/avgbc
-slow_calc_alt_ratio = slow_calc_alt_ratio / mean(slow_calc_alt_ratio[k1:k2])
-
-;plot,avgbc,avgslow,psym=4,/ylog,/xlog
-;plot,avgbc,avgslow/avgbc,psym=4,/xlog
-
-plot,avgbc,ratioslow,psym=4,/nodata,/xlog,xtitle='SURF Beam Current [mA]',ytitle='Normalized Signal/BC',$
-  xrange=[1e-6,2e-1],xstyle=1,yrange=[0,1.2],ystyle=1, $
-  title='Tau_slow = '+string(tau_slow[index],format='(F3.1)') + ' microsec'
-xyouts,(10^!x.crange[0])*2,0.6,'X123 Slow'
-xyouts,(10^!x.crange[0])*2,0.75,'X123 Fast',color=cc[0]
-xyouts,(10^!x.crange[0])*2,0.45,'Slow Predicted from Fast',color=cc[3]
-oplot,10^!x.crange,[1,1],color=cc[1]
-
-oplot, bc_range, fast_calc/predicted, line=3, color=cc[0]
-oplot, bc_range, slow_calc/predicted, line=3
-oplot, avgbc, slow_calc_alt_ratio, psym=-6, color=cc[3]
-
-oplot,avgbc,ratioslow,psym=5
-oplot,avgbc,ratiofast,psym=4,color=cc[0]
-
-
-
-;
-; For post-surf analysis
-;
-plot,surfbc[goodData],slow[goodData],/xlog,/ylog,psym=1
-
-
+print,' '
 
 if keyword_set(debug) then stop, 'STOPPED at end of x123_linearity ...'
 
