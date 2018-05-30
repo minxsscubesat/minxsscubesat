@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Stripped down code with similar purpose as read_tm2_all_cd.pro, designed to return the data via a common buffer rather than save to disk as a .dat.
-;   Designed to work in conjunction with eve_csol_real_time_socket_read_wrapper.pro, which shares the COMMON blocks. That code is responsible for initializing
+;   Designed to work in conjunction with rocket_eve_tm2_real_time_dislay.pro, which shares the COMMON blocks. That code is responsible for initializing
 ;   many of the variables in the common blocks.
 ;
 ; INPUTS:
@@ -21,15 +21,15 @@
 ;   megsCcdLookupTable [fltarr] [input]:          A 3 x 2 million array containing pixel indices 0-2,097,151 and their corresponding column and row in the MEGS CCD.
 ;                                                 Passed via common buffer so that it uses a pointer rather than copying the whole array as it would with an optional input. 
 ;   megsAImageBuffer [uintarr] [input/output]:    A 2048 * 1024 image to be filled in. This program updates the buffer with the current socketData. 
-;                                                 Ditto for megsBImageBuffer. Ditto for csolImageBuffer, except its a 1024 * 1024 image. 
+;                                                 Ditto for megsBImageBuffer. Ditto for csolImageBuffer, except its a 2000 * (5 * 88) image. There wasn't room in the telmetry
+;                                                 stream to fit the entire CSOL image, so instead 5 rows with 88 columns are extracted in flight and sent down via telemetry.
 ;   megsAImageIndex [long] [input/output]:        The number of images received so far. This program updates the value if a fiducial for MEGS is found. 
-;                                                 Ditto for megsBImageIndex and csolImageIndex.
+;                                                 Ditto for megsBImageIndex.
 ;   megsAPixelIndex [long] [input/output]:        A single number indicating the pixel index in the CCD. This program updates it with the number of pixels read in socketData. 
-;                                                 Ditto for megsBPixelIndex.
+;                                                 Ditto for megsBPixelIndex and csolPixelIndex.
 ;   megsATotalPixelsFound [long] [input/output]:  Incremements by the number of pixels found in socketData. Used for checking whether too much or too little data were
 ;                                                 collected for an image, which should be 2048 * 1024 pixels. Ditto for megsBTotalPixelsFound and csolTotalPixelsFound. 
-;   csolRowNumberInStart [long] [input/output]:   Same idea as csolFrameNumberInStart, but for the row number. f the frame (image) number is found at the start of a new image, this program updates it. It's used for checking
-;                                                 image validity by comparing its value to csolFrameNumberInEnd.
+;   csolRowNumberLatest [long] [input/output]:    The most recent row number found in the CSOL stream.
 ;   csolNumberGapPixels [long] [input]:           The number of gap pixels to insert between the regions of interest of the image.
 ;   csolHk [structure] [output]:                  An anonymous structure with tags for telemetry points of interest, e.g., housekeeping (hk) data. 
 ;   sampleSizeDeweSoft [integer] [input]:         This is =2 if using synchronous data in DeweSoft for instrument channels, or =10 if using asynchronous. The additional bytes
@@ -69,6 +69,7 @@
 ;   2015-04-13: James Paul Mason: Wrote script.
 ;   2015-04-25: James Paul Mason: The last few days have seen extensive edits to this code to get it work in the field where real debugging could be done. 
 ;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code. 
+;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working. 
 ;-
 PRO rocket_eve_tm2_read_packets, socketData, VERBOSE = VERBOSE, DEBUG = DEBUG
 
@@ -76,7 +77,7 @@ PRO rocket_eve_tm2_read_packets, socketData, VERBOSE = VERBOSE, DEBUG = DEBUG
 COMMON MEGS_PERSISTENT_DATA, megsCcdLookupTable
 COMMON MEGS_A_PERSISTENT_DATA, megsAImageBuffer, megsAImageIndex, megsAPixelIndex, megsATotalPixelsFound
 COMMON MEGS_B_PERSISTENT_DATA, megsBImageBuffer, megsBImageIndex, megsBPixelIndex, megsBTotalPixelsFound
-COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolImageIndex, csolRowNumberInStart, csolTotalPixelsFound, csolNumberGapPixels, csolHk
+COMMON CSOL_PERSISTENT_DATA, csolImageBuffer, csolPixelIndex, csolRowNumberLatest, csolTotalPixelsFound, csolNumberGapPixels, csolHk
 COMMON DEWESOFT_PERSISTENT_DATA, sampleSizeDeweSoft, offsetP1, numberOfDataSamplesP1, offsetP2, numberOfDataSamplesP2, offsetP3, numberOfDataSamplesP3 ; Note P1 = MEGS-A, P2 = MEGS-B, P3 = CSOL
 
 ; Telemetry stream packet structure
@@ -94,7 +95,7 @@ sync2Offset = nint - 2L ; 1L if reading binary file, because WSMR moves sync1 to
 
 ; Instrument packet fiducial values (sync words)
 csolFrameStartFiducialValue1 = '5555'X
-csolFrameStartFiducialValue2 = '5A5'X
+csolFrameStartFiducialValue2 = 'A5A5'X
 csolFrameEndFiducialValue1   = '5A5A'X
 megsFiducialValue1           = 'FFFF'X
 megsFiducialValue2           = 'AAAA'X
@@ -152,8 +153,10 @@ ENDIF ELSE BEGIN ; End of numberOfFoundMegsAPixels NE 0
   ; TASK 4.2: If totalPixels LE imageSize, issue warning.
   ;
   IF megsATotalPixelsFound LT 2048L * 1024L - 2L AND megsATotalPixelsFound NE 0 THEN BEGIN
-    message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
-                    ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+                      ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+    ENDIF
   ENDIF
   
   ; Reset image pointers for a new image
@@ -208,8 +211,10 @@ ENDIF ELSE BEGIN ; End of numberOfFoundMegsBPixels NE 0
   
   ; TASK 4.2: If totalPixels LE imageSize, issue warning. 
   IF megsBTotalPixelsFound LT 2048L * 1024L - 2L AND megsBTotalPixelsFound NE 0 THEN BEGIN
-    message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
-                    ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+                      ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+    ENDIF
   ENDIF
   
   ; Reset image pointers for a new image
@@ -239,57 +244,64 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
   ;
   
   ; Find the start sync
-  csolFrameStartFiducial2Index = where(csolPacketData EQ csolFrameStartFiducialValue2)
-  IF keyword_set(DEBUG) THEN BEGIN
-    IF n_elements(csolFrameStartFiducial2Index) GT 1 THEN BEGIN
-      message, /INFO, JPMsystime() + ' Only expected to find one CSOL start sync byte but found ' + JPMPrintNumber(n_elements(csolFrameStartFiducial2Index), /NO_DECIMALS)
+  csolFrameStartFiducial1Indices = where(csolPacketData EQ csolFrameStartFiducialValue1)
+  csolFrameStartFiducial2Indices = where(csolPacketData EQ csolFrameStartFiducialValue2) - 1 ; - 1 to match indices to the first fiducial location
+  FOR i = 0, n_elements(csolFrameStartFiducial1Indices) - 1 DO BEGIN
+    bothFiducialsIndex = where(csolFrameStartFiducial2Indices EQ csolFrameStartFiducial1Indices[i])
+    IF bothFiducialsIndex NE [-1] THEN BEGIN
+      csolFrameStartIndices = csolFrameStartIndices EQ !NULL ? csolFrameStartFiducial2Indices[bothFiducialsIndex]: [csolFrameStartIndices, csolFrameStartFiducial2Indices[bothFiducialsIndex]]
     ENDIF
-  ENDIF
+  ENDFOR
   
-  ; Extract the row number and columns that contain the desired measurements 
-  IF csolFrameStartFiducial2Index NE [-1] THEN BEGIN
-    csolFrameStartSyncFound = 1
-    rowNumber = uint(csolPacketData[csolFrameStartFiducial2Index + 1]) ; TODO: Is any casting needed at all?
-    
-    IF rowNumber NE 2000 THEN BEGIN
-      ; Regions of interest
-      darkTopData = csolPacketData[csolFrameStartFiducial2Index + 1 + 301: csolFrameStartFiducial2Index + 1 + 388]
-      fuvData = csolPacketData[csolFrameStartFiducial2Index + 1 + 547: csolFrameStartFiducial2Index + 1 + 634]
-      darkMiddleData = csolPacketData[csolFrameStartFiducial2Index + 1 + 757: csolFrameStartFiducial2Index + 1 + 844]
-      muvData = csolPacketData[csolFrameStartFiducial2Index + 1 + 965: csolFrameStartFiducial2Index + 1 + 1052]
-      darkBottomData = csolPacketData[csolFrameStartFiducial2Index + 1 + 1201: csolFrameStartFiducial2Index + 1 + 1288]
+  ; Extract the row number and columns that contain the desired measurements
+  IF csolFrameStartIndices NE !NULL THEN BEGIN
+    FOR rowIndex = 0, n_elements(csolFrameStartIndices) - 1 DO BEGIN
+      csolFrameStartIndex = csolFrameStartIndices[rowIndex]
       
-      ; Reformat and stuff into COMMON buffer variable -- swapping rows and columns to make the image wide rather than tall
-      ; There's a gap between each of these that need not be manually populated -- can just be left 0
-      csolImageBuffer[rowNumber, 0:88] = darkTopData
-      csolImageBuffer[rowNumber, 1 * 88 + 1 * csolNumberGapPixels + 1: 2 * 88 + 1 * csolNumberGapPixels] = fuvData
-      csolImageBuffer[rowNumber, 2 * 88 + 2 * csolNumberGapPixels + 1: 3 * 88 + 2 * csolNumberGapPixels] = darkMiddleData
-      csolImageBuffer[rowNumber, 3 * 88 + 3 * csolNumberGapPixels + 1: 4 * 88 + 3 * csolNumberGapPixels] = muvData
-      csolImageBuffer[rowNumber, 4 * 88 + 4 * csolNumberGapPixels + 1: 5 * 88 + 4 * csolNumberGapPixels] = darkBottomData
-      
-      csolTotalPixelsFound += 5L * 8L
-      IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
-    ENDIF ELSE BEGIN ; End rows 0-1999 and now handle metadata in row 2000
-      csolHk = rocket_csol_extract_hk(csolPacketData)
-    ENDELSE
-  ENDIF ELSE BEGIN ; Didn't find csolFrameStartFiducialValue2
+      ; Get row number and then handle image (rows 0-1999) vs housekeeping data (row 2000)
+      csolRowNumberLatest = csolPacketData[csolFrameStartIndex + 2]
+      IF csolRowNumberLatest NE 2000 THEN BEGIN
+        
+        ; Make sure the buffer (csolPacketData) is complete
+        IF n_elements(csolPacketData) LT (csolFrameStartIndex + 444) THEN BEGIN ; 446 was the original value but it seems to skip rows sometimes then
+          IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+            message, /INFO, JPMsystime() + ' Partial CSOL row detected in csolPacketData. Need to buffer more.'
+          ENDIF
+          CONTINUE
+        ENDIF
+        
+        ; Regions of interest
+        darkTopData    = csolPacketData[csolFrameStartIndex + 4 + (0  * 0) : csolFrameStartIndex + 4 + (88 * 1) - 1]
+        fuvData        = csolPacketData[csolFrameStartIndex + 4 + (88 * 1) : csolFrameStartIndex + 4 + (88 * 2) - 1]
+        darkMiddleData = csolPacketData[csolFrameStartIndex + 4 + (88 * 2) : csolFrameStartIndex + 4 + (88 * 3) - 1]
+        muvData        = csolPacketData[csolFrameStartIndex + 4 + (88 * 3) : csolFrameStartIndex + 4 + (88 * 4) - 1]
+        darkBottomData = csolPacketData[csolFrameStartIndex + 4 + (88 * 4) : csolFrameStartIndex + 4 + (88 * 5) - 1]
+
+        ; Reformat and stuff into COMMON buffer variable -- swapping rows and columns to make the image wide rather than tall
+        ; There's a gap between each of these that need not be manually populated -- can just be left 0
+        csolImageBuffer[csolRowNumberLatest, 0:87] = darkTopData
+        csolImageBuffer[csolRowNumberLatest, 1 * 88 + 1 * csolNumberGapPixels + 1: 2 * 88 + 1 * csolNumberGapPixels] = fuvData
+        csolImageBuffer[csolRowNumberLatest, 2 * 88 + 2 * csolNumberGapPixels + 1: 3 * 88 + 2 * csolNumberGapPixels] = darkMiddleData
+        csolImageBuffer[csolRowNumberLatest, 3 * 88 + 3 * csolNumberGapPixels + 1: 4 * 88 + 3 * csolNumberGapPixels] = muvData
+        csolImageBuffer[csolRowNumberLatest, 4 * 88 + 4 * csolNumberGapPixels + 0: 5 * 88 + 4 * csolNumberGapPixels - 1] = darkBottomData ; +0 and -1 to fit array 
+        
+        csolPixelIndex += 5L * 8L
+        csolTotalPixelsFound += 5L * 8L
+        IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+      ENDIF ELSE BEGIN ; End rows 0-1999 and now handle metadata in row 2000
+        csolHk = rocket_csol_extract_hk(csolPacketData[csolFrameStartIndex + 4:-1])
+      ENDELSE
+    ENDFOR
+  ENDIF ELSE BEGIN ; Didn't find CSOL row start sync
     IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
       message, /INFO, JPMsystime() + ' Did not find CSOL frame start sync byte 2: 0x' + csolFrameStartFiducialValue2.ToHex()
     ENDIF
   ENDELSE
   
   ; Find the end sync
-  csolFrameEndFiducial1Index = where(csolPacketData EQ csolFrameEndFiducialValue1)
-  IF keyword_set(DEBUG) THEN BEGIN
-    IF n_elements(csolFrameEndFiducial1Index) GT 1 THEN BEGIN
-      message, /INFO, JPMsystime() + ' Only expected to find one CSOL end sync byte but found ' + JPMPrintNumber(n_elements(csolFrameStartFiducial2Index), /NO_DECIMALS)
-      STOP
-    ENDIF
-  ENDIF
-  
-  ; Increment the image counter if found the start and end syncs
-  IF csolFrameStartFiducial2Index NE [-1] AND csolFrameEndFiducial1Index NE [-1] THEN BEGIN
-    csolImageIndex++
+  csolFrameEndFiducial1Indices = where(csolPacketData EQ csolFrameEndFiducialValue1)
+  IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+    message, /INFO, JPMsystime() + ' Found ' + JPMPrintNumber(n_elements(csolFrameEndFiducial1Indices), /NO_DECIMALS) + ' rows of CSOL image data.'
   ENDIF
   
   ;
@@ -298,23 +310,26 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
   ;      4.2: If totalPixels LE imageSize, issue warning.
   ;
   
-  IF csolTotalPixelsFound GT 2000L * (5L * 88L) THEN message, /INFO, 'CSOL image has accumulated too many pixels. Expected 2000x(5*8) = 80,000 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
-  IF csolFrameEndSyncFound AND csolTotalPixelsFound LT 1024L * 1024L THEN message, /INFO, 'Some CSOL data in previous image was lost. Expected 2000x(5*8) = 80,000  pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
-ENDIF ELSE BEGIN ; End CSOL data found
+  IF csolTotalPixelsFound GT 2000L * (5L * 88L) THEN BEGIN
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, 'CSOL image has accumulated too many pixels. Expected 2000x(5*8) = 80,000 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+    ENDIF
+  ENDIF
+  ENDIF ELSE BEGIN ; End CSOL data found
   
   ; Getting to this point implies that all data in the packet was 0 or 0x7e7e (filler), which only (should) happen when the image is finished being dumped and WSMR is filling
   ; the remaining bandwidth (10 Mbps) of the telemetry link with filler.
 
   ; TASK 4.2: If totalPixels LE imageSize, issue warning.
   IF csolTotalPixelsFound LT 2000L * (5L * 88L) AND csolTotalPixelsFound NE 0 THEN BEGIN
-    message, /INFO, JPMsystime() + ' Some CSOL data in previous image was lost. Expected 2000x(5*8) = 80,000 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+    IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + ' Some CSOL data in previous image was lost. Expected 2000x(5*8) = 80,000 pixels but received ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+    ENDIF
   ENDIF
   
   ; Reset image pointers for a new image
+  csolPixelIndex = 0L
   csolTotalPixelsFound = 0L
-
-  ; Increment the number of image read
-  csolImageIndex++
 ENDELSE
 
 END

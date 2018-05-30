@@ -38,11 +38,11 @@
 PRO test_eve_tlm_simulator, server = server, command = command
  
   ; Defaults
-  IF server EQ !NULL THEN server = 'rocket9'
+  IF server EQ !NULL THEN server = '128.138.131.243'
   IF command EQ !NULL THEN command = 'startacq'
   
   ; Establish connection to server
-  port = read_csv('/Users/jmason86/Dropbox/Development/IDLWorkspace/Rocket/test_port.txt')
+  port = read_csv('~/Dropbox/minxss_dropbox/code/rocket_real_time/test_port.txt')
   port = (uint(byte(port.field1[0]), 0, 2))[1] ; Just for testing
   socket, serverLUN, server, port, /GET_LUN, CONNECT_TIMEOUT = 10., READ_TIMEOUT = 10., WRITE_TIMEOUT = 10., /RAWIO, /SWAP_IF_BIG_ENDIAN
   

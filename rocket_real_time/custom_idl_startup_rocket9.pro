@@ -1,2 +1,2 @@
 setenv, 'username=rocket'
-setenv, 'codepath=/Users/rocket/Dropbox/Rocket Code/'
+setenv, 'rocket_real_time=/Users/rocket/Dropbox/minxss_dropbox/code/rocket_real_time/'
