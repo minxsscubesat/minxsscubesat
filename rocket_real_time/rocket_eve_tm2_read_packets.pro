@@ -132,7 +132,7 @@ IF numberOfFoundMegsAPixels NE 0 THEN BEGIN
     ENDIF
   ENDFOR
   megsATotalPixelsFound += n_elements(megsAPacketData)
-  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime() + ' MEGS-A total pixels found in this image so far: ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime() + ' MEGS-A total pixels found in this image so far: ' + strtrim(megsATotalPixelsFound, 2) ;JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
   
   ;
   ;   TASK 4: Check limits:
@@ -192,7 +192,7 @@ IF numberOfFoundMegsBPixels NE 0 THEN BEGIN
     ENDIF
   ENDFOR
   megsBTotalPixelsFound += n_elements(megsBPacketData)
-  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'MEGS-B total pixels found in this image so far: ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+  IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + ' MEGS-B total pixels found in this image so far: ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
   
   ;
   ;   TASK 4: Check limits:
@@ -287,7 +287,7 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
         
         csolPixelIndex += 5L * 8L
         csolTotalPixelsFound += 5L * 8L
-        IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + 'CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
+        IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + ' CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
       ENDIF ELSE BEGIN ; End rows 0-1999 and now handle metadata in row 2000
         csolHk = rocket_csol_extract_hk(csolPacketData[csolFrameStartIndex + 4:-1])
       ENDELSE

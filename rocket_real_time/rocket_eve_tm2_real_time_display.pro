@@ -102,7 +102,7 @@ IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
 IF ~keyword_set(megsBExpectedCentroid) THEN megsBExpectedCentroid = [120., 120.]
-IF ~keyword_set(frequencyOfImageDisplay) THEN frequencyOfImageDisplay = 12
+IF ~keyword_set(frequencyOfImageDisplay) THEN frequencyOfImageDisplay = 8
 IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
   backgroundColor = 'white'
@@ -540,7 +540,7 @@ WHILE 1 DO BEGIN
   ENDIF ; If socketDataSize GT 0
 
   IF keyword_set(DEBUG) THEN BEGIN
-    message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(TOC(wrapperClock))
+    message, /INFO, JPMsystime() + ' Finished processing socket data in ' + JPMPrintNumber(TOC(wrapperClock), /SCIENTIFIC_NOTATION) + 'seconds'
   ENDIF
 ENDWHILE ; Infinite loop
 

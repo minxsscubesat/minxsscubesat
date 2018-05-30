@@ -36,36 +36,35 @@
 ;   Just hit run! 
 ;
 ; MODIFICATION HISTORY:
-;   2015/03/30: James Paul Mason: Copied from minxss_real-time_socket_read_wrapper and modified for use with EVE rocket 36.300
-;   2016/05/03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
-;                                 Also removed X123 plots since there isn't one on this flight. 
+;   2015-03-30: James Paul Mason: Copied from minxss_real-time_socket_read_wrapper and modified for use with EVE rocket 36.300
+;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
 ;-
 PRO rocket_xrs_real_time_display, isisIP = isisIP, number_of_packets_to_store = number_of_packets_to_store, data_cadence = data_cadence, $
                                   time_window_to_store = time_window_to_store, windowSize = windowSize, $
                                   VERBOSE = VERBOSE, LIGHT_BACKGROUND = LIGHT_BACKGROUND
 
 ; Defaults
-IF ~keyword_set(isisIP) THEN isisIP = '192.168.1.49' ; WinD2791 = 27" HP ; Rocket5 = 169.254.191.253, Rocket6 = 169.254.191.0
+IF ~keyword_set(isisIP) THEN isisIP = '192.88.37.191' ; WinD2791 = 27" HP ; Rocket5 = 192.88.37.191, Rocket6 = 169.254.191.0
 IF ~keyword_set(number_of_packets_to_store) THEN number_of_packets_to_store = 12
 IF ~keyword_set(data_cadence) THEN data_cadence = 3. ; seconds/packet
 IF keyword_set(time_window_to_store) THEN number_of_packets_to_store = time_window_to_store / data_cadence ; time_window_to_store in seconds
 IF ~keyword_set(windowSize) THEN windowSize = [950, 950]
 
 ; Setup
-numberOfPlotRows = 2
+numberOfPlotRows = 3
 numberOfPlotColumns = 2
 hkPacketBusy = 0
 timeArray = JPMrange(0, number_of_packets_to_store * 10, inc = 10) ; Seconds
 IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
   backgroundColor = 'white'
-  blueColor = 'blue'
-  orangeColor = 'orange'
+  blueColor = 'dodger blue'
+  orangeColor = 'tomato'
 ENDIF ELSE BEGIN
   fontColor = 'white'
   backgroundColor = 'black'
-  blueColor = 'light sky blue'
-  orangeColor = 'orange'
+  blueColor = 'dodger blue'
+  orangeColor = 'tomato'
 ENDELSE
 
 ; Create place holder plots
@@ -108,24 +107,44 @@ t3a = text(0.0, 1.0, 'A Dark = 32 DN', /RELATIVE, TARGET = p3a, FONT_COLOR = ora
 t3b = text(1.0, 1.0, 'B Dark = 46 DN', ALIGNMENT = 1.0, /RELATIVE, TARGET = p3a, FONT_COLOR = blueColor)
 
 ; XRS A2 and B2 position
-p4a = bubbleplot(-0.4, 0.8, MAGNITUDE = 1E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = 'gold', /SHADED, AXIS_STYLE = 3, /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 4], FONT_COLOR = fontColor, $
+p4a = bubbleplot(-0.4, 0.8, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = 'gold', /SHADED, AXIS_STYLE = 3, /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 4], FONT_COLOR = fontColor, $
                 TITLE = 'XRS A2 & B2 Position [º]', $
                 YRANGE = [-1, 1], YCOLOR = fontColor, $
                 XRANGE = [-1, 1], XCOLOR = fontColor)
-p4b = bubbleplot(0.2, -0.3, MAGNITUDE = 1E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = blueColor, AXIS_STYLE = 3, /SHADED, /OVERPLOT)
+p4b = bubbleplot(0.2, -0.3, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = blueColor, AXIS_STYLE = 3, /SHADED, /OVERPLOT)
 t4a = text(-1.0, -0.83, 'A2 = [-0.4, 0.8]º', /DATA, TARGET = p4a, FONT_COLOR = orangeColor)
 t4b = text(-1.0, -0.95, 'B2 = [0.2, -0.3]º', /DATA, TARGET = p4a, FONT_COLOR = blueColor)
 
+p5a = bubbleplot(-2.5, 2.5, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = 'gold', /SHADED, AXIS_STYLE = 3, /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 5], FONT_COLOR = fontColor, $
+                 TITLE = 'SPS Position [º]', $
+                 YRANGE = [-2.5, 2.5], YCOLOR = fontColor, $
+                 XRANGE = [-2.5, 2.5], XCOLOR = fontColor)
+t5a = text(-2.5, -2.45, '[-2.5, 2.5]º', /DATA, TARGET = p5a, FONT_COLOR = orangeColor)
+
+p6a = plot(indgen(1024)*0.0199933-0.052797, findgen(1024), COLOR = blueColor, '2*-', LINESTYLE = 'none', /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 6], FONT_COLOR = fontColor, $
+           TITLE = 'X123 Spectra', $
+           XTITLE = 'Energy', XCOLOR = fontColor, $
+           YRANGE = [0, 2000], YTITLE = 'Intensity', YCOLOR = fontColor, /ylog, $
+           NAME = 'A6',xrange=[0,max(indgen(1024)*0.0199933-0.052797)],xstyle=1)
+t6a = text(0.0, 1.0, 'Fast Count = N/A', /RELATIVE, TARGET = p6a, FONT_COLOR = orangeColor)
+t6b = text(1.0, 1.0, 'Slow Count = N/A', /RELATIVE, ALIGNMENT = 1.0, TARGET = p6a, FONT_COLOR = blueColor)
+
 ; Refresh text output
-t = text(0.0, 0.0, 'Last refresh: ' + systime())
+t = text(0.0, 0.0, 'Last refresh: ' + JPMsystime(), FONT_COLOR = fontColor)
 
 ; Open up a  to the ISIS computer stream
 ; Ports:
-; 10000 = housekeeping
-; 10001 = science
-; 10002 = SD card playback
+; 10000 = rocket housekeeping
+; 10001 = X123
+; 10003 = SPS
 get_lun, lun
-socket, lun, isisIP, 10003, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
+socket, lun, isisIP, 10000, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
+
+get_lun, lun2
+socket, lun2, isisIP, 10003, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
+
+get_lun, lun3
+socket, lun3, isisIP, 10001, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
 
 ; Start an infinite loop
 WHILE 1 DO BEGIN
@@ -143,7 +162,7 @@ WHILE 1 DO BEGIN
     ; If science packet is busy being read, append to the bytarr, otherwise replace it
     IF hkPacketBusy THEN socketData = [temporary(socketData), socketDataTmp] ELSE socketData = socketDataTmp
     
-    read_hydra_rxrs, socketData, sps = hkTemp, VERBOSE = VERBOSE
+    rocket_xrs_read_packets, socketData, hk = hkTemp, VERBOSE = VERBOSE
     
     ; The first time through this loop, create the array for time series
     IF hkTemp NE !NULL THEN BEGIN
@@ -169,14 +188,14 @@ WHILE 1 DO BEGIN
     ; -= MANIPULATE DATA AS NECESSARY =- ;
     
     ; Compute XRS-A2 position - still called sps from MinXSS code heritage
-    spsTotal = hk.sps_sum
-    spsXposition = hk.sps_x
-    spsYposition = hk.sps_y
+    spsTotal = hk[0].sps_sum
+    spsXposition = hk[0].sps_x
+    spsYposition = hk[0].sps_y
     
     ; Compute XRS-B2 position - still called sps from MinXSS code heritage
-    sps2Total = hk.sps_sum2
-    sps2Xposition = hk.sps_x2
-    sps2Yposition = hk.sps_y2
+    sps2Total = hk[0].sps_sum2
+    sps2Xposition = hk[0].sps_x2
+    sps2Yposition = hk[0].sps_y2
         
     ; -= UPDATE PLOT WINDOW =- ;
     
@@ -189,13 +208,13 @@ WHILE 1 DO BEGIN
     p3a.SetData, timeArray[0:hkCounter - 1], hk[0:hkCounter - 1].dark_data   ; A dark
     p3b.SetData, timeArray[0:hkCounter - 1],  hk[0:hkCounter - 1].dark_data2 ; B dark  
     p4a.SetData, spsXposition, spsYposition                                  ; A2 position
-    p4a.MAGNITUDE = spsTotal                                                 ; A2 position magnitude
+    ;p4a.MAGNITUDE = spsTotal                                                 ; A2 position magnitude
     p4b.SetData, sps2Xposition, sps2Yposition                                ; B2 position
-    p4b.MAGNITUDE = sps2Total                                                ; B2 position magnitude
+    ;p4b.MAGNITUDE = sps2Total                                                ; B2 position magnitude
     !Except = 1 ; Re-enable math error logging
     
     ; Update text
-    t.STRING = 'Last refresh: ' + systime()
+    t.STRING = 'Last refresh: ' + JPMsystime()
     t1a.STRING = 'A1 = ' + JPMPrintNumber(round(hk[hkCounter - 1].xps_data), /NO_DECIMALS) + ' DN'
     t1b.STRING = 'B1 = ' + JPMPrintNumber(round(hk[hkCounter - 1].xps_data2), /NO_DECIMALS) + ' DN'
     t2a.STRING = 'A2 Sum = ' + JPMPrintNumber(hk[hkCounter - 1].sps_sum) + ' fA'
@@ -205,13 +224,135 @@ WHILE 1 DO BEGIN
     t4a.STRING = 'A2 = [' + strmid(JPMPrintNumber(spsXposition), 0, 7) + ', ' + strmid(JPMPrintNumber(spsYposition), 0, 6) + ']º'
     t4b.STRING = 'B2 = [' + strmid(JPMPrintNumber(sps2Xposition), 0, 7) + ', ' + strmid(JPMPrintNumber(sps2Yposition), 0, 6) + ']º'
 
-  ENDIF ELSE message, /INFO, 'Socket connected but no data posted within 60 seconds.'
+  ENDIF ELSE begin
+    message, /INFO, 'HK socket connected but no data posted within 60 seconds.'
+  ENDELSE
+  
+  IF file_poll_input(lun2, TIMEOUT = 60.0d) THEN BEGIN ; Timeout is in seconds
+
+    ; Read data on the socket
+    IF ((fstat(lun2)).size NE 0) THEN BEGIN
+      socketDataTmp = bytarr((fstat(lun2)).size)
+      readu, lun2, socketDataTmp
+    ENDIF ELSE BEGIN
+      socketError = 1
+      message, /info, systime() + " -- " + "EOF reached on socket... trying to reopen in " + strtrim(retryWaitTime) + " seconds..."
+      wait, retryWaitTime
+      CONTINUE
+    ENDELSE
+    socketData = socketDataTmp
+
+    read_hydra_rxrs, socketData, sci=sci, sps = spsTemp, VERBOSE = VERBOSE
+
+    ; The first time through this loop, create the array for time series
+    IF spsTemp NE !NULL THEN BEGIN
+      IF n_elements(sps) EQ 0 THEN BEGIN
+        spsCounter = 0
+        sps = replicate(spsTemp[0], number_of_packets_to_store)
+      ENDIF
+    ENDIF
+
+    ; Fill up the time series array
+    IF spsTemp NE !NULL THEN BEGIN
+      numberOfFreeSlots = number_of_packets_to_store - spsCounter
+      IF numberOfFreeSlots GE n_elements(spsTemp) THEN BEGIN
+        sps[spsCounter:spsCounter + n_elements(spsTemp) - 1] = spsTemp
+        spsCounter += n_elements(spsTemp)
+      ENDIF ELSE BEGIN ; Array is full so need to shift
+        sps = shift(temporary(sps), -(n_elements(spsTemp) - numberOfFreeSlots))
+        sps[-n_elements(spsTemp):-1] = spsTemp
+        spsCounter = number_of_packets_to_store ; Now at max
+      ENDELSE
+    ENDIF
+
+    ; -= MANIPULATE DATA AS NECESSARY =- ;
+
+    ; Compute XRS-A2 position - still called sps from MinXSS code heritage
+    spstot = sps[0].SPS_QD_Sum
+    spsXpos = sps[0].SPS_QD_X
+    spsYpos = sps[0].SPS_QD_Y
+
+    ; -= UPDATE PLOT WINDOW =- ;
+
+    ; Update plots
+    !Except = 0 ; Disable annoying divide by 0 messages
+    p5a.SetData, spsXpos, spsYpos
+    ;p5a.MAGNITUDE = spstot                                                
+    !Except = 1 ; Re-enable math error logging
+
+    ; Update text
+    t.STRING = 'Last refresh: ' + JPMsystime()
+    t5a.STRING = '[' + strmid(JPMPrintNumber(spsXpos), 0, 7) + ', ' + strmid(JPMPrintNumber(spsYpos), 0, 6) + ']º'
+    
+
+  ENDIF ELSE begin
+    message, /INFO, 'SPS socket connected but no data posted within 60 seconds.'
+  ENDELSE
+  
+  IF file_poll_input(lun3, TIMEOUT = 60.0d) THEN BEGIN ; Timeout is in seconds
+
+    ; Read data on the socket
+    IF ((fstat(lun3)).size NE 0) THEN BEGIN
+      socketDataTmp = bytarr((fstat(lun3)).size)
+      readu, lun3, socketDataTmp
+    ENDIF ELSE BEGIN
+      socketError = 1
+      message, /info, systime() + " -- " + "EOF reached on socket... trying to reopen in " + strtrim(retryWaitTime) + " seconds..."
+      wait, retryWaitTime
+      CONTINUE
+    ENDELSE
+    socketData = socketDataTmp
+
+    read_hydra_rxrs, socketData, sci=sciTemp, VERBOSE = VERBOSE
+
+    ; The first time through this loop, create the array for time series
+    IF sciTemp NE !NULL THEN BEGIN
+      IF n_elements(sci) EQ 0 THEN BEGIN
+        sciCounter = 0
+        sci = replicate(sciTemp[0], number_of_packets_to_store)
+      ENDIF
+    ENDIF
+
+    ; Fill up the time series array
+    IF sciTemp NE !NULL THEN BEGIN
+      numberOfFreeSlots = number_of_packets_to_store - sciCounter
+      IF numberOfFreeSlots GE n_elements(sciTemp) THEN BEGIN
+        sci[sciCounter:sciCounter + n_elements(sciTemp) - 1] = sciTemp
+        sciCounter += n_elements(sciTemp)
+      ENDIF ELSE BEGIN ; Array is full so need to shift
+        sci = shift(temporary(sci), -(n_elements(sci) - numberOfFreeSlots))
+        sci[-n_elements(sciTemp):-1] = sciTemp
+        sciCounter = number_of_packets_to_store ; Now at max
+      ENDELSE
+    ENDIF
+
+    ; Update plots
+    !Except = 0 ; Disable annoying divide by 0 messages
+    p6a.SetData,indgen(1024)*0.0199933-0.052797,sci[0].x123_spectrum
+    p6a.linestyle = 'none'
+    p6a.xstyle=1
+    p6a.xrange=[0, max(indgen(1024)*0.0199933-0.052797)]
+    p6a.yrange = [0, 2000]
+    
+    
+    !Except = 1 ; Re-enable math error logging
+
+    ; Update text
+    t6a.STRING = 'Fast Count = ' + strtrim(fix(sci[sciCounter - 1].x123_fast_count),2)
+    t6b.STRING = 'Slow Count = ' + strtrim(fix(sci[sciCounter - 1].x123_slow_count),2)
+    t.STRING = 'Last refresh: ' + JPMsystime()
+
+
+  ENDIF ELSE begin
+    message, /INFO, 'SPS socket connected but no data posted within 60 seconds.'
+  ENDELSE
   
   IF n_elements(logTemp) GT 0 THEN FOR i = 0, n_elements(logTemp)-1 DO print, 'LOG: ' + logTemp[i].message
   
   ; Reset values to nonexistant so that we don't hold old variables
   hkTemp = !NULL
-  
+  spsTemp = !NULL
+  sciTemp = !NULL
   IF TOC(wrapperClock) GE data_cadence THEN $
     message, /INFO, 'Completed in time = ' +  JPMPrintNumber(TOC(wrapperClock))
 ENDWHILE ; Infinite loop
