@@ -44,7 +44,7 @@ PRO rocket_xrs_real_time_display, isisIP = isisIP, number_of_packets_to_store = 
                                   VERBOSE = VERBOSE, LIGHT_BACKGROUND = LIGHT_BACKGROUND
 
 ; Defaults
-IF ~keyword_set(isisIP) THEN isisIP = '192.88.37.191' ; WinD2791 = 27" HP ; Rocket5 = 192.88.37.191, Rocket6 = 169.254.191.0
+IF ~keyword_set(isisIP) THEN isisIP = '169.254.155.92' ; WinD2791 = 27" HP ; Rocket5 = 192.88.37.191, Rocket6 = 169.254.191.0
 IF ~keyword_set(number_of_packets_to_store) THEN number_of_packets_to_store = 12
 IF ~keyword_set(data_cadence) THEN data_cadence = 3. ; seconds/packet
 IF keyword_set(time_window_to_store) THEN number_of_packets_to_store = time_window_to_store / data_cadence ; time_window_to_store in seconds
@@ -68,7 +68,7 @@ ENDIF ELSE BEGIN
 ENDELSE
 
 ; Create place holder plots
-w = window(DIMENSIONS = windowSize, /DEVICE, LOCATION = [2400, 20], WINDOW_TITLE = 'EVE Rocket 36.318 XRS Science Data', BACKGROUND_COLOR = backgroundColor)
+w = window(DIMENSIONS = windowSize, /DEVICE, LOCATION = [1415, 0], WINDOW_TITLE = 'EVE Rocket 36.336 XRS/X123 Science Data', BACKGROUND_COLOR = backgroundColor)
 
 ; XRS A1 and B1 
 ; (xps_data and xps_data2)
@@ -134,17 +134,17 @@ t = text(0.0, 0.0, 'Last refresh: ' + JPMsystime(), FONT_COLOR = fontColor)
 
 ; Open up a  to the ISIS computer stream
 ; Ports:
-; 10000 = rocket housekeeping
-; 10001 = X123
-; 10003 = SPS
+; 10000 = housekeeping
+; 10001 = science
+; 10002 = SD card playback
 get_lun, lun
-socket, lun, isisIP, 10000, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
+socket, lun, isisIP, 10000, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
 get_lun, lun2
-socket, lun2, isisIP, 10003, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
+socket, lun2, isisIP, 10003, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
 get_lun, lun3
-socket, lun3, isisIP, 10001, ERROR = socketError, CONNECT_TIMEOUT = 5, /RAWIO ; timeout is in seconds
+socket, lun3, isisIP, 10001, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
 ; Start an infinite loop
 WHILE 1 DO BEGIN
@@ -326,22 +326,23 @@ WHILE 1 DO BEGIN
       ENDELSE
     ENDIF
 
-    ; Update plots
-    !Except = 0 ; Disable annoying divide by 0 messages
-    p6a.SetData,indgen(1024)*0.0199933-0.052797,sci[0].x123_spectrum
-    p6a.linestyle = 'none'
-    p6a.xstyle=1
-    p6a.xrange=[0, max(indgen(1024)*0.0199933-0.052797)]
-    p6a.yrange = [0, 2000]
-    
-    
-    !Except = 1 ; Re-enable math error logging
-
-    ; Update text
-    t6a.STRING = 'Fast Count = ' + strtrim(fix(sci[sciCounter - 1].x123_fast_count),2)
-    t6b.STRING = 'Slow Count = ' + strtrim(fix(sci[sciCounter - 1].x123_slow_count),2)
-    t.STRING = 'Last refresh: ' + JPMsystime()
-
+    IF sciTemp NE !NULL THEN BEGIN
+      ; Update plots
+      !Except = 0 ; Disable annoying divide by 0 messages
+      p6a.SetData,indgen(1024)*0.0199933-0.052797,sci[0].x123_spectrum
+      p6a.linestyle = 'none'
+      p6a.xstyle=1
+      ;p6a.xrange=[0, max(indgen(1024)*0.0199933-0.052797)]
+      ;p6a.yrange = [0, 2000]
+      
+      
+      !Except = 1 ; Re-enable math error logging
+  
+      ; Update text
+      t6a.STRING = 'Fast Count = ' + jpmprintnumber(sci[sciCounter - 1].x123_fast_count,/no_dec)
+      t6b.STRING = 'Slow Count = ' + jpmprintnumber(sci[sciCounter - 1].x123_slow_count,/no_dec)
+      t.STRING = 'Last refresh: ' + JPMsystime()
+    ENDIF
 
   ENDIF ELSE begin
     message, /INFO, 'SPS socket connected but no data posted within 60 seconds.'
