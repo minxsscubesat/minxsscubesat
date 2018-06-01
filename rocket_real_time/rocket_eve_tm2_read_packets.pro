@@ -259,6 +259,7 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
       csolFrameStartIndex = csolFrameStartIndices[rowIndex]
       
       ; Get row number and then handle image (rows 0-1999) vs housekeeping data (row 2000)
+      IF n_elements(csolPacketData) LE (csolFrameStartIndex + 2) THEN CONTINUE
       csolRowNumberLatest = csolPacketData[csolFrameStartIndex + 2]
       IF csolRowNumberLatest NE 2000 THEN BEGIN
         
