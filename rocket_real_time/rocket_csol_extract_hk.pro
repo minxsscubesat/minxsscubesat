@@ -37,8 +37,8 @@ FUNCTION rocket_csol_extract_hk, csolRow2000, $
                                  VERBOSE = VERBOSE, DEBUG = DEBUG
 
 ; Input check
-IF n_elements(csolRow2000) NE 434 THEN BEGIN
-  message, /INFO, JPMsystime() + ' Expected to get only the 434 words from CSOL row 2000 but input contained ' + JPMPrintNumber(n_elements(csolRow2000), /NO_DECIMALS) + ' words.'
+IF n_elements(csolRow2000) LE 35 THEN BEGIN ; Filler starts at element 36
+  message, /INFO, JPMsystime() + ' Expected to get only the >35 words from CSOL row 2000 but input contained ' + JPMPrintNumber(n_elements(csolRow2000), /NO_DECIMALS) + ' words.'
   return, !NULL
 ENDIF
 
