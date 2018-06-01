@@ -349,6 +349,9 @@ WHILE 1 DO BEGIN
         v_convert_=woods8[2]*(analogMonitors.cryo_cold)^2+woods8[1]*(analogMonitors.cryo_cold)+woods8[0]
         t_Cold_Finger=woods17[0]*v_convert_+woods17[1]
         
+        megsa_ccd=34.5*analogMonitors.megsa_ccd_temp-143
+        megsb_ccd=34.45*analogMonitors.megsb_ccd_temp-156
+        
                 
         ; -= UPDATE PLOT WINDOWS WITH REASONABLE REFRESH RATE =- ;
 
@@ -364,8 +367,8 @@ WHILE 1 DO BEGIN
         ta29.string = jpmprintnumber(analogMonitors.fpga_5v)
         ta30.string = jpmprintnumber(analogMonitors.tv_12v)
         ta7.string = jpmprintnumber(analogMonitors.xrs_5v)
-        ta19.string = jpmprintnumber(analogMonitors.megsa_ccd_temp)
-        ta20.string = jpmprintnumber(analogMonitors.megsb_ccd_temp)
+        ta19.string = jpmprintnumber(megsa_ccd)+" ("+jpmprintnumber(analogMonitors.megsa_ccd_temp)+")"
+        ta20.string = jpmprintnumber(megsb_ccd)+" ("+jpmprintnumber(analogMonitors.megsb_ccd_temp)+")"
         ta1.string = jpmprintnumber(t_MEGSP)
         ta7.string = jpmprintnumber(analogMonitors.xrs_5v) 
         ta26.string = jpmprintnumber(analogMonitors.hvs_pressure)
@@ -405,7 +408,7 @@ WHILE 1 DO BEGIN
         endelse
         
         if (analogMonitors.megsa_htr le -1 or analogMonitors.megsa_htr ge 0.2) then begin
-          ta3.string = 'Heater ON('+jpmprintnumber(analogMonitors.megsa_htr)+')'
+          ta3.string = 'Heater ON ('+jpmprintnumber(analogMonitors.megsa_htr)+')'
           ta3.font_color=redcolor
         endif else begin
           ta3.string = 'Heater OFF('+jpmprintnumber(analogMonitors.megsa_htr)+')'
