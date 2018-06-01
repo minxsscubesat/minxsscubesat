@@ -326,7 +326,7 @@ WHILE 1 DO BEGIN
       ENDELSE
     ENDIF
 
-    IF sciTemp NE !NULL THEN BEGIN
+    IF sci NE !NULL THEN BEGIN
       ; Update plots
       !Except = 0 ; Disable annoying divide by 0 messages
       p6a.SetData,indgen(1024)*0.0199933-0.052797,sci[0].x123_spectrum
