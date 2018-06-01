@@ -509,8 +509,8 @@ WHILE 1 DO BEGIN
             tThermFPGA.String = JPMPrintNumber(csolHk.thermFPGA)
             tCurrent5v.String = JPMPrintNumber(csolHk.current5v)
             tVoltage5v.String = JPMPrintNumber(csolHk.voltage5v)
-            IF csolHk.tecEnable THEN tTecEnable.String = 'True' ELSE IF csolHk.tecEnable EQ 0 THEN tTecEnable.String = 'False' ELSE tTecEnable.String = JPMPrintNumber(csolHk.tecEnable, /NO_DECIMALS)
-            IF csolHk.fflEnable THEN tFFLEnable.String = 'True' ELSE IF csolHk.fflEnable EQ 0 THEN tFFLEnable.String = 'False' ELSE tFFLEnable.String = JPMPrintNumber(csolHk.fflEnable, /NO_DECIMALS)
+            IF csolHk.tecEnable EQ 1 THEN tTecEnable.String = 'True' ELSE IF csolHk.tecEnable EQ 0 THEN tTecEnable.String = 'False' ELSE tTecEnable.String = JPMPrintNumber(csolHk.tecEnable, /NO_DECIMALS)
+            IF csolHk.fflEnable EQ 1 THEN tFFLEnable.String = 'True' ELSE IF csolHk.fflEnable EQ 0 THEN tFFLEnable.String = 'False' ELSE tFFLEnable.String = JPMPrintNumber(csolHk.fflEnable, /NO_DECIMALS)
             tSdStart.String = JPMPrintNumber(csolHk.sdStartFrameAddress, /NO_DECIMALS)
             tSdCurrent.String = JPMPrintNumber(csolHk.sdCurrentFrameAddress, /NO_DECIMALS)
             
@@ -522,9 +522,10 @@ WHILE 1 DO BEGIN
             IF csolHk.voltage5v LT 5.5 OR csolHk.voltage5v GT 4.5 THEN tVoltage5v.Color = greenColor ELSE tVoltage5v.Color = redColor
             IF csolHk.tecEnable EQ 1 THEN tTecEnable.Color = greenColor ELSE tTecEnable.Color = redColor
             IF csolHk.fflEnable EQ 0 THEN tFFLEnable.Color = greenColor ELSE tFFLEnable.Color = redColor
-            
+            csolHkRefreshText.String = 'Last refresh: ' + JPMsystime()
           ENDIF
-          csolHkRefreshText.String = 'Last refresh: ' + JPMsystime()
+          
+          csolHk = !NULL
         ENDIF ; doCsolProcessing        
         
         !Except = 1 ; Re-enable math error logging
