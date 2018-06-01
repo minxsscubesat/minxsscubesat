@@ -39,7 +39,7 @@ IF keyword_set(COEFF_SET_0) THEN BEGIN
   c = 1.7836d-4
   d = -7.8392d-8
   e = 1.7269d-11
-  f = -1.5249d-15
+  f = -1.5245d-15
 ENDIF ELSE IF keyword_set(COEFF_SET_1) THEN BEGIN
   a = 150.78
   b = -0.19499
