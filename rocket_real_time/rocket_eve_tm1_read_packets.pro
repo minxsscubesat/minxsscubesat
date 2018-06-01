@@ -48,12 +48,12 @@
 FUNCTION rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s
 
 ;Conversion factors for each individual monitor. Found in DataView
-conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023*34.5,5./1023*34.45,$
+conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023,5./1023,$
              5./1023,5./1023*10,5./1023,5./1023,$
              0.05,0.055,5./1023,5./1023,5./1023,5./1023,0.00918]
              
 ;Byte offsets for each individual monitor. Also found in DataView
-shift=[0,0,0,0,0,0,0,0,-143,-156.6,0,0,0,0,0,0,0,0,0,0,21.7]
+shift=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21.7]
 
 channel_num=23;We should have 23 offsets in a valid Dewesoft packet. One for each pulled channel
 
@@ -61,7 +61,6 @@ serial_num=14;Number of serial data points in our monitor structure
 
 ;If we have a valid Dewesoft packet then parse the packet for each channel
 if (channel_num eq n_elements(offsets)-1) then begin
-  
   ;Change the refresh string and reset our invalid counter now that we found a valid packet
    monitorsRefreshText.String = 'Last full refresh: ' + JPMsystime()
    stale_a=0
@@ -73,6 +72,7 @@ if (channel_num eq n_elements(offsets)-1) then begin
    ;Loop over only the analog monitors in our struct
    for i=0,n_tags(analogMonitorsStructure)-(1+serial_num) do begin
     ;This is the data for an individual channel
+    var=tag_names(analogMonitorsStructure)
     packetdata=socketdata[offsets[i]+4:offsets[i+1]-1]
     ;As analog values are just the same tlm point repeated in the channel data 
     ;we can grap the first word and say thats our data 
