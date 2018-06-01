@@ -813,14 +813,14 @@ junk = temporary(hexdump)
   
   ; Add additional time formats
   ; TODO: Do this for the rest of the packet types
-  if arg_present(sci) THEN BEGIN
-    sci = JPMAddTagsToStructure(sci, 'jd', 'double')
-    sci = JPMAddTagsToStructure(sci, 'iso', 'string')
-    sci = JPMAddTagsToStructure(sci, 'human', 'string')
-    sci.jd = gps2jd(sci.time)
-    sci.iso = JPMjd2iso(gps2jd(sci.time))
-    sci.human = JPMjd2iso(gps2jd(sci.time), /NO_T_OR_Z)
-  endif
+;  if arg_present(sci) THEN BEGIN
+;    sci = JPMAddTagsToStructure(sci, 'jd', 'double')
+;    sci = JPMAddTagsToStructure(sci, 'iso', 'string')
+;    sci = JPMAddTagsToStructure(sci, 'human', 'string')
+;    sci.jd = gps2jd(sci.time)
+;    sci.iso = JPMjd2iso(gps2jd(sci.time))
+;    sci.human = JPMjd2iso(gps2jd(sci.time), /NO_T_OR_Z)
+;  endif
 
   return    ; end of reading packets
 
