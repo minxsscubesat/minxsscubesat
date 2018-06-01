@@ -234,7 +234,7 @@ ENDELSE
 ;;
 ;; TASK 2: Remove filler. WSMR stuffs in 0x7E7E. End up with new variable, instrumentPacketData.
 ;;
-csolPacketDataGoodIndices = where(csolPacketDataWithFiller NE 0 AND csolPacketDataWithFiller NE '7E7E'X, numberOfFoundCsolPixels)
+csolPacketDataGoodIndices = where(csolPacketDataWithFiller NE '7E7E'X, numberOfFoundCsolPixels)
 IF numberOfFoundCsolPixels NE 0 THEN BEGIN
   
   csolPacketData = csolPacketDataWithFiller[csolPacketDataGoodIndices]
@@ -289,7 +289,13 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
         csolTotalPixelsFound += 5L * 8L
         IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + ' CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
       ENDIF ELSE BEGIN ; End rows 0-1999 and now handle metadata in row 2000
-        csolHk = rocket_csol_extract_hk(csolPacketData[csolFrameStartIndex + 4:-1])
+        IF n_elements(csolPacketData) GE (csolFrameStartIndex + 4) THEN BEGIN
+          csolHk = rocket_csol_extract_hk(csolPacketData[csolFrameStartIndex + 4:-1])
+        ENDIF ELSE BEGIN
+          IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+            message, /INFO, JPMsystime() + ' CSOL partial housekeeping packet. Skipping.'
+          ENDIF
+        ENDELSE
       ENDELSE
     ENDFOR
   ENDIF ELSE BEGIN ; Didn't find CSOL row start sync
