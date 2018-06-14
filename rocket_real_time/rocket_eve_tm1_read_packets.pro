@@ -39,23 +39,28 @@
 ;   TASK 3: Process MEGSP Serial Data
 ;
 ; EXAMPLE:
-;   rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s
+;   rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s, sdoor_state
 ;
 ; MODIFICATION HISTORY:
 ;   2018-05-29: Robert Sewell: Wrote script for rocket_eve_tm1_real_time_display updates and 36.336 Altair changes
 ;-
 
-FUNCTION rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s
+FUNCTION rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s, sdoor_state
+
+common rocket_eve_tm1_read_packets,sdoor_history
 
 ;Conversion factors for each individual monitor. Found in DataView
 conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023,5./1023,$
              5./1023,5./1023*10,5./1023,5./1023,$
-             0.05,0.055,5./1023,5./1023,5./1023,5./1023,0.00918]
+             0.05,0.055,5./1023,5./1023,5./1023,5./1023,5./1023,0.00918]
              
 ;Byte offsets for each individual monitor. Also found in DataView
-shift=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21.7]
 
-channel_num=23;We should have 23 offsets in a valid Dewesoft packet. One for each pulled channel
+;TODO forflight - add a 0 for shutter door o/c
+shift=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21.7]
+
+
+channel_num=24;We should have 24 offsets in a valid Dewesoft packet. One for each pulled channel
 
 serial_num=14;Number of serial data points in our monitor structure
 
@@ -73,13 +78,39 @@ if (channel_num eq n_elements(offsets)-1) then begin
    for i=0,n_tags(analogMonitorsStructure)-(1+serial_num) do begin
     ;This is the data for an individual channel
     var=tag_names(analogMonitorsStructure)
-    packetdata=socketdata[offsets[i]+4:offsets[i+1]-1]
+    packetdata=socketdata[offsets[i]+4:offsets[i]+packetsize[i]*2+4-3]
     ;As analog values are just the same tlm point repeated in the channel data 
     ;we can grap the first word and say thats our data 
-    tlm=byte2uint(packetdata[0:1])*conv_factor[i]+shift[i]
+    tlm=byte2uint(packetdata[n_elements(packetdata)-2:n_elements(packetdata)-1])*conv_factor[i]+shift[i]
     ;Store it to our struct
     analogMonitorsStructure.(i)=tlm 
    endfor
+   
+   ;Shutter door logic
+   closethresh = 1.5 ; [Volts]
+   openthresh = 2.9 ; [Volts]
+   
+   if analogMonitorsStructure.sdoor_oc ge closethresh then begin
+    sdoor_history=shift(sdoor_history,1)
+    sdoor_history[0]=analogMonitorsStructure.sdoor_oc
+    print,sdoor_history
+   endif
+   
+   ;this is a common array so if it's not already defined, then define it --> else it's already defined so we don't need to redefine it
+   if size(sdoor_history,/type) eq 0 then begin
+    sdoor_history=fltarr(7) ; takes about 3 seconds, and we get about 3 pkts/sec
+    sdoor_state = "UNKNOWN"
+   endif
+   
+   ;check if most values of sdoor_history are above the open threshold or above the closed theshold
+   if median(sdoor_history) gt openthresh then begin
+    sdoor_state = "Open"
+    ;stop
+   endif else if median(sdoor_history) gt closethresh then begin
+    sdoor_state = "Closed"
+    stop
+   endif
+   
    
    ;Process esp channel data which comes next
    sync_esp_ind=-1;Where we found the ESP sync word in the dewesoft channel
