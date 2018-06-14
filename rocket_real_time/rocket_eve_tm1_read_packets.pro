@@ -52,7 +52,7 @@ common rocket_eve_tm1_read_packets,sdoor_history
 ;Conversion factors for each individual monitor. Found in DataView
 conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023,5./1023,$
              5./1023,5./1023*10,5./1023,5./1023,$
-             0.05,0.055,5./1023,5./1023,5./1023,5./1023,5./1023,0.00918]
+             0.05,0.055,5./1023,5./1023,5./1023,5./1023,1,0.00918]
              
 ;Byte offsets for each individual monitor. Also found in DataView
 
@@ -87,28 +87,23 @@ if (channel_num eq n_elements(offsets)-1) then begin
    endfor
    
    ;Shutter door logic
-   closethresh = 1.5 ; [Volts]
-   openthresh = 2.9 ; [Volts]
    
-   if analogMonitorsStructure.sdoor_oc ge closethresh then begin
+   if analogMonitorsStructure.sdoor_oc ge 100 then begin
     sdoor_history=shift(sdoor_history,1)
     sdoor_history[0]=analogMonitorsStructure.sdoor_oc
-    print,sdoor_history
    endif
    
    ;this is a common array so if it's not already defined, then define it --> else it's already defined so we don't need to redefine it
    if size(sdoor_history,/type) eq 0 then begin
-    sdoor_history=fltarr(7) ; takes about 3 seconds, and we get about 3 pkts/sec
+    sdoor_history=lonarr(10)
     sdoor_state = "UNKNOWN"
    endif
    
    ;check if most values of sdoor_history are above the open threshold or above the closed theshold
-   if median(sdoor_history) gt openthresh then begin
+   if median(sdoor_history) gt 475 then begin
     sdoor_state = "Open"
-    ;stop
-   endif else if median(sdoor_history) gt closethresh then begin
+   endif else if median(sdoor_history) gt 100 then begin
     sdoor_state = "Closed"
-    stop
    endif
    
    
