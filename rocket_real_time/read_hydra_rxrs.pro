@@ -39,12 +39,12 @@
 ;+
 pro read_hydra_rxrs, input, hk=hk, sci=sci, log=log, sps=sps, hexdump=hexdump, verbose=verbose
 
-; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
-junk = temporary(hk)
-junk = temporary(sci)
-junk = temporary(log)
-junk = temporary(sps)
-junk = temporary(hexdump)
+  ; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
+  junk = temporary(hk)
+  junk = temporary(sci)
+  junk = temporary(log)
+  junk = temporary(sps)
+  junk = temporary(hexdump)
 
   ; Define initial quantum of packet array length
   N_CHUNKS = 500
