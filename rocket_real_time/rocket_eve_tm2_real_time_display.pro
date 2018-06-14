@@ -78,6 +78,7 @@
 ;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
 ;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code.
 ;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working. 
+;   2018-06-11: Don Woodraska, Tom Woods, Alan Sims added inttime, rowperiod and rowperint
 ;-
 PRO rocket_eve_tm2_real_time_display, port = port, IS_ASYNCHRONOUSDATA = IS_ASYNCHRONOUSDATA, windowSize = windowSize, windowSizeCsol = windowSizeCsol, windowSizeCsolHk = windowSizeCsolHk, $
                                       megsAStatisticsBox = megsAStatisticsBox, megsBStatisticsBox = megsBStatisticsBox, $
@@ -97,12 +98,12 @@ IF ~keyword_set(port) THEN port = 8002
 IF keyword_set(IS_ASYNCHRONOUSDATA) THEN sampleSizeDeweSoft = 10 ELSE sampleSizeDeweSoft = 2
 IF ~keyword_set(windowSize) THEN windowSize = [1984, 530]
 IF ~keyword_set(windowSizeCsol) THEN windowSizeCsol = [1984, 565]
-IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsolHk = [300, 400]
+IF ~keyword_set(windowSizeCsolHk) THEN windowSizeCsolHk = [300, 550]
 IF ~keyword_set(megsAStatisticsBox) THEN megsAStatisticsBox = [402, 80, 442, 511]  ; Corresponds to He II 304 Å line
 IF ~keyword_set(megsBStatisticsBox) THEN megsBStatisticsBox = [624, 514, 864, 754] ; Corresponds to center block
 IF ~keyword_set(megsAExpectedCentroid) THEN megsAExpectedCentroid = [19.6, 215.15] ; Expected for He II 304 Å
 IF ~keyword_set(megsBExpectedCentroid) THEN megsBExpectedCentroid = [120., 120.]
-IF ~keyword_set(frequencyOfImageDisplay) THEN frequencyOfImageDisplay = 8
+IF ~keyword_set(frequencyOfImageDisplay) THEN frequencyOfImageDisplay = 32
 IF keyword_set(LIGHT_BACKGROUND) THEN BEGIN
   fontColor = 'black'
   backgroundColor = 'white'
@@ -123,7 +124,8 @@ fontSizeHk = 14
 
 ; Open a port that the DEWESoft computer will be commanded to stream to (see PROCEDURE in this code's header)
 socket, connectionCheckLUN, port, /LISTEN, /GET_LUN, /RAWIO
-STOP, 'Wait until DEWESoft is set to startacq. Then click go.'
+;STOP, 'Wait until DEWESoft is set to startacq. Then click go.'
+wait,5
 
 ; Prepare a separate logical unit (LUN) to read the actual incoming data
 get_lun, socketLun
@@ -150,7 +152,7 @@ statsTextSpacing = 0.02
 statsBoxHeight = statsTextSpacing * 20
 statsYPositions = reverse(JPMRange(0.005, statsBoxHeight - 0.05, npts = 8))
 hkHSpacing = 0.02 ; Horizontal spacing
-hkVSpacing = 0.07 ; Vertical spacing
+hkVSpacing = 1./19. ; Vertical spacing for 18 rows of text
 topLinePosition = 0.90
 
 ; MEGS-A
@@ -176,7 +178,7 @@ megsARefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLO
 
 ; MEGS-B
 wb = window(DIMENSIONS = windowSize, /NO_TOOLBAR, LOCATION = [0, windowSize[1] + 50], BACKGROUND_COLOR = backgroundColor)
-p1 = image(findgen(2048L, 1024L), TITLE = 'EVE MEGS B', WINDOW_TITLE = 'EVE MEGS B', /CURRENT, MARGIN = [0.1, 0.02, 0., 0.02], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+p1 = image(findgen(2048L, 1024L), TITLE = 'EVE MEGS B', WINDOW_TITLE = 'EVE MEGS B', /CURRENT, /NO_TOOLBAR, MARGIN = [0.1, 0.02, 0., 0.02], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 c1 = colorbar(TARGET = p1, ORIENTATION = 1, POSITION = [0.85, 0.03, 0.87, 0.98], TEXTPOS = 1, FONT_SIZE = fontSize - 2, TEXT_COLOR = fontColor)
 readArrowMegsBLeft = arrow([-50., 0], [1023., 1023.], /DATA, COLOR = redColor, THICK = 3, /CURRENT)
 readArrowMegsBRight = arrow([2098., 2048], [0, 0], /DATA, COLOR = redColor, THICK = 3, /CURRENT)
@@ -195,15 +197,16 @@ megsBMinLocationText = text(0, statsYPositions[7], 'X:Y Min Location [pixel inde
 megsBRefreshText =     text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = redColor, ALIGNMENT = 1.0)
 
 ; CSOL
+;  REMOVE /NO_TOOLBAR if want interactive cursor to tell you the pixel location of cursor (useful for STIM LAMP test)
 wc = window(DIMENSIONS = windowSizeCsol, /NO_TOOLBAR, LOCATION = [0, 2 * windowSize[1] + 78], BACKGROUND_COLOR = backgroundColor)
-p3 = image(findgen(2000L, 480L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, MARGIN = [0.1, 0.02, 0.1, 0.02], /NO_TOOLBAR, $
+p3 = image(findgen(2000L, 480L), TITLE = 'CSOL', WINDOW_TITLE = 'CSOL', /CURRENT, MARGIN = [0.1, 0.02, 0.1, 0.02], $
            LOCATION = [windowSizeCsol[0] + 5, 0], RGB_TABLE = 'Rainbow', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 c3 = colorbar(TARGET = p3, ORIENTATION = 1, POSITION = [0.91, 0.18, 0.93, 0.82], TEXTPOS = 1, FONT_SIZE = fontSize - 6, TEXT_COLOR = fontColor)
 readArrowCSOL = arrow([0, 0], [-50, 0], /DATA, COLOR = greenColor, THICK = 3, /CURRENT)
 t = text(0.09, 0.75, 'Dark', FONT_SIZE = fontSizeHk, FONT_COLOR = 'grey', ALIGNMENT = 1)
-t = text(0.09, 0.61, 'FUV', FONT_SIZE = fontSizeHk, FONT_COLOR = 'dark violet', ALIGNMENT = 1)
+t = text(0.09, 0.61, 'MUV', FONT_SIZE = fontSizeHk, FONT_COLOR = 'dark violet', ALIGNMENT = 1)
 t = text(0.09, 0.48, 'Dark', FONT_SIZE = fontSizeHk, FONT_COLOR = 'grey', ALIGNMENT = 1)
-t = text(0.09, 0.34, 'MUV', FONT_SIZE = fontSizeHk, FONT_COLOR = 'dodger blue', ALIGNMENT = 1)
+t = text(0.09, 0.34, 'FUV', FONT_SIZE = fontSizeHk, FONT_COLOR = 'dodger blue', ALIGNMENT = 1)
 t = text(0.09, 0.21, 'Dark', FONT_SIZE = fontSizeHk, FONT_COLOR = 'grey', ALIGNMENT = 1)
 csolRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
@@ -231,6 +234,15 @@ t          = text(0.7,              topLinePosition - (11  * hkVSpacing), 'Start
 tSdStart   = text(0.7 + hkHSpacing, topLinePosition - (11  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 t          = text(0.7,              topLinePosition - (12  * hkVSpacing), 'Current Frame = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
 tSdCurrent = text(0.7 + hkHSpacing, topLinePosition - (12  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+
+t          = text(0.5,              topLinePosition - (13  * hkVSpacing), 'Int Time', ALIGNMENT = 0.5, FONT_COLOR = blueColor, FONT_SIZE = fontSizeHk + 6)
+t          = text(0.7,              topLinePosition - (14  * hkVSpacing), 'Row Period      = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tRowPeriod = text(0.7 + hkHSpacing, topLinePosition - (14  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (15  * hkVSpacing), 'Row per Int   = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tRowPerInt = text(0.7 + hkHSpacing, topLinePosition - (15  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+t          = text(0.7,              topLinePosition - (16  * hkVSpacing), 'Int Time (s)  = ', ALIGNMENT = 1, FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+tIntTime   = text(0.7 + hkHSpacing, topLinePosition - (16  * hkVSpacing), '--', FONT_COLOR = fontColor, FONT_SIZE = fontSizeHk)
+
 csolHkRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = greenColor, ALIGNMENT = 1.0)
 
 ; Initialize COMMON buffer variables
@@ -513,6 +525,9 @@ WHILE 1 DO BEGIN
             IF csolHk.fflEnable EQ 1 THEN tFFLEnable.String = 'True' ELSE IF csolHk.fflEnable EQ 0 THEN tFFLEnable.String = 'False' ELSE tFFLEnable.String = JPMPrintNumber(csolHk.fflEnable, /NO_DECIMALS)
             tSdStart.String = JPMPrintNumber(csolHk.sdStartFrameAddress, /NO_DECIMALS)
             tSdCurrent.String = JPMPrintNumber(csolHk.sdCurrentFrameAddress, /NO_DECIMALS)
+            tRowPeriod.String = JPMPrintNumber(csolHk.rowPeriod, /NO_DECIMALS)
+            tRowPerInt.String = JPMPrintNumber(csolHk.rowPerInt, /NO_DECIMALS)
+            tIntTime.String = JPMPrintNumber(csolHk.intTime)
             
             ; Limit check / red/green coloring
             IF csolHk.thermDet0 LT 20 OR csolHk.thermDet0 GT 0 THEN tThermDet0.Color = greenColor ELSE tThermDet0.Color = redColor
@@ -522,6 +537,8 @@ WHILE 1 DO BEGIN
             IF csolHk.voltage5v LT 5.5 OR csolHk.voltage5v GT 4.5 THEN tVoltage5v.Color = greenColor ELSE tVoltage5v.Color = redColor
             IF csolHk.tecEnable EQ 1 THEN tTecEnable.Color = greenColor ELSE tTecEnable.Color = redColor
             IF csolHk.fflEnable EQ 0 THEN tFFLEnable.Color = greenColor ELSE tFFLEnable.Color = redColor
+            IF csolHk.intTime GT 10.23 AND csolHK.intTime LT 10.25 THEN tIntTime.Color = greenColor ELSE tIntTime.Color = redColor
+
             csolHkRefreshText.String = 'Last refresh: ' + JPMsystime()
           ENDIF
           
