@@ -32,6 +32,7 @@
 ; MODIFICATION HISTORY:
 ;   2018-05-11: James Paul Mason: Wrote script.
 ;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working.
+;   2018-06-11: Don Woodraska, Tom Woods, Alan Sims added inttime, rowperiod and rowperint
 ;-
 FUNCTION rocket_csol_extract_hk, csolRow2000, $
                                  VERBOSE = VERBOSE, DEBUG = DEBUG
@@ -46,7 +47,10 @@ ENDIF
 csolHk = {thermDet0: 0.0, thermDet1: 0.0, thermFPGA: 0.0, $
           current5V: 0.0, voltage5V: 0.0, $
           tecEnable: 0, fflEnable: 0, $ ; Treat as booleans
-          sdStartFrameAddress: 0L, sdCurrentFrameAddress: 0}
+          sdStartFrameAddress: 0L, sdCurrentFrameAddress: 0, $
+          rowPeriod: 0u, $
+          rowPerInt: 0u, $
+          intTime: 0.0}
 
 ; Extract telemetry points, convert to engineering units, and store in structure
 csolHk.thermDet0 = rocket_csol_convert_temperatures(csolRow2000[10], /COEFF_SET_0) ; [ºC]
@@ -54,10 +58,15 @@ csolHk.thermDet1 = rocket_csol_convert_temperatures(csolRow2000[11], /COEFF_SET_
 csolHk.thermFPGA = rocket_csol_convert_temperatures(csolRow2000[12], /COEFF_SET_0) ; [ºC]
 csolHk.current5V = 2500. * csolRow2000[13] / 8192. ; [mA]
 csolHk.voltage5V = 10. * csolRow2000[14] / 4096. ; [V]
+csolhk.rowPeriod = csolRow2000[16]
+csolhk.rowPerInt = csolRow2000[17]
 csolHk.tecEnable = csolRow2000[18] ; [bool] 1 = on, 0 = off
 csolhk.fflEnable = csolRow2000[19] ; [bool] 1 = on, 0 = off
 csolhk.sdStartFrameAddress = csolRow2000[21] ; First frame address of the data recording for the current power cycle
 csolhk.sdCurrentFrameAddress = csolRow2000[22] ; Current frame address for data recording
+
+;derived integration time
+csolhk.intTime = (csolhk.rowPeriod + 1.) * (csolhk.rowPerInt + 1.) / (1.e6) ; integration time in seconds
 
 return, csolhk
 
