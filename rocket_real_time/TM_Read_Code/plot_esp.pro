@@ -16,7 +16,8 @@
 ;   Tom Woods
 ;   10/15/06
 ;
-pro plot_esp, filename, edata, xrange=xrange, channel=channel, tzero=tzero, notime=notime, rocket=rocket
+pro plot_esp, filename, edata, xrange=xrange, yrange=yrange, channel=channel, $
+				tzero=tzero, notime=notime, rocket=rocket
 
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
@@ -124,8 +125,10 @@ endif
 if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.286
   if (rocket ne 36.258) or (rocket ne 36.275) or (rocket ne 36.286) $
-  		or (rocket ne 36.290) then rocket = 36.290
-endif else rocket = 36.290
+  		or (rocket ne 36.290) or (rocket ne 36.300) or (rocket ne 36.318) then rocket = 36.318
+endif else rocket = 36.318
+
+print, 'Processing ESP data for rocket = ', rocket
 
 if (rocket eq 36.258) then begin
     tzero = 18*3600L+32*60L+2.00D0  ; launch time in UT
@@ -168,6 +171,27 @@ endif else if (rocket eq 36.290) then begin
     twindow = -1.
     dtwindow=2.
     dtmove=2.
+endif else if (rocket eq 36.300) then begin
+    tzero = 19*3600L+15*60L+0.000D0  ; launch time in UT
+    ;  launch failure - BB cut down
+    tapogee = 180
+    dtlight = 15.
+    tdark1 = 60.
+    tdark2 = 300.
+    dtdark=5.
+    twindow = -1.
+    dtwindow=2.
+    dtmove=2.
+endif else if (rocket eq 36.318) then begin
+    tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
+    tapogee = 275.
+    dtlight = 15.
+    tdark1 = 60.
+    tdark2 = 490.
+    dtdark=5.
+    twindow = 315.
+    dtwindow=2.
+    dtmove=2.
 endif else begin
     ; force plot to not look for dark and visible light
     rocket = 0.0
@@ -196,15 +220,15 @@ if (rocket ne 0.0) then begin
   print, 'Channel    Dark-1    Dark-2      Apogee   Visible   Signal (Light-Dark)'
 endif
 
+if not keyword_set(xrange) then xrange = [min(ptime), max(ptime)]
+
 for k=kstart,kend do begin
     mtitle='ESP #' + strtrim(k+1,2)
-    if keyword_set(xrange) then begin
-      plot, ptime, edata.cnt[k], ys=1, xrange=xrange, $
+
+    if keyword_set(yrange) then yr = yrange else yr = [0, max(edata.cnt[k])]
+    plot, ptime, edata.cnt[k], ys=1, xrange=xrange, yrange=yr, $
         xtitle=xtitle, ytitle='Counts', title=mtitle, xmargin=xmargin, ymargin=ymargin
-    endif else begin
-      plot, ptime, edata.cnt[k], ys=1, xrange=xrange, $
-        xtitle=xtitle, ytitle='Counts', title=mtitle, xmargin=xmargin, ymargin=ymargin
-    endelse
+
     if (rocket ne 0.0) then begin
       oplot, (tapogee-dtlight)*[1,1], !y.crange, line=2
       oplot, (tapogee+dtlight)*[1,1], !y.crange, line=2

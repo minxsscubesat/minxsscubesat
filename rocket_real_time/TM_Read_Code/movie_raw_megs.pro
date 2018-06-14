@@ -154,7 +154,7 @@ endif else begin
 endelse
 
 common rocket_common, rocket_number, launch_time, rocket_data_dir
-if not keyword_set(rocket) then rocket=0.0
+if not keyword_set(rocket) then rocket=36.300
 rocket_set_number, rocket
 tzero = launch_time
 
@@ -165,26 +165,30 @@ if (rocket eq 36.258) then begin
     tdark1 = 50.
     tdark2 = 550.
     dtdark=10.
-endif
-if (rocket eq 36.275) then begin
+endif else if (rocket eq 36.275) then begin
     ; tzero = 17*3600L+50*60L+0.354D0  ; launch time in UT
     tapogee = 275.
     dtlight = 30.
     tdark1 = 60.
     tdark2 = 490.
     dtdark=10.
-endif
-if (rocket eq 36.286) then begin
+endif else if (rocket eq 36.286) then begin
     ; tzero = 19*3600L+30*60L+1.000D0  ; launch time in UT
     tapogee = 276.
     dtlight = 30.
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
-endif
-if (rocket eq 36.290) then begin
+endif else if (rocket eq 36.290) then begin
     ; tzero = 18*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 275.
+    dtlight = 30.
+    tdark1 = 65.
+    tdark2 = 490.
+    dtdark=10.
+endif else if (rocket eq 36.300) then begin
+    ; tzero = 19*3600L+15*60L+0.000D0  ; launch time in UT
+    tapogee = 200.
     dtlight = 30.
     tdark1 = 65.
     tdark2 = 490.

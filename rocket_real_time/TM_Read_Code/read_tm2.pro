@@ -1,7 +1,7 @@
 ;
-;	read_tm2_all_cd.pro
+;	read_tm2.pro
 ;
-;	Read NASA 36.233 or 36.240 or 36.258 or 36.275 TM2 CD data files
+;	Read NASA 36.318, 36.300, 36.290, 36.275, 36.258, 36.240, or 36.233 TM2 CD data files
 ;		CCD Data at 10 Mbps
 ;
 ;	Extract out data from TM2, keep all data once find fiducial after finding first fiducial
@@ -22,12 +22,30 @@
 ;		!path = '/Users/Shared/Projects/Rocket_Folder/Data_36290/WSMR/code:' + !path
 ;		read_tm2_all_cd, file2, rocket=36.290, /amegs, /bmegs
 ;
-pro  read_tm2_all_cd, filename, launchtime=launchtime, time=time, $
+;	Updated May 2016 to merge read_tm2_all_cd.pro and read_tm2_rt.pro
+;		Just use the /CD option to read the CD log files, default is DataView Dump file (RT)
+;
+pro  read_tm2, filename, cd=cd, launchtime=launchtime, time=time, $
 					classic=classic, amegs=amegs, bmegs=bmegs, rocket=rocket, debug=debug
+
+;  new code to check for CD or RT file type
+if keyword_set(cd) then begin
+	fileRT = 0
+	fileType = 'DataView Raw Dump File'
+	fileFilter = 'Raw*TM2_*.*'
+	ncol = 85L	; CD has 6 extra header bytes (3 words) for Time
+	nrow = 3L
+endif else begin
+	fileRT = 1
+	fileType = 'CD Raw Log File'
+	fileFilter = 'LOGFILE*.*'
+	ncol = 82L
+	nrow = 3L
+endelse
 
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
-  filename = dialog_pickfile(title='Pick TM CD Data File', filter='36*.log')
+  filename = dialog_pickfile(title='Pick TM#2 '+fileType, filter=fileFilter)
 endif
 
 if (strlen(filename) lt 1) then begin
@@ -36,66 +54,118 @@ if (strlen(filename) lt 1) then begin
 endif
 
 ;
+;	extract out file base name
+;
+dirslash = path_sep()  ; is it Mac ('/') or Windows ('\')
+fb1 = rstrpos( filename, dirslash )
+if (fb1 lt 0) then fb1 = -1L
+fb2 = rstrpos( filename, '.' )
+if (fb2 lt 0) then fb2 = strlen(filename)
+fbase = strmid( filename, fb1+1, fb2-fb1-1 ) + '_'
+;  just use the full input file name
+fbase = filename + '_'
+
+if keyword_set(rocket) then rnum = rocket else rnum = 36.318
+if (rnum ne 36.318) and (rnum ne 36.300) and (rnum ne 36.290) and $
+		(rnum ne 36.286) and (rnum ne 36.240) and (rnum ne 36.233) then begin
+  print, 'ERROR: rocket number is not valid, resetting to 36.318'
+  rnum = 36.318
+endif
+print, 'Processing for rocket # ', string(rnum,format='(F7.3)')
+
+if not keyword_set(launchtime) then launchtime=0L
+fpos = strpos( filename, 'flight' )
+if (not keyword_set(launchtime)) and (fpos ge 0) then begin
+  if (rnum eq 36.217) then launchtime = 12*3600L + 23*60L + 30  ; MDT instead of UT
+  if (rnum eq 36.240) then launchtime = 10*3600L + 58*60L + 0
+  if (rnum eq 36.258) then launchtime = 12*3600L + 32*60L + 2.00D0
+  if (rnum eq 36.275) then launchtime = 11*3600L + 50*60L + 0.354D0
+  if (rnum eq 36.286) then launchtime = 13*3600L + 30*60L + 1.000D0
+  if (rnum eq 36.290) then launchtime = 12*3600L + 0*60L + 0.4D0
+  if (rnum eq 36.300) then launchtime = 13*3600L + 14*60L + 25.1D0
+  if (rnum eq 36.318) then launchtime = 19*3600L + 0*60L + 0.0D0
+  print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
+endif
+
+nbytes = ncol*2L * nrow		; sync_1 + 3 words of time + sfid + mid + 78 words of data + sync_2
+nint = nbytes/2L
+ntotal = ncol * nrow
+
+ntime = 2L                 ; DataView time is 4-bytes of milliseconds of time
+packetrate = ntotal * 10L / 1.D6    ; number_words * 10_bits / bit_rate ==> sec per packet
+
+RToffset = -2L		; offset between CD data and RT data for the "X" value
+
+;
+;	Define SYNC words
+;
+if keyword_set(CD) then begin
+	wordmask = 'FFFF'X		; don't need to mask
+	sync1value = '2840'X
+	sync1offset = 0L
+
+	sync2value = 'FE6B'X
+	sync2offset = nint-1L
+endif else begin
+	wordmask = 'FFFF'X   ; don't need to mask
+	sync1value = 'FE6B'X
+	sync1offset = 0L
+
+	sync2value = '2840'X
+	sync2offset = 1L
+endelse
+
+;
 ;  open the TM CD Data file
 ;	Record is 85 words (170 bytes) x 3 rows
-;
 ;
 ;	NOTE:  words have bytes flipped for MAC but code written for any computer
 ;
 openr,lun, filename, /get_lun
 
-fb1 = rstrpos( filename, '/' )
-if (fb1 lt 0) then fb1 = -1L
-fb2 = rstrpos( filename, '.' )
-if (fb2 lt 0) then fb2 = strlen(filename)
-fbase = strmid( filename, fb1+1, fb2-fb1-1 ) + '_'
+if keyword_set(CD) then begin
+	; Record for CD file
+	a = assoc( lun, uintarr(ncol,nrow) )
+endif else begin
+ ;
+ ;   DataView can have 4-byte (long) time word at end of each packet
+ ;   so have to determine which type format by examining for Sync words
+ ;
+ atest = assoc( lun, uintarr(ntotal+ntime*2L+(sync1offset+1L)*2L) )
+ dtest = atest[0]
+ swap_endian_inplace, dtest, /swap_if_big_endian     ; only MACs will flip bytes
+ if ((dtest[sync1offset] and wordmask) eq sync1value) and $
+    ((dtest[sync1offset+ntotal] and wordmask) eq sync1value) then begin
+  print, 'WARNING: assuming constant TIME rate for these packets'
+  hasTime = 0L
+  a = assoc( lun, uintarr(ncol,nrow) )
+ endif else if ((dtest[sync1offset] and wordmask) eq sync1value) and $
+    ((dtest[sync1offset+ntotal+ntime] and wordmask) eq sync1value) then begin
+  hasTime = 1L
+  a = assoc( lun, uintarr(ntotal+ntime) )
+  nbytes = nbytes + ntime*2L  ; make file record longer
+ endif else begin
+  print, 'ERROR: could not find SYNC with or without TIME in these packets'
+  close,lun
+  free_lun,lun
+  return
+ endelse
 
-if keyword_set(rocket) then rnum = rocket else rnum = 36.290
-if (rnum ne 36.290) and (rnum ne 36.286) and (rnum ne 36.275) and (rnum ne 36.258) and (rnum ne 36.240) and (rnum ne 36.233) then begin
-  print, 'ERROR: rocket number is not valid, resetting to 36.290'
-  rnum = 36.290
-endif
-print, 'Processing for rocket # ', string(rnum,format='(F7.3)')
-
-if not keyword_set(launchtime) then begin
-  launchtime=0
-  if (rnum eq 36.217) then launchtime = 18*3600L + 23*60L + 30  ; UT time
-  if (rnum eq 36.240) then launchtime = 16*3600L + 58*60L + 0.72D0
-  if (rnum eq 36.258) then launchtime = 18*3600L + 32*60L + 2.00D0
-  if (rnum eq 36.275) then launchtime = 17*3600L + 50*60L + 0.354D0
-  if (rnum eq 36.286) then launchtime = 19*3600L + 30*60L + 1.000D0
-  if (rnum eq 36.290) then launchtime = 18*3600L + 0*60L + 0.000D0
-  print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
-endif
-
-ncol = 85L
-nrow = 3L
-nbytes = ncol*2L * nrow		; sync_1 + 3 words of time + sfid + mid + 78 words of data + sync_2
-nint = nbytes/2L
-a = assoc( lun, uintarr(ncol,nrow) )
+endelse
 
 finfo = fstat(lun)
 fsize = finfo.size
 pcnt = fsize/nbytes
 print, ' '
-print, 'READ_TM2_CD:  ',strtrim(pcnt,2), ' records in ', filename
-
-;
-;	define constants / arrays for finding sync values
-;
-wordmask = 'FFFF'X		; don't need to mask
-sync1value = '2840'X
-sync1offset = 0L
-
-sync2value = 'FE6B'X
-sync2offset = nint-1L
+print, 'READ_TM2:  ',strtrim(pcnt,2), ' records in ', filename
+if not keyword_set(CD) then $
+	print, ' WARNING:  DataView dumps are incomplete - use READ_TM2, /CD for complete data set.'
 
 acnt = 0L
 aindex=ulong(lonarr(pcnt))
 atime = dblarr(pcnt)
 
 pcnt10 = pcnt/10L
-
 
 ;
 ;	find first valid time
@@ -105,14 +175,24 @@ for k=0L,pcnt-1L do begin
   swap_endian_inplace, data, /swap_if_big_endian		; only MACs will flip bytes
   if ((data[sync1offset] and wordmask) eq sync1value) and $
   			((data[sync2offset] and wordmask) eq sync2value) then begin
-    time1 = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
+  	if keyword_set(CD) then begin
+      time1 = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
   		+ (data[2,0] and '03FF'X) + (data[3,0] and '03FF'X) / 1000.D0
-  	time1 = time1 / 1000.D0   ; convert msec to sec
+  	  time1 = time1 / 1000.D0   ; convert msec to sec
+  	endif else begin
+  	  if (hasTime ne 0) then begin
+        time1 = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
+        time1 = time1 / 1000.D0   ; convert millisec to sec
+      endif else begin
+        time1 = k * packetrate
+      endelse
+  	endelse
   	goto, gottime1
   endif
 endfor
 
 gottime1:
+data1 = data
 print, ' '
 timetemp = time1
 if (launchtime eq 0) then launchtime = time1   ;  set T+0 as start of file if launch time not given
@@ -129,14 +209,24 @@ for k=pcnt-1L,0L,-1L do begin
   swap_endian_inplace, data, /swap_if_big_endian		; only MACs will flip bytes
   if ((data[sync1offset] and wordmask) eq sync1value) and $
   			((data[sync2offset] and wordmask) eq sync2value) then begin
-    time2 = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
+  	if keyword_set(CD) then begin
+      time2 = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
   		+ (data[2,0] and '03FF'X) + (data[3,0] and '03FF'X) / 1000.D0
-  	time2 = time2 / 1000.D0   ; convert msec to sec
+  	  time2 = time2 / 1000.D0   ; convert msec to sec
+  	endif else begin
+  	  if (hasTime ne 0) then begin
+        time2 = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
+        time2 = time2 / 1000.D0   ; convert millisec to sec
+      endif else begin
+        time2 = k * packetrate
+      endelse
+  	endelse
   	goto, gottime2
   endif
 endfor
 
 gottime2:
+data2 = data
 print, ' '
 timetemp = time2
 hr = fix(timetemp/3600.)
@@ -146,22 +236,12 @@ print, 'Stop  Time = ', strtrim(hr,2), ':', strtrim(min,2), ':', strtrim(sec,2),
 print, ' '
 
 if keyword_set(time) then begin
-  mytime = time
-endif else begin
-  mytime = [ 0., time2-time1]  ; all of the file, but ask user
-  read, 'Enter time range (relative to T+0 in sec) [or -1000 for all] : ', mytime
-  if (mytime[0] le -1000) then begin
-    mytime=0
-  endif
-endelse
-
-if n_elements(mytime) ge 2 then begin
   dtime = (time2-time1)/pcnt
-  kstart = long( (mytime[0] - (time1 - launchtime)) / dtime )
+  kstart = long( (time[0] - (time1 - launchtime)) / dtime )
   if (kstart lt 0) then kstart = 0L
   if (kstart ge pcnt) then kstart = pcnt-1
-  if n_elements(mytime) lt 2 then kend = pcnt-1L else begin
-    kend = long( (mytime[1] - (time1 - launchtime)) / dtime )
+  if n_elements(time) lt 2 then kend = pcnt-1L else begin
+    kend = long( (time[1] - (time1 - launchtime)) / dtime )
     if (kend lt 0) then kend = 0L
     if (kend ge pcnt) then kend = pcnt-1
   endelse
@@ -170,13 +250,15 @@ if n_elements(mytime) ge 2 then begin
     kend = kstart
     kstart = ktemp
   endif
-  timestr = strtrim(long(mytime[0]),2) + '_' + strtrim(long(mytime[1]),2) + '_'
+  timestr = strtrim(long(time[0]),2) + '_' + strtrim(long(time[1]),2) + '_'
 endif else begin
   kstart = 0L
   kend = pcnt-1L
   timestr = ''
 endelse
 ktotal = kend - kstart + 1L
+
+if keyword_set(debug) then stop, 'DEBUG first packet = data1 and last packet = data2 ...'
 
 ;
 ;	set up files / variables
@@ -203,6 +285,9 @@ if keyword_set(classic) then begin
   ;ctcnt = 0L
   ;ctemp = cwords
   ;ctmax = n_elements(ctemp)
+  if not keyword_set(CD) then begin
+  	cxy[0] = cxy[0] + RToffset	; convert from CD to RT "X"
+  endif
 endif
 if keyword_set(amegs) then begin
   famegs = fbase + 'raw_amegs' + fend
@@ -220,6 +305,9 @@ if keyword_set(amegs) then begin
   mfidvalue2 = 'AAAA'X
   awcnt = 0L
   axy = [18,0,2,1,33,0]
+  if not keyword_set(CD) then begin
+  	axy[0] = axy[0] + RToffset	; convert from CD to RT "X"
+  endif
 endif
 if keyword_set(bmegs) then begin
   fbmegs = fbase + 'raw_bmegs' + fend
@@ -237,6 +325,9 @@ if keyword_set(bmegs) then begin
   mfidvalue2 = 'AAAA'X
   bwcnt = 0L
   bxy = [19,0,2,1,33,0]
+  if not keyword_set(CD) then begin
+  	bxy[0] = bxy[0] + RToffset	; convert from CD to RT "X"
+  endif
 endif
 
 ;
@@ -251,11 +342,22 @@ for k=kstart,kend do begin
 
   if ((data[sync1offset] and wordmask) eq sync1value) and $
   			((data[sync2offset] and wordmask) eq sync2value) then begin
-    atime[acnt] = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
+  	if keyword_set(CD) then begin
+     atime[acnt] = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
   		+ (data[2,0] and '03FF'X) + (data[3,0] and '03FF'X) / 1000.D0
-  	atime[acnt] = atime[acnt] / 1000.	; convert msec to sec
-  	; stop, 'STOP: DEBUG time ...'
-  	atime[acnt] = atime[acnt] - launchtime  ; convert to relative time
+  	 atime[acnt] = atime[acnt] / 1000.	; convert msec to sec
+  	 ; stop, 'STOP: DEBUG time ...'
+  	 atime[acnt] = atime[acnt] - launchtime  ; convert to relative time
+  	endif else begin
+  	 if (hasTime ne 0) then begin
+      atime[acnt] = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
+      atime[acnt] = atime[acnt] / 1000.D0   ; convert millisec to sec
+      ;  restructure data into ncol x nrow (without time)
+      data = reform( data[0:ntotal-1], ncol, nrow )
+     endif else begin
+      atime[acnt] = k * packetrate
+     endelse
+  	endelse
   	aindex[acnt] = k
 
     if keyword_set(amegs) then begin
@@ -292,7 +394,7 @@ anotyet:
             endif
             ;  save the record
             amegs1.numbuffer = awcnt
-            if keyword_set(debug) and (aacnt lt 4) then stop, 'Check out MEGS-A image...'
+            if keyword_set(debug) and (aacnt lt 2) then stop, 'Check out MEGS-A image...'
             aa[aacnt] = amegs1
             aacnt = aacnt + 1L
             ;  start new image stream
@@ -312,11 +414,10 @@ anotyet:
             endif
             ;  save the record
             amegs1.numbuffer = awcnt
-            if keyword_set(debug) and (aacnt lt 4) then stop, 'Check out MEGS-A image...'
+            if keyword_set(debug) and (aacnt lt 2) then stop, 'Check out MEGS-A image...'
             aa[aacnt] = amegs1
             aacnt = aacnt + 1L
             ;  start new image stream
-            STOP
             awcnt = 0L
 	        nw = jend - jmax
 	        if (nw gt 0) then begin
@@ -371,7 +472,7 @@ bnotyet:
             endif
             ;  save the record
             bmegs1.numbuffer = bwcnt
-            if keyword_set(debug) and (bacnt lt 4) then stop, 'Check out MEGS-B image...'
+            if keyword_set(debug) and (bacnt lt 2) then stop, 'Check out MEGS-B image...'
             ba[bacnt] = bmegs1
             bacnt = bacnt + 1L
             ;  start new image stream
@@ -391,7 +492,7 @@ bnotyet:
             endif
             ;  save the record
             bmegs1.numbuffer = bwcnt
-            if keyword_set(debug) and (bacnt lt 4) then stop, 'Check out MEGS-B image...'
+            if keyword_set(debug) and (bacnt lt 2) then stop, 'Check out MEGS-B image...'
             ba[bacnt] = bmegs1
             bacnt = bacnt + 1L
             ;  start new image stream
@@ -494,7 +595,7 @@ cnotyet2:
 endfor
 
 print, ' '
-print, 'READ_TM2_ALL_CD: processed ',strtrim(acnt,2), ' records'
+print, 'READ_TM2: processed ',strtrim(acnt,2), ' records'
 print, '                 expected to process ', strtrim(ktotal,2)
 if (acnt ne pcnt) then begin
   atime=atime[0:acnt-1]
@@ -520,13 +621,17 @@ if keyword_set(classic) then begin
 endif
 if keyword_set(amegs) then begin
   close, alun
-  STOP ; JPM: TODO: try passing aa array back out as function, may need to make bigger array that stores time series, not single time
   free_lun, alun
   print, ' '
   print, strtrim(aacnt,2), ' MEGS-A images saved.'
   read, 'Show MEGS-A image movie (Y/N) ? ', ans
   ans = strupcase(strmid(ans,0,1))
-  if (ans eq 'Y') then movie_raw_megs, famegs, 'A', 2
+  if (ans eq 'Y') then begin
+  	movie_raw_megs, famegs, 'A', 2, data=amegs
+  	aSaveFile = fbase + 'image_amegs.sav'
+  	print, 'Saving processed MEGS-A data (amegs) in ', aSaveFile
+  	save, amegs, file=aSaveFile
+  endif
 endif
 if keyword_set(bmegs) then begin
   close, blun
@@ -535,10 +640,15 @@ if keyword_set(bmegs) then begin
   print, strtrim(bacnt,2), ' MEGS-B images saved.'
   read, 'Show MEGS-B image movie (Y/N) ? ', ans
   ans = strupcase(strmid(ans,0,1))
-  if (ans eq 'Y') then movie_raw_megs, fbmegs, 'B', 2
+  if (ans eq 'Y') then begin
+  	movie_raw_megs, fbmegs, 'B', 2, data=bmegs
+  	bSaveFile = fbase + 'image_bmegs.sav'
+  	print, 'Saving processed MEGS-B data (bmegs) in ', bSaveFile
+  	save, bmegs, file=bSaveFile
+  endif
 endif
 
-if keyword_set(debug) then stop, 'Check out results ...'
+if keyword_set(debug) then stop, 'STOP: Check out results, atime, aindex, acnt ...'
 
 return
 end

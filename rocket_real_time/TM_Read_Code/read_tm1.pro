@@ -1,7 +1,7 @@
 ;
-;   read_tm1_rt.pro
+;   read_tm1.pro
 ;
-;   Read NSROC 36.240 TM1 CD data files
+;   Read NSROC Woods 36.XXX TM1 CD data files
 ;     Serial Data
 ;     Analog Monitors
 ;
@@ -19,8 +19,11 @@
 ;
 ;     /esp           serial data for ESP
 ;     /pmegs         serial data for MEGS-P
-;       /xps           serial data for XPS
-;       /axs           serial data for AXS
+;       /xps           serial data for XPS (removed before 36.290)
+;       /axs           serial data for AXS (removed before 36.290)
+;	  /xrs			serial data for GOES-R XRS (note that format changed for 36.290 for ISIS)
+;	  /x123			serial data for X123 as part of XRS package (36.290 & 36.300 only)
+;	  /cmd			serial data for CMD box added for 36.290
 ;
 ;   OUTPUT
 ;
@@ -36,13 +39,35 @@
 ;	3/17/08  Tom Woods
 ;
 ;	Updated Apr 08 for 36.240 - included ROCKET option to specify the rocket number
+;	Updated Mar 3, 2015 for 36.300 so XRS is binary data  -  INCOMPLETE EDIT - DOES NOT WORK (yet)
 ;
-pro  read_tm1_rt, filename, launchtime=launchtime, time=time, single=single, analog=analog, $
-                 esp=esp, pmegs=pmegs, xps=xps, axs=axs, xrs=xrs, debug=debug, rocket=rocket
+;	Updated May 2016 for 36.318 and also so RT and CD version works under
+;		one procedure with CD option flag (default is RT)
+;
+;	Updated June 2018 for 36.336
+;
+pro  read_tm1, filename, cd=cd, launchtime=launchtime, time=time, single=single, $
+				analog=analog, esp=esp, pmegs=pmegs, xps=xps, axs=axs, xrs=xrs, x123=x123, $
+				cmd=cmd, debug=debug, rocket=rocket
+
+;  new code to check for CD or RT file type
+if keyword_set(cd) then begin
+	fileRT = 0
+	fileType = 'DataView Raw Dump File'
+	fileFilter = 'Raw*TM1_*.*'
+	ncol = 83L	; CD has 6 extra header bytes (3 words) for Time
+	nrow = 8L
+endif else begin
+	fileRT = 1
+	fileType = 'CD Raw Log File'
+	fileFilter = 'LOGFILE*.*'
+	ncol = 80L
+	nrow = 8L
+endelse
 
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
-  filename = dialog_pickfile(title='Pick TM#1 DataView Raw Dump File', filter='Raw*TM1_*')
+  filename = dialog_pickfile(title='Pick TM#1 '+fileType, filter=fileFilter)
 endif
 
 if (strlen(filename) lt 1) then begin
@@ -51,45 +76,52 @@ if (strlen(filename) lt 1) then begin
 endif
 
 ;
-;  open the TM CD Data file
 ;   Record is 80 words (160 bytes) x 8 rows
 ;
 ;   NOTE:  words have bytes flipped for MAC but code written for any computer
 ;
-openr,lun, filename, /get_lun
 
-fb1 = rstrpos( filename, '/' )
+dirslash = path_sep()  ; is it Mac ('/') or Windows ('\')
+fb1 = rstrpos( filename, dirslash )
 if (fb1 lt 0) then fb1 = -1L
 fb2 = rstrpos( filename, '.' )
 if (fb2 lt 0) then fb2 = strlen(filename)
 fbase = strmid( filename, fb1+1, fb2-fb1-1 ) + '_'
+;  just use the full input file name
+fbase = filename + '_'
 
-if keyword_set(rocket) then rnum = rocket else rnum = 36.286
-if (rnum ne 36.286) and (rnum ne 36.240) and (rnum ne 36.233) then begin
-  print, 'ERROR: rocket number is not valid, resetting to 36.286 (TM1 format changed in 2012)'
-  rnum = 36.286
+if keyword_set(rocket) then rnum = rocket else rnum = 36.336	; Default of 36.336
+if (rnum ne 36.336) and (rnum ne 36.318) and (rnum ne 36.300) and (rnum ne 36.290) and $
+		(rnum ne 36.286) and (rnum ne 36.240) and (rnum ne 36.233) then begin
+  print, 'ERROR: rocket number is not valid, resetting to 36.336'
+  rnum = 36.336
 endif
 print, 'Processing for rocket # ', string(rnum,format='(F7.3)')
 
-if not keyword_set(launchtime) then launchtime=0
+if not keyword_set(launchtime) then launchtime=0L
 fpos = strpos( filename, 'flight' )
 if (not keyword_set(launchtime)) and (fpos ge 0) then begin
   if (rnum eq 36.217) then launchtime = 12*3600L + 23*60L + 30  ; MDT instead of UT
-  if (rnum eq 36.240) then launchtime = 10*3600L + 58*60L + 0 
-  if (rnum eq 36.258) then launchtime = 12*3600L + 32*60L + 2.00D0 
-  if (rnum eq 36.275) then launchtime = 11*3600L + 50*60L + 0.354D0 
+  if (rnum eq 36.240) then launchtime = 10*3600L + 58*60L + 0
+  if (rnum eq 36.258) then launchtime = 12*3600L + 32*60L + 2.00D0
+  if (rnum eq 36.275) then launchtime = 11*3600L + 50*60L + 0.354D0
   if (rnum eq 36.286) then launchtime = 13*3600L + 30*60L + 1.000D0
+  if (rnum eq 36.290) then launchtime = 12*3600L + 0*60L + 0.4D0
+  if (rnum eq 36.300) then launchtime = 13*3600L + 14*60L + 25.1D0
+  if (rnum eq 36.318) then launchtime = 19*3600L + 0*60L + 0.0D0
+  if (rnum eq 36.336) then launchtime = 19*3600L + 0*60L + 0.0D0
   print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
 endif
 
+;  36.336 TM1 packet size is same as before but some monitor placements changed
 ;  36.233 and 36.240 TM1 packet size and sync are the same but monitor placements are different
 ;  36.233 had 1 Mbps TM and  36.240 has 5 Mbps TM
 ;  36.286 format also changed monitor placement in 2012
+;  36.300 format changed monitor placement in 2015
 
-ncol = 80L
-nrow = 8L
-nbytes = ncol*2L * nrow     ; sync_1 + sync_2 + sync_3 + sfid + 76 words of data
-
+; ncol and nrow are defined above based on CD or RT
+nbytes = ncol*2L * nrow     ; [CD_time] sync_1 + sync_2 + sync_3 + sfid + 76 words of data
+nint = nbytes/2L
 ntotal = ncol * nrow
 
 ntime = 2L                 ; DataView time is 4-bytes of milliseconds of time
@@ -103,7 +135,18 @@ RToffset = -1L		; offset between CD data and RT data for the "X" value
 ;	For 36.233 (1 Mbps) - 2006
 ;	Same for 36.240 (5 Mbps) - 2008
 ;
-if (rnum eq 36.233) or (rnum eq 36.240) or (rnum eq 36.286) then begin
+if (rnum eq 36.233) or (rnum eq 36.240) or (rnum eq 36.286) or (rnum eq 36.290) or (rnum eq 36.300) or (rnum eq 36.318) or (rnum eq 36.336) then begin
+ if keyword_set(CD) then begin
+  wordmask = '03FF'X
+  sync1value = '0100'X
+  sync1offset = 0L
+
+  sync2value = '03EB'X
+  sync2offset = nint-2L
+
+  sync3value = '0333'X
+  sync3offset = nint-1L
+ endif else begin
   wordmask = '03FF'X
   sync1value = '03EB'X
   sync1offset = 0L
@@ -113,45 +156,51 @@ if (rnum eq 36.233) or (rnum eq 36.240) or (rnum eq 36.286) then begin
 
   sync3value = '0100'X
   sync3offset = 2L
-endif
+ endelse
+endif else begin
+  print, 'ERROR: Invalid Rocket Number for SYNC word definition, exiting...'
+  return
+endelse
 
-;
-;   DataView can have 4-byte (long) time word at end of each packet
-;   so have to determine which type format by examining for Sync words
-;
-atest = assoc( lun, uintarr(ntotal+ntime*2L+(sync1offset+1L)*2L) )
-dtest = atest[0]
-swap_endian_inplace, dtest, /swap_if_big_endian     ; only MACs will flip bytes
-if ((dtest[sync1offset] and wordmask) eq sync1value) and $
+;  open the TM CD Data file
+openr,lun, filename, /get_lun
+
+if keyword_set(CD) then begin
+	; Record for CD file
+	a = assoc( lun, uintarr(ncol,nrow) )
+endif else begin
+ ;
+ ;   DataView can have 4-byte (long) time word at end of each packet
+ ;   so have to determine which type format by examining for Sync words
+ ;
+ atest = assoc( lun, uintarr(ntotal+ntime*2L+(sync1offset+1L)*2L) )
+ dtest = atest[0]
+ swap_endian_inplace, dtest, /swap_if_big_endian     ; only MACs will flip bytes
+ if ((dtest[sync1offset] and wordmask) eq sync1value) and $
     ((dtest[sync1offset+ntotal] and wordmask) eq sync1value) then begin
   print, 'WARNING: assuming constant TIME rate for these packets'
   hasTime = 0L
   a = assoc( lun, uintarr(ncol,nrow) )
-endif else if ((dtest[sync1offset] and wordmask) eq sync1value) and $
+ endif else if ((dtest[sync1offset] and wordmask) eq sync1value) and $
     ((dtest[sync1offset+ntotal+ntime] and wordmask) eq sync1value) then begin
   hasTime = 1L
   a = assoc( lun, uintarr(ntotal+ntime) )
   nbytes = nbytes + ntime*2L  ; make file record longer
-endif else begin
+ endif else begin
   print, 'ERROR: could not find SYNC with or without TIME in these packets'
   close,lun
   free_lun,lun
   return
+ endelse
 endelse
-
-; stop, 'Debug for "dtest" and SYNC values...'
-
-;
-;   define arrays for finding sync values
-;
-nint = nbytes/2L
 
 finfo = fstat(lun)
 fsize = finfo.size
 pcnt = fsize/nbytes
 print, ' '
-print, 'READ_TM1_RT:  ',strtrim(pcnt,2), ' records in ', filename
-print, ' WARNING:  DataView dumps are incomplete - use READ_TM1_CD for complete data set.'
+print, 'READ_TM1:  ',strtrim(pcnt,2), ' records in ', filename
+if not keyword_set(CD) then $
+	print, ' WARNING:  DataView dumps are incomplete - use READ_TM1, /CD for complete data set.'
 
 acnt = 0L
 aindex=ulong(lonarr(pcnt))
@@ -168,11 +217,17 @@ for k=0L,pcnt-1L do begin
   if ((data[sync1offset] and wordmask) eq sync1value) and $
          ((data[sync2offset] and wordmask) eq sync2value) and $
          ((data[sync3offset] and wordmask) eq sync3value) then begin
-    if (hasTime ne 0) then begin
-      time1 = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
-      time1 = time1 / 1000.D0   ; convert millisec to sec
+    if keyword_set(CD) then begin
+      time1 = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
+  		+ (data[2,0] and '03FF'X) + (data[3,0] and '03FF'X) / 1000.D0
+  	  time1 = time1 / 1000.D0   ; convert msec to sec
     endif else begin
-      time1 = k * packetrate
+     if (hasTime ne 0) then begin
+       time1 = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
+       time1 = time1 / 1000.D0   ; convert millisec to sec
+     endif else begin
+       time1 = k * packetrate
+     endelse
     endelse
     goto, gottime1
   endif
@@ -181,10 +236,12 @@ endfor
 gottime1:
 print, ' '
 timetemp = time1
+if (launchtime eq 0) then launchtime = time1   ;  set T+0 as start of file if launch time not given
 hr = fix(timetemp/3600.)
 min = fix((timetemp-hr*3600.)/60.)
 sec = fix(timetemp-hr*3600.-min*60.)
 print, 'Start Time = ', strtrim(hr,2), ':', strtrim(min,2), ':', strtrim(sec,2), ' at T ',strtrim(timetemp-launchtime,2)
+data1 = data
 
 ;
 ;   find last valid time
@@ -195,11 +252,17 @@ for k=pcnt-1L,0L,-1L do begin
   if ((data[sync1offset] and wordmask) eq sync1value) and $
          ((data[sync2offset] and wordmask) eq sync2value) and $
          ((data[sync3offset] and wordmask) eq sync3value) then begin
-    if (hasTime ne 0) then begin
-      time2 = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
-      time2 = time2 / 1000.D0   ; convert millisec to sec
+    if keyword_set(CD) then begin
+      time2 = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
+  		+ (data[2,0] and '03FF'X) + (data[3,0] and '03FF'X) / 1000.D0
+  	  time2 = time2 / 1000.D0   ; convert msec to sec
     endif else begin
-      time2 = k * packetrate
+     if (hasTime ne 0) then begin
+       time2 = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
+       time2 = time2 / 1000.D0   ; convert millisec to sec
+     endif else begin
+       time2 = k * packetrate
+     endelse
     endelse
     goto, gottime2
   endif
@@ -213,6 +276,7 @@ min = fix((timetemp-hr*3600.)/60.)
 sec = fix(timetemp-hr*3600.-min*60.)
 print, 'Stop  Time = ', strtrim(hr,2), ':', strtrim(min,2), ':', strtrim(sec,2), ' at T ',strtrim(timetemp-launchtime,2)
 print, ' '
+data2 = data
 
 if keyword_set(time) then begin
   dtime = (time2-time1)/pcnt
@@ -235,6 +299,9 @@ endif else begin
   kend = pcnt-1L
   timestr = ''
 endelse
+ktotal = kend - kstart + 1L
+
+if keyword_set(debug) then stop, 'DEBUG first packet = data1 and last packet = data2 ...'
 
 ;
 ;   set up files / variables
@@ -281,7 +348,7 @@ if keyword_set(analog) then begin
   			[44,3], [67,4], [67,5], $
   			[70,4], [68,6], [68,7], $
   			[70,5], [70,3], [67,1], $
-  			[67,2], [67,3], [44,5], $  			
+  			[67,2], [67,3], [44,5], $
   			[67,0], [68,2], [68,1] ]
     atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
   			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
@@ -311,7 +378,7 @@ if keyword_set(analog) then begin
   			[56,3], [57,3], [57,2], $
   			[61,2], [58,1], [58,1], $
   			[56,6], [56,6], [56,6], $
-  			[56,1], [56,1], [56,4], $  			
+  			[56,1], [56,1], [56,4], $
   			[56,6], [58,0], [57,7] ]
     atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
   			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
@@ -323,7 +390,7 @@ if keyword_set(analog) then begin
   			xps_tempa: 0.0, xps_tempb: 0.0, classic_temp: 0.0, $
   			classic_hv1: 0.0, classic_hv2: 0.0, classic_hv10v: 0.0, $
   			classic_integ_bit0: 0.0, classic_integ_bit1: 0.0, axs_tec_hot: 0.0, $
-  			axs_hv: 0.0, axs_temp: 0.0, axs_tec_temp: 0.0 }  
+  			axs_hv: 0.0, axs_temp: 0.0, axs_tec_temp: 0.0 }
   endif else if (rnum eq 36.258) or (rnum eq 36.275) then begin
     ;  Note that left structure the same but changes include:
     ;				EXP_CUR = CRYO_TEMP2 (includes name change)
@@ -332,7 +399,7 @@ if keyword_set(analog) then begin
     ;				AXS_TEMP = XRS_M5V (includes name change)
     ;				AXS_TEC_TEMP = XRS_TEMP1 (includes name change)
     ;		Removed:	CLASSIC_TEMP, _HV1, _HV2, _hv10V
-    ;					CLASSIC_INTEG_BIT0, _BIT1 
+    ;					CLASSIC_INTEG_BIT0, _BIT1
     numanalogs = 27L
     axy = [ [77,1], [73,1], [58,6], $
   			[61,5], [56,1], [61,4], $
@@ -341,7 +408,7 @@ if keyword_set(analog) then begin
   			[58,2], [56,2], [56,0], $
   			[58,3], [57,6], [56,5], $
   			[56,3], [57,3], [57,2], $
-  			[61,2], [58,1], [56,4], $  			
+  			[61,2], [58,1], [56,4], $
   			[56,6], [58,0], [57,7] ]
     atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
   			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
@@ -351,7 +418,7 @@ if keyword_set(analog) then begin
   			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xps_pwr: 0.0, $
   			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
   			xps_tempa: 0.0, xps_tempb: 0.0, xrs_temp2: 0.0, $
-  			xrs_p5v: 0.0, xrs_m5v: 0.0, xrs_temp1: 0.0 }  
+  			xrs_p5v: 0.0, xrs_m5v: 0.0, xrs_temp1: 0.0 }
    endif else if (rnum eq 36.286) then begin
     ;  Note smaller structure, changes include:
     ;		Removed:		AXS_HV, AXS_TEMP, AXS_TEC_TEMP
@@ -374,11 +441,116 @@ if keyword_set(analog) then begin
   			megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
   			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xps_pwr: 0.0, $
   			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
-  			xps_tempa: 0.0, xps_tempb: 0.0, axs_tec_hot: 0.0 }  
- endif
+  			xps_tempa: 0.0, xps_tempb: 0.0, axs_tec_hot: 0.0 }
+  endif else if (rnum eq 36.290) then begin
+    ;  Note smaller structure like 36.286
+    ;		There are many changes in TM1 format
+    ;   define the TM items for all of the analog monitors
+    ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+    ;
+    numanalogs = 24L
+    axy = [ [41,0], [34,0], [18,0], $
+  			[67,7], [44,0], [67,6], $
+  			[57,0], [67,2], [57,0], $
+  			[34,0], [70,0], [70,1], $
+  			[62,0], [45,0], [43,0], $
+  			[80,0], [58,0], [50,0], $
+    		[46,0], [55,0], [54,0], $
+			[51,0], [59,0], [49,0] ]
+    atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+  			solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+  			exp_cur: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+  			megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+  			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xps_pwr: 0.0, $
+  			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+  			xrs_5v: 0.0, xrs_temp1: 0.0, xrs_temp2: 0.0 }
+  endif else if (rnum eq 36.300) then begin
+    ;
+    ;   define the TM items for all of the analog monitors
+    ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+    ;
+    numanalogs = 28L
+    axy = [ [41,0], [34,0], [18,0], $
+  			[67,7], [56,1], [67,6], $
+  			[56,0], [67,2], [57,0], $
+  			[61,0], [70,0], [70,1], $
+  			[62,0], [45,0], [43,0], $
+  			[80,0], [58,0], [50,0], $
+    		[46,0], [55,0], [54,0], $
+			[59,0], [49,0], [51,0], $
+			[75,3], [75,4], [75,5], $
+			[35,0] ]
+    atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+  			solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+  			xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+  			megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+  			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+  			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+  			xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+  			shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+  			shutter_door_cur: 0.0 }
+  endif else if (rnum eq 36.318) then begin
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
+  numanalogs = 28L
+  axy = [ [41,0], [34,0], [18,0], $
+    [68,2], [56,1], [68,1], $
+    [56,0], [67,5], [57,0], $
+    [61,0], [68,3], [68,4], $
+    [62,0], [45,0], [43,0], $
+    [67,2], [58,0], [50,0], $
+    [46,0], [55,0], [54,0], $
+    [59,0], [49,0], [51,0], $
+    [74,4], [74,5], [74,7], $
+    [35,0] ]
+  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+    tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+    solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+    xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+    xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+    xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+    shutter_door_cur: 0.0 }
+  endif else if (rnum eq 36.336) then begin
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
+  numanalogs = 28L
+  axy = [ [41,0], [34,0], [18,0], $
+  	[67,6], [56,0], [68,0], $
+    [68,2], [56,1], [68,1], $
+    [67,5], [57,0], [67,4], $
+    [61,0], [68,3], [68,4], $
+    [62,0], [45,0], [43,0], $
+    [67,2], [58,0], [50,0], $
+    [46,0], [55,0], [54,0], $
+    [59,0], [49,0], [51,0], $
+    [74,4], [74,5], [74,7], $
+    [71,7], [66,0], [67,3] ]
+  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  	hvs_press: 0.0, solar_press: 0.0, exp_15v: 0.0, $
+    tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+    gate_valve: 0.0, cryo_cold_temp: 0.0, cryo_hot_temp: 0.0, $
+    xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+    xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+    xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+    shutter_door_cur: 0.0, csol_5v: 0.0, csol_tec_temp: 0.0 }
+endif
 
+if not keyword_set(CD) then begin
   ; convert from CD to RT "X"
-  for jj=0L,numanalogs-1 do axy[0,jj] = axy[0,jj] + RToffset 
+  for jj=0L,numanalogs-1 do axy[0,jj] = axy[0,jj] + RToffset
+endif
 
   ;
   ;  open Analog file
@@ -388,6 +560,7 @@ if keyword_set(analog) then begin
   openw,alun,fanalog,/get_lun
   aa = assoc(alun,atemp)
 endif
+
 ;
 ;	Serial Data
 ;		X = WD + 3 (CD, -1 for RT),  Y = FR - 1
@@ -408,13 +581,16 @@ if keyword_set(esp) then begin
   ewords = uintarr(ewlen)
   if (rnum eq 36.233) then begin
     exy = [32,0,0,1]
-   endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) then begin
+   endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) or (rnum eq 36.300) or (rnum eq 36.318) then begin
     exy = [11,1,0,2]
   endif
-  exy[0] = exy[0] + RToffset	; convert from CD to RT "X"
+  if not keyword_set(CD) then begin
+	  exy[0] = exy[0] + RToffset	; convert from CD to RT "X"
+  endif
   edebugcnt = 0
 endif
-if keyword_set(xps) then begin
+
+if keyword_set(xps) and (rnum lt 36.290) then begin
   fxps = fbase + 'xps' + fend
   print, 'Saving XPS spectra in ', fxps
   numxps = 12L
@@ -433,8 +609,11 @@ if keyword_set(xps) then begin
   endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) then begin
     xxy = [11,0,0,2]
   endif
-  xxy[0] = xxy[0] + RToffset	; convert from CD to RT "X"
+  if not keyword_set(CD) then begin
+	xxy[0] = xxy[0] + RToffset	; convert from CD to RT "X"
+  endif
 endif
+
 if keyword_set(pmegs) then begin
   fpmegs = fbase + 'pmegs' + fend
   print, 'Saving MEGS-P spectra in ', fpmegs
@@ -452,12 +631,15 @@ if keyword_set(pmegs) then begin
   pwords = uintarr(pwlen)
   if (rnum eq 36.233) then begin
     pxy = [33,0,0,1]
-  endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) then begin
+  endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) or (rnum eq 36.300) or (rnum eq 36.318) then begin
     pxy = [16,0,0,2]
   endif
-  pxy[0] = pxy[0] + RToffset  ; convert from CD to RT "X"
+  if not keyword_set(CD) then begin
+	pxy[0] = pxy[0] + RToffset  ; convert from CD to RT "X"
+  endif
 endif
-if keyword_set(axs) then begin
+
+if keyword_set(axs) and (rnum lt 36.290) then begin
 	;  S1 = Serial 1 (no longer used)
   faxs = fbase + 'axs' + fend
   print, 'Saving axs spectra in ', faxs
@@ -479,7 +661,9 @@ if keyword_set(axs) then begin
   endif else if (rnum eq 36.286) then begin
     axsxy = [7,0,0,1]
   endif
-  axsxy[0] = axsxy[0] + RToffset  ;  convert from CD to RT "X"
+  if not keyword_set(CD) then begin
+	axsxy[0] = axsxy[0] + RToffset  ;  convert from CD to RT "X"
+  endif
 endif
 
 if keyword_set(xrs) then begin
@@ -492,9 +676,35 @@ if keyword_set(xrs) then begin
     print, 'ERROR: can not have GOES-R XRS data for NASA ', strtrim(rnum,2)
   endif else if (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) then begin
     gxxy = [17,1,0,2]
+  endif else if (rnum eq 36.300) or (rnum eq 36.318) then begin
+    gxxy = [47,0,0,1]
   endif
-  gxxy[0] = gxxy[0] + RToffset	; convert from CD to RT "X"
+  if not keyword_set(CD) then begin
+	gxxy[0] = gxxy[0] + RToffset	; convert from CD to RT "X"
+  endif
   glastchar = -1
+endif
+if keyword_set(x123) and ((rnum eq 36.290) or (rnum lt 36.300)) then begin
+  fx123 = fbase + 'x123' + fend
+  print, 'Saving X123 serial data in ', fx123
+  openw,x123lun,fx123,/get_lun
+  x123cnt = 0L
+  x123xy = [47,0,0,1]
+  if not keyword_set(CD) then begin
+	x123xy[0] = x123xy[0] + RToffset	; convert from CD to RT "X"
+  endif
+endif
+if keyword_set(cmd) and (rnum ge 36.290) then begin
+  fcmd = fbase + 'cmd_fpga' + fend
+  print, 'Saving CMD Box / FPGA serial data in ', fcmd
+  openw,cmdlun,fcmd,/get_lun
+  cmdcnt = 0L
+  if (rnum eq 36.290) or (rnum eq 36.300) or (rnum eq 36.318) then begin
+    cmdxy = [63,0,0,2]
+  endif
+  if not keyword_set(CD) then begin
+	cmdxy[0] = cmdxy[0] + RToffset	; convert from CD to RT "X"
+  endif
 endif
 
 kfullcnt = kend - kstart
@@ -513,7 +723,12 @@ for k=kstart,kend do begin
   if ((data[sync1offset] and wordmask) eq sync1value) and $
          ((data[sync2offset] and wordmask) eq sync2value) and $
          ((data[sync3offset] and wordmask) eq sync3value) then begin
-    if (hasTime ne 0) then begin
+    if keyword_set(CD) then begin
+      atime[acnt] = (data[1,0] + ISHFT(ulong(data[2,0] and '8000'X),1)) * 1000.D0 $
+  		+ (data[2,0] and '03FF'X) + (data[3,0] and '03FF'X) / 1000.D0
+  	  atime[acnt] = atime[acnt] / 1000.   ; convert msec to sec
+    endif else begin
+     if (hasTime ne 0) then begin
       atime[acnt] = (data[ntotal] + ISHFT(ulong(data[ntotal+1]),16))
       atime[acnt] = atime[acnt] / 1000.D0   ; convert millisec to sec
         ; print, data[0:5],data[ntotal:ntotal+1],format='(8Z5)'
@@ -521,9 +736,11 @@ for k=kstart,kend do begin
         ; stop, 'Debug data and atime[acnt] ...'
       ;  restructure data into ncol x nrow (without time)
       data = reform( data[0:ntotal-1], ncol, nrow )
-    endif else begin
+     endif else begin
       atime[acnt] = k * packetrate
+     endelse
     endelse
+
     aindex[acnt] = k
 
     if keyword_set(single) then begin
@@ -540,10 +757,11 @@ for k=kstart,kend do begin
       endfor
       atemp.time = atime[acnt]
       aa[acnt] = atemp  ; write data to file
-      if (acnt eq 0) and keyword_set(debug) then begin
+      if (acnt ge 0) and (acnt lt 2) and keyword_set(debug) then begin
         print, 'Analog Record'
         help, atemp, /struct
         print, ' '
+        stop, 'Debug ANALOG atemp, atime[acnt], acnt ...'
       endif
     endif
 
@@ -552,7 +770,7 @@ for k=kstart,kend do begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, exy )
         jend = n_elements(temp)
-        if keyword_set(debug) then begin
+        if keyword_set(debug) and (ewcnt lt 0) then begin
           print, temp, format='(4Z5)'
           edebugcnt = edebugcnt + 1
           if (edebugcnt gt 20) then begin
@@ -573,7 +791,7 @@ enotyet:
         ; store data until see next fiducial
         temp = extract_item( data, exy )
         jend = n_elements(temp)
-        if keyword_set(debug) then begin
+        if keyword_set(debug) and (ewcnt lt 0) then begin
           print, temp, format='(4Z5)'
           edebugcnt = edebugcnt + 1
           if (edebugcnt gt 20) then begin
@@ -611,7 +829,7 @@ enotyet2:
       endelse
     endif
 
-    if keyword_set(xps) then begin
+    if keyword_set(xps) and (rnum lt 36.290) then begin
       if (xwcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, xxy )
@@ -707,7 +925,7 @@ pnotyet2:
       endelse
     endif
 
-    if keyword_set(axs) then begin
+    if keyword_set(axs) and (rnum lt 36.290)  then begin
       if (axswcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, axsxy )
@@ -772,7 +990,7 @@ axsnotyet2:
       endelse
     endif
 
-  	if keyword_set(xrs) then begin
+  	if keyword_set(xrs) and (rnum lt 36.290) then begin
   	  dummy = extract_item( data, gxxy )
   	  ndummy = n_elements(dummy)
   	  if (glastchar eq -1) and keyword_set(debug) then begin
@@ -791,8 +1009,54 @@ axsnotyet2:
   	 	  ; stop, 'check out XRS serial data in "dummy" ...'
   	      ; write 7-bit BYTE to file (bit-shift 2 bits down
   	      ;  TEST:  printf,gxlun,dummy[jj],format='(Z4)'
-  	      writeu,gxlun,byte(ishft(dummy[jj],-2) and '7F'X)
+  	      writeu,gxlun,byte(ishft(dummy[jj],-2) and 'FF'X)  ; changed mask from '7F'X
 	      gxrscnt = gxrscnt + 1
+	    endif
+	  endfor
+  	endif
+
+  	if keyword_set(xrs) and (rnum ge 36.290) then begin
+  	  dummy = extract_item( data, gxxy )
+  	  ndummy = n_elements(dummy)
+  	  ; change in 2015 so XRS-X123 data are binary packets (CCSDS, MinXSS)
+  	  ; so no bit shifting or masking for now...
+  	  ; if total(dummy) ne 0 and (gxrscnt lt 10000L) then print, 'XRS:',dummy,format='(A8,8Z5)'
+  	  dummy2 = dummy
+  	  cnt2=0L
+  	  for jj=0,ndummy-1 do begin
+  	   if (dummy[jj] ne 0) then begin
+  	      ; write 7-bit BYTE to file (bit-shift 2 bits down)
+  	      ;  TEST:  printf,gxlun,dummy[jj],format='(Z4)'
+  	      aByte = byte(ishft(dummy[jj],-2) and 'FF'X)  ; was '7F'X mask before 2015
+  	      dummy2[cnt2] = aByte
+  	      cnt2 += 1L
+  	      writeu,gxlun, aByte
+	      gxrscnt = gxrscnt + 1
+	    endif
+	  endfor
+	  ; if cnt2 gt 0 and (gxrscnt lt 10000L) then print, 'XRS:',dummy2[0:cnt2-1],format='(A8,8Z5)'
+  	endif
+
+  	if keyword_set(x123) and ((rnum eq 36.290) or (rnum eq 36.300)) then begin
+   	  dummy = extract_item( data, x123xy )
+  	  ndummy = n_elements(dummy)
+  	  for jj=0,ndummy-1 do begin
+  	    if (dummy[jj] ne 0) then begin
+  	      ; write 8-bit BYTE to file (bit-shift 2 bits down)
+  	      writeu,x123lun,byte(ishft(dummy[jj],-2) and 'FF'X)
+	      x123cnt = x123cnt + 1
+	    endif
+	  endfor
+  	endif
+
+  	if keyword_set(cmd) and (rnum ge 36.290) then begin
+  	  dummy = extract_item( data, cmdxy )
+  	  ndummy = n_elements(dummy)
+  	  for jj=0,ndummy-1 do begin
+  	    if (dummy[jj] ne 0) then begin
+  	      ; write 8-bit BYTE to file (bit-shift 2 bits down)
+  	      writeu,cmdlun,byte(ishft(dummy[jj],-2) and 'FF'X)
+	      cmdcnt = cmdcnt + 1
 	    endif
 	  endfor
   	endif
@@ -804,7 +1068,7 @@ axsnotyet2:
 endfor
 
 print, ' '
-print, 'READ_TM1_RT: processed ',strtrim(acnt,2), ' records'
+print, 'READ_TM1: processed ',strtrim(acnt,2), ' records'
 print, '             expected to process ', strtrim(kfullcnt,2)
 if (acnt ne pcnt) then begin
   atime=atime[0:acnt-1]
@@ -831,7 +1095,7 @@ if keyword_set(analog) then begin
   free_lun, alun
   read, 'Plot All Analogs time series (Y/N) ? ', ans
   ans = strupcase(strmid(ans,0,1))
-  if (ans eq 'Y') then plot_analogs, fanalog
+  if (ans eq 'Y') then plot_analogs, fanalog, tzero=launchtime
 endif
 if keyword_set(esp) then begin
   close, elun
@@ -842,7 +1106,7 @@ if keyword_set(esp) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_esp, fesp
 endif
-if keyword_set(xps) then begin
+if keyword_set(xps) and (rnum lt 36.290) then begin
   close, xlun
   free_lun, xlun
   print, ' '
@@ -860,7 +1124,7 @@ if keyword_set(pmegs) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_megsp, fpmegs, /all
 endif
-if keyword_set(axs) then begin
+if keyword_set(axs) and (rnum lt 36.290) then begin
   close, axslun
   free_lun, axslun
   print, ' '
@@ -877,6 +1141,18 @@ if keyword_set(xrs) then begin
   ; read, 'Plot XRS channels time series (Y/N) ? ', ans
   ; ans = strupcase(strmid(ans,0,1))
   ; if (ans eq 'Y') then plot_goes_xrs, fgxrs
+endif
+if keyword_set(x123) and ((rnum eq 36.290) or (rnum eq 36.300)) then begin
+  close, x123lun
+  free_lun, x123lun
+  print, ' '
+  print, strtrim(x123cnt,2), ' X123 serial stream characters saved.'
+endif
+if keyword_set(cmd) and (rnum ge 36.290) then begin
+  close, cmdlun
+  free_lun, cmdlun
+  print, ' '
+  print, strtrim(cmdcnt,2), ' CMD Box / FPGA serial stream characters saved.'
 endif
 
 if keyword_set(debug) then stop, 'STOP:  Check out results, atime, aindex, acnt ...'

@@ -20,7 +20,8 @@
 ;	Tom Woods
 ;	10/15/06
 ;
-pro plot_megsp, filename, pdata, xrange=xrange, channel=channel, allanalog=allanalog, analog=analog, tzero=tzero, rocket=rocket
+pro plot_megsp, filename, pdata, xrange=xrange, yrange=yrange, channel=channel, $
+					allanalog=allanalog, analog=analog, tzero=tzero, rocket=rocket
 
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
@@ -101,8 +102,8 @@ endelse
 if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.286
   if (rocket ne 36.258) or (rocket ne 36.275) or (rocket ne 36.286) $
-  		or (rocket ne 36.290) then rocket = 36.290
-endif else rocket = 36.290
+  		or (rocket ne 36.290) or (rocket ne 36.300) or (rocket ne 36.318) then rocket = 36.318
+endif else rocket = 36.318
 
 if (rocket eq 36.258) then begin
     tzero = 18*3600L+32*60L+2.00D0  ; launch time in UT
@@ -127,6 +128,20 @@ endif else if (rocket eq 36.286) then begin
     dtdark=5.
 endif else if (rocket eq 36.290) then begin
     tzero = 18*3600L+0*60L+0.000D0  ; launch time in UT
+    tapogee = 275.
+    dtlight = 15.
+    tdark1 = 60.
+    tdark2 = 490.
+    dtdark=5.
+endif else if (rocket eq 36.300) then begin
+    tzero = 19*3600L+15*60L+0.000D0  ; launch time in UT
+    tapogee = 200.
+    dtlight = 15.
+    tdark1 = 100.
+    tdark2 = 360.
+    dtdark=5.
+endif else if (rocket eq 36.318) then begin
+    tzero = 19*3600L+0*0L+0.000D0  ; launch time in UT
     tapogee = 275.
     dtlight = 15.
     tdark1 = 60.
@@ -176,16 +191,16 @@ if (rocket ne 0.0) then begin
   print, '  Channel      Dark-1    Dark-2      Apogee  Signal(=Light-Dark)'
 endif
 
+if not keyword_set(xrange) then xrange = [ min(ptime), max(ptime) ]
+
 for k=kstart,kend do begin
     mtitle='MEGS-P #' + strtrim(k+1,2)
+
     yr = [0,60]
-    if keyword_set(xrange) then begin
-      plot, ptime, pdata.cnt[k], xrange=xrange, xs=1, yrange=yr, ys=1, $
+    if keyword_set(yrange) then yr = yrange
+    plot, ptime, pdata.cnt[k], xrange=xrange, xs=1, yrange=yr, ys=1, $
         xtitle='Time (sec)', ytitle='Counts', title=mtitle, xmargin=xmargin, ymargin=ymargin
-    endif else begin
-      plot, ptime, pdata.cnt[k], yrange=yr, ys=1, $
-        xtitle='Time (sec)', ytitle='Counts', title=mtitle, xmargin=xmargin, ymargin=ymargin
-    endelse
+
     if (rocket ne 0.0) then begin
       oplot, (tapogee-dtlight)*[1,1], !y.crange, line=2
       oplot, (tapogee+dtlight)*[1,1], !y.crange, line=2

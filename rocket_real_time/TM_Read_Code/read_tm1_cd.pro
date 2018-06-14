@@ -1,7 +1,7 @@
 ;
 ;	read_tm1_cd.pro
 ;
-;	Read NSROC 36.286 TM1 CD data files
+;	Read NSROC 36.300 TM1 CD data files
 ;		Serial Data
 ;		Analog Monitors
 ;
@@ -9,6 +9,7 @@
 ;	Changed to 5 Mbps for 36.240 (March 2008)
 ;	Changed some analog monitors for 36.240
 ;	Added Serial Data for GOES-R XRS
+;	Changed XRS-X123 data to binary data instead of ASCII 7-bits
 ;
 ;	INPUT
 ;		filename    filename of 36233*.bin or not given or '' to ask user to select file
@@ -24,7 +25,7 @@
 ;       /xps           serial data for XPS
 ;       /axs           serial data for AXS
 ;		/xrs		   serial data for X123
-;		/x123		   serial data for X123 (first on 36.290)
+;		/x123		   serial data for X123 (only on 36.290)
 ;		/cmd		   serial data for CMD Box / FPGA (first on 36.290)
 ;
 ;	OUTPUT
@@ -37,6 +38,8 @@
 ;	Updated Apr 08 for 36.258 - included ROCKET option to specify the rocket number
 ;	Updated May 12 for 36.286 - TM1 format - monitor placement - changed
 ;	Updated Oct 22 for 36.290 - TM1 format changed
+;	Updated Mar 3, 2015 for 36.300 - XRS & X123 are now one CDH board and 8-bit binary data
+;	Updated May 27, 2015 for 36.300 analog placement differences in TM-1 frame
 ;
 ;	Usage:
 ;		!path = '/Users/Shared/Projects/Rocket_Folder/Data_36290/WSMR/code:' + !path
@@ -72,9 +75,9 @@ fb2 = rstrpos( filename, '.' )
 if (fb2 lt 0) then fb2 = strlen(filename)
 fbase = strmid( filename, fb1+1, fb2-fb1-1 ) + '_'
 
-if keyword_set(rocket) then rnum = rocket else rnum = 36.290
-if (rnum ne 36.290) and (rnum ne 36.286) and (rnum ne 36.275) and (rnum ne 36.240) $
-	and (rnum ne 36.233) then begin
+if keyword_set(rocket) then rnum = rocket else rnum = 36.300  ; default is now 36.300
+if (rnum ne 36.300) and (rnum ne 36.290) and (rnum ne 36.286) and (rnum ne 36.275)  $
+	and (rnum ne 36.240) and (rnum ne 36.233) then begin
   print, 'ERROR: rocket number is not valid, resetting to 36.290'
   rnum = 36.290
 endif
@@ -89,10 +92,12 @@ if not keyword_set(launchtime) then begin
   if (rnum eq 36.275) then launchtime = 17*3600L + 50*60L + 0.354D0
   if (rnum eq 36.286) then launchtime = 19*3600L + 30*60L + 1.000D0
   if (rnum eq 36.290) then launchtime = 18*3600L + 0*60L + 0.000D0
+  if (rnum eq 36.300) then launchtime = 19*3600L + 14*60L + 25.1D0
   print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
 endif
 
-;  36.290 has TM1 format changed
+;  36.300 has TM1 format changes
+;  36.290 has TM1 format changes
 ;  36.275 and 36.233 and 36.240 TM1 packet size and sync are the same but monitor placements are different
 ;  36.233 had 1 Mbps TM and  36.240 & 36.258 has 5 Mbps TM
 ;  Several analog monitors changed for 36.258
@@ -119,9 +124,10 @@ print, 'READ_TM1_CD:  ',strtrim(pcnt,2), ' records in ', filename
 ;	Same for 36.275 (5 Mbps) - 2010
 ;	Same for 36.286 (5 Mbps) - 2012
 ;	Same for 36.290 (5 Mbps) - 2013
+;	Same for 36.300 (5 Mbps) - 2015
 ;
 if (rnum eq 36.233) or (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) $
-		or (rnum eq 36.286) or (rnum eq 36.290) then begin
+		or (rnum eq 36.286) or (rnum eq 36.290) or (rnum eq 36.300) then begin
   wordmask = '03FF'X
   sync1value = '0100'X
   sync1offset = 0L
@@ -361,7 +367,7 @@ if keyword_set(analog) then begin
   			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xps_pwr: 0.0, $
   			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
   			xps_tempa: 0.0, xps_tempb: 0.0, axs_tec_hot: 0.0 }
-   endif else if (rnum eq 36.290) then begin
+  endif else if (rnum eq 36.290) then begin
     ;  Note smaller structure like 36.286
     ;		There are many changes in TM1 format
     ;   define the TM items for all of the analog monitors
@@ -384,7 +390,34 @@ if keyword_set(analog) then begin
   			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xps_pwr: 0.0, $
   			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
   			xrs_5v: 0.0, xrs_temp1: 0.0, xrs_temp2: 0.0 }
- endif
+  endif else if (rnum eq 36.300) then begin
+    ;  Note smaller structure like 36.286
+    ;		There are many changes in TM1 format
+    ;   define the TM items for all of the analog monitors
+    ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+    ;
+  	numanalogs = 28L
+    axy = [ [41,0], [34,0], [18,0], $
+  			[67,7], [56,1], [67,6], $
+  			[56,0], [67,2], [57,0], $
+  			[61,0], [70,0], [70,1], $
+  			[62,0], [45,0], [43,0], $
+  			[80,0], [58,0], [50,0], $
+    		[46,0], [55,0], [54,0], $
+			[59,0], [49,0], [51,0], $
+			[75,3], [75,4], [75,5], $
+			[35,0] ]
+    atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+  			solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+  			xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+  			megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+  			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+  			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+  			xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+  			shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+  			shutter_door_cur: 0.0 }
+  endif
 
   ;
   ;  open Analog file
@@ -412,7 +445,7 @@ if keyword_set(esp) then begin
     exy = [32,0,0,1]
   endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) then begin
     exy = [11,1,0,2]
-  endif else if (rnum eq 36.290) then begin
+  endif else if (rnum eq 36.290) or (rnum eq 36.300) then begin
     exy = [11,1,0,2]
   endif
 endif
@@ -456,7 +489,7 @@ if keyword_set(pmegs) then begin
     pxy = [33,0,0,1]
   endif else if (rnum eq 36.240) or (rnum eq 36.258) or (rnum eq 36.275) or (rnum eq 36.286) then begin
     pxy = [16,0,0,2]
-  endif else if (rnum eq 36.290) then begin
+  endif else if (rnum eq 36.290) or (rnum eq 36.300) then begin
     pxy = [16,0,0,2]
   endif
 endif
@@ -493,9 +526,11 @@ if keyword_set(xrs) then begin
     gxxy = [17,1,0,2]
   endif else if (rnum eq 36.290) then begin
     gxxy = [17,1,0,2]
+  endif else if (rnum eq 36.300) then begin
+    gxxy = [47,0,0,1]
   endif
 endif
-if keyword_set(x123) and (rnum ge 36.290) then begin
+if keyword_set(x123) and (rnum eq 36.290) then begin
   fx123 = fbase + 'x123' + fend
   print, 'Saving X123 serial data in ', fx123
   openw,x123lun,fx123,/get_lun
@@ -509,7 +544,7 @@ if keyword_set(cmd) and (rnum ge 36.290) then begin
   print, 'Saving CMD Box / FPGA serial data in ', fcmd
   openw,cmdlun,fcmd,/get_lun
   cmdcnt = 0L
-  if (rnum eq 36.290) then begin
+  if (rnum eq 36.290) or (rnum eq 36.300) then begin
     cmdxy = [63,0,0,2]
   endif
 endif
@@ -781,17 +816,26 @@ axsnotyet2:
   	if keyword_set(xrs) then begin
   	  dummy = extract_item( data, gxxy )
   	  ndummy = n_elements(dummy)
+  	  ; change in 2015 so XRS-X123 data are binary packets (CCSDS, MinXSS)
+  	  ; so no bit shifting or masking for now...
+  	  ; if total(dummy) ne 0 and (gxrscnt lt 10000L) then print, 'XRS:',dummy,format='(A8,8Z5)'
+  	  dummy2 = dummy
+  	  cnt2=0L
   	  for jj=0,ndummy-1 do begin
-  	    if (dummy[jj] ne 0) then begin
+  	   if (dummy[jj] ne 0) then begin
   	      ; write 7-bit BYTE to file (bit-shift 2 bits down)
   	      ;  TEST:  printf,gxlun,dummy[jj],format='(Z4)'
-  	      writeu,gxlun,byte(ishft(dummy[jj],-2) and '7F'X)
+  	      aByte = byte(ishft(dummy[jj],-2) and 'FF'X)  ; was '7F'X mask before 2015
+  	      dummy2[cnt2] = aByte
+  	      cnt2 += 1L
+  	      writeu,gxlun, aByte
 	      gxrscnt = gxrscnt + 1
 	    endif
 	  endfor
+	  ; if cnt2 gt 0 and (gxrscnt lt 10000L) then print, 'XRS:',dummy2[0:cnt2-1],format='(A8,8Z5)'
   	endif
 
-  	if keyword_set(x123) and (rnum ge 36.290) then begin
+  	if keyword_set(x123) and (rnum eq 36.290) then begin
    	  dummy = extract_item( data, x123xy )
   	  ndummy = n_elements(dummy)
   	  for jj=0,ndummy-1 do begin
@@ -896,7 +940,7 @@ if keyword_set(xrs) then begin
   ; ans = strupcase(strmid(ans,0,1))
   ; if (ans eq 'Y') then plot_goes_xrs, fgxrs
 endif
-if keyword_set(x123) and (rnum ge 36.290) then begin
+if keyword_set(x123) and (rnum eq 36.290) then begin
   close, x123lun
   free_lun, x123lun
   print, ' '

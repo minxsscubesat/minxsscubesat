@@ -16,9 +16,10 @@
 ;
 ;	10/15/06  Tom Woods   Original Code
 ;	3/23/11   Tom Woods   Updated so can read *.sav file instead of binary *.dat file
+;	4/30/15	  Tom Woods   Added option to make PDF file, indicate Timer functions, and grid lines
 ;
 pro plot_analogs, filename, data, xrange=xrange, plotnum=plotnum, tzero=tzero, rocket=rocket, $
-				ccd=ccd, debug=debug
+				ccd=ccd, debug=debug, noplot=noplot, pdf=pdf, notimer=notimer, nogrid=nogrid
 
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
@@ -30,12 +31,35 @@ if (strlen(filename) lt 1) then begin
   return
 endif
 
-rnum = 36.290
+rnum = 36.318
 if keyword_set(rocket) then rnum = rocket
 if (rnum ne 36.275) and (rnum ne 36.233) and (rnum ne 36.240) and (rnum ne 36.258) $
-	and (rnum ne 36.286) and (rnum ne 36.290) then begin
+	and (rnum ne 36.286) and (rnum ne 36.290) and (rnum ne 36.300) and (rnum ne 36.318) then begin
   stop, 'STOP:  ERROR with "rnum"...'
 endif
+rocket_str = string(rnum,format='(F6.3)')
+
+;
+;	configuration for timer times (T time for 36.290)
+;
+timer_times = [ 52., 53, 82, 83, 90, 452, 459, 469, 500, 530, 580, 585, 586 ]
+timer_names = ['A', 'B', 'D', 'E', 'H', 'G', 'M', 'N', 'F', 'K', 'L', 'P', 'R']
+;
+;	Verify timers as follows
+;		A = MEGSA_FF and MEGSB_FF go from 0.05V to 0.3V (with 0.05V noise)
+;		B = MEGSA_FF and MEGSB_FF go from 0.3V to 0.05V
+;		D = GATE_VALVE goes from 1.0V to 0.0V (with 0.1V noise)
+;		E = unable to confirm
+;		H = unable to confirm (unless have HVS monitor)
+;		G = unable to confirm
+;		M = GATE_VALVE goes from 3.8V to 0.0V
+;		N = unable to confirm
+;		F = MEGSA_FF and MEGSB_FF go from 0.05V to 0.3V (with 0.05V noise)
+;		K = MEGSA_FF and MEGSB_FF go from 0.3V to 0.05V
+;		L = unable to confirm
+;		P = FPGA_5V goes from 0.45V to 0.0V (with 0.05V noise)
+;		R = unable to confirm
+;
 
 ;
 ;	needs to be same as what is defined in read_tm1_cd.pro
@@ -121,6 +145,39 @@ endif else if (rnum eq 36.290) then begin
   			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xps_pwr: 0.0, $
   			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
   			xrs_5v: 0.0, xrs_temp1: 0.0, xrs_temp2: 0.0 }
+endif else if (rnum eq 36.300) then begin
+    ;  Note smaller structure like 36.286
+    ;		There are many changes in TM1 format
+    ;   define the TM items for all of the analog monitors
+    ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+    ;
+    numanalogs = 28L
+    atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  			tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+  			solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+  			xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+  			megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+  			megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+  			xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+  			xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+  			shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+  			shutter_door_cur: 0.0 }
+endif else if (rnum eq 36.318) then begin
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
+  numanalogs = 28L
+  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+    tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+    solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+    xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+    xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+    xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+    shutter_door_cur: 0.0 }
 endif
 
 nbytes = n_tags(atemp,/length)
@@ -135,16 +192,18 @@ nbytes = n_tags(atemp,/length)
 ;
 rpos = strpos( filename, '.', /reverse_search )
 if (rpos lt 0) then begin
-  print, 'Expected file to have an extension, either .dat or .sav'
-  return
-endif
-extfile = strupcase(strmid(filename,rpos+1,3))
+  print, 'Expected file to have an extension, either .dat or .sav, assuming .DAT file'
+  extfile = 'DAT'
+endif else begin
+  extfile = strupcase(strmid(filename,rpos+1,3))
+endelse
 
 ;
 ;	READ IF block for *.DAT files
 ;
-if (extfile eq 'DAT') then begin
+if (extfile ne 'SAV') then begin
 
+if keyword_set(debug) then print, '    Reading BINARY file (slow) ...'
 openr,lun,filename, /get_lun
 a = assoc(lun, atemp)
 
@@ -174,15 +233,16 @@ endif else if (extfile eq 'SAV') then begin
   ;
   ;	READ IF block for *.SAV files
   ;
+  if keyword_set(debug) then print, '    Reading IDL Save Set (fast)...'
   restore, filename	; expect to have "analog" in this save set
   if (n_elements(analog) gt 10) then begin
     data = analog
     analog = 0L
   endif ; else assume that "data" was in the save set
-endif else begin
-  print, 'Expected file to have an extension, either .dat or .sav'
-  return
-endelse
+endif
+
+;  quick exit with just the data if /noplot option given
+if keyword_set(noplot) then return
 
 ;
 ;	now plot the data
@@ -210,44 +270,123 @@ if (rnum eq 36.217) then tz = 18*3600L + 23*60L + 30  $
 else if (rnum eq 36.240) then tz = 16*3600L + 58*60L + 0.72D0 $
 else if (rnum eq 36.258) then tz = 18*3600L + 32*60L + 2.00D0 $
 else if (rnum eq 36.275) then tz = 17*3600L + 50*60L + 0.354D0 $
-else if (rnum eq 36.286) then tz = 18*3600L + 0*60L + 0.0D0 $    ; ????
+else if (rnum eq 36.286) then tz = 18*3600L + 30*60L + 1.000D0 $
+else if (rnum eq 36.290) then tz = 18*3600L + 0*60L + 0.4D0 $
+else if (rnum eq 36.300) then tz = 19*3600L + 14*60L + 25.1D0 $
 else tz = data[0].time
 
 if keyword_set(tzero) then tz = tzero
-if (data[0].time-tz) lt -500 then tz=data[0].time
+if (data[0].time-tz) lt -3600 then tz=data[0].time
 ptime = (data.time - tz)		; relative time
 
 xr = [min(ptime),max(ptime)]
 if (xr[1]-xr[0]) gt 1000 then xr = median(ptime)+[-500,500]
 if keyword_set(xrange) then xr=xrange
 
+;  if /pdf is given, then prepare for PDF file to be made
+if keyword_set(pdf) then begin
+  time_str = '_T'+strtrim(long(xr[0]),2)+'-'+strtrim(long(xr[1]),2)+'s'
+  pdf_file = 'rocket_analogs_' + rocket_str + time_str + '.pdf'
+  ; if keyword_set(verbose) then $
+    print, 'plot_analogs:  PDF file = ' +  pdf_file
+endif
+
+; new IDL plot function used so easier to make PDF file
+num_col = 1L
+num_row = numplots
+num_plots_per_page = num_col * num_row
+page_num = 0L
+page_last = (kend-kstart+1)/numplots
+if (page_last*numplots lt (kend-kstart+1)) then page_last += 1L
+xdim = num_col * 800L
+ydim = num_row * 250L
+
+plotobj = objarr(num_plots_per_page)
+plotobj[0] = plot( indgen(10), indgen(10), dimension=[xdim,ydim], /current )  ; dummy plot so window will be erased
+
+yr = [0, 5]   ; Y-range
+
+if not keyword_set(nogrid) then begin
+  plotGrid = objarr(num_plots_per_page)
+  ; this assume Y-range is 0-5 V and grid lines are at every 1.0 Volts
+  xGrid = [ xr[0], xr[1], xr[1], xr[0], xr[0], xr[1], xr[1], xr[0] ]
+  yGrid = [ 1.0,   1.0,   2.0,   2.0,   3.0,   3.0,   4.0,   4.0 ]
+endif
+
+if not keyword_set(notimer) then begin
+  plotTimer = objarr(num_plots_per_page)
+  num_Timer = n_elements(timer_times)
+  xTimer = [ timer_times[0], timer_times[0] ]
+  yTimer = [ yr[0], yr[1] ]
+  for k=1L,num_Timer-1 do begin
+    xTimer = [ xTimer, timer_times[k-1], timer_times[k], timer_times[k] ]
+    if (k eq (long(k/2)*2)) then begin
+      yTimer = [ yTimer, yr[0], yr[0], yr[1] ]
+    endif else begin
+      yTimer = [ yTimer, yr[1], yr[1], yr[0] ]
+    endelse
+  endfor
+endif
+
 wgd = where((ptime ge xr[0]) and (ptime le xr[1]), numgd)
 if (numgd lt 2) then wgd = where(ptime ne 0)
 
 tnames = tag_names(atemp)
 
+title1=rocket_str + ' - Page '
+
 for k=kstart,kend,numplots do begin
   jend = k+numplots-1L
   if (jend ge numanalogs) then jend = numanalogs-1L
   pnumstr = strtrim(k/numplots,2)
+  page_num += 1
+  if (plotobj[0] ne !NULL) then begin
+    	; erase the current window
+    	; if (not keyword_set(pdf)) then read, 'Ready for next plot ? ', ans
+    	w = plotobj[0].window
+    	w.Erase
+  endif
+
   for j=k,jend do begin
-    if (j eq (k+numplots-1L)) then begin
+    if (j eq jend) then begin
       xtitle='Time (sec)'
       ymargin=[3,1]
     endif else begin
       xtitle=''
       ymargin=[2.5,1.5]
     endelse
-    rnumstr = strtrim(string(rnum,format='(F6.3)'),2)
-    mtitle=rnumstr + '-P' + pnumstr + ': ' + tnames[j+1]
-    plot, ptime[wgd], data[wgd].(j+1), yr=[0,5], ys=1, xrange=xr, xs=1, $
-        xtitle=xtitle, ytitle='Volts', title=mtitle, xmargin=[7,2], ymargin=ymargin
+    ; old IDL plot procedure
+    ;plot, ptime[wgd], data[wgd].(j+1), yr=[0,5], ys=1, xrange=xr, xs=1, $
+    ;    xtitle=xtitle, ytitle='Volts', title=mtitle, xmargin=[7,2], ymargin=ymargin
+
+    ;
+    ; new IDL plot function
+    ;
+	jplot = j-k  ; index 0, 1, 2, ...
+    if (jplot eq 0) then mtitle=title1 + strtrim(page_num,2) else mtitle=' '
+    plotobj[jplot] = plot( ptime[wgd], data[wgd].(j+1), xrange=xr, yrange=[0,5], $
+        		xtitle=xtitle, ytitle=tnames[j+1]+' (V)', $
+        		title=mtitle, /current, layout=[num_col, num_row, jplot+1] )
+    if not keyword_set(nogrid) then begin
+      plotGrid[jplot] = plot( xGrid, yGrid, /overplot, linestyle=1 )
+    endif
+    if not keyword_set(notimer) then begin
+      plotTimer[jplot] = plot( xTimer, yTimer, /overplot, linestyle=2 )
+    endif
   endfor
-  if (not keyword_set(plotnum)) and ((k+numplots) lt numanalogs) then begin
-    read, 'Next ? ', ans
-    ans = strupcase(strmid(ans,0,1))
-    if (ans eq 'N') then goto, exitplot
-  endif
+  ;
+  ;  write this page of plots to PDF file
+  ;
+  if keyword_set(pdf) then begin
+     if (page_num lt page_last) then plotobj[0].Save, pdf_file, resolution=72, /append $
+     else plotobj[0].Save, pdf_file, resolution=72, /append, /close
+  endif else begin
+    if (not keyword_set(plotnum)) and ((k+numplots) lt numanalogs) then begin
+      read, 'Next ? ', ans
+      ans = strupcase(strmid(ans,0,1))
+      if (ans eq 'N') then goto, exitplot
+    endif
+  endelse
 endfor
 
 ;
@@ -298,7 +437,7 @@ endif
 exitplot:
 !p.multi=0
 
-if keyword_set(debug) then stop, 'DEBUG: stopped at end...'
+if keyword_set(debug) then stop, 'DEBUG: stopped at end of plot_analogs.pro ...'
 
 return
 end
