@@ -79,8 +79,8 @@ p1a = plot(findgen(10), sin(findgen(10)), COLOR = orangeColor, '2*-', /CURRENT, 
            NAME = 'A1')
 p1b = plot(findgen(10), sin(findgen(10) + 0.3), COLOR = blueColor, '2*-', /OVERPLOT, $
            NAME = 'B1')
-t1a = text(0.0, 1.0, 'A1 = 300 DN', /RELATIVE, TARGET = p1a, FONT_COLOR = orangeColor)
-t1b = text(1.0, 1.0, 'B1 = 300 DN', /RELATIVE, ALIGNMENT = 1.0, TARGET = p1a, FONT_COLOR = blueColor)
+t1a = text(0.0, -0.3, 'A1 = 300 DN', /RELATIVE, TARGET = p1a, FONT_COLOR = orangeColor)
+t1b = text(1.0, -0.3, 'B1 = 300 DN', /RELATIVE, ALIGNMENT = 1.0, TARGET = p1a, FONT_COLOR = blueColor)
 
 ; XRS A2 and B2
 ; (sps_sum and sps_sum2)
@@ -91,8 +91,8 @@ p2a = plot(findgen(10), tan(findgen(10)), COLOR = orangeColor, '2*-', /CURRENT, 
            NAME = 'A2')
 p2b = plot(findgen(10), tan(findgen(10) + 0.3), COLOR = blueColor, '2*-', /OVERPLOT, $
            NAME = 'B2')
-t2a = text(0.0, 1.0, 'A2 Sum = 300 fA', /RELATIVE, TARGET = p2a, FONT_COLOR = orangeColor)
-t2b = text(1.0, 1.0, 'B2 Sum = 300 fA', /RELATIVE, ALIGNMENT = 1.0, TARGET = p2a, FONT_COLOR = blueColor)
+t2a = text(0.0, -0.3, 'A2 Sum = 300 fA', /RELATIVE, TARGET = p2a, FONT_COLOR = orangeColor)
+t2b = text(1.0, -0.3, 'B2 Sum = 300 fA', /RELATIVE, ALIGNMENT = 1.0, TARGET = p2a, FONT_COLOR = blueColor)
 
 ; XRS dark diodes
 ; dark_data and dark_data2
@@ -103,8 +103,8 @@ p3a = plot(findgen(10), exp(reverse(findgen(10))), '2*-', COLOR = orangeColor, /
            NAME = 'A')
 p3b = plot(findgen(10), exp(reverse(findgen(10) + 0.3)), COLOR = blueColor, '2*-', /OVERPLOT, $
            NAME = 'B')
-t3a = text(0.0, 1.0, 'A Dark = 32 DN', /RELATIVE, TARGET = p3a, FONT_COLOR = orangeColor)
-t3b = text(1.0, 1.0, 'B Dark = 46 DN', ALIGNMENT = 1.0, /RELATIVE, TARGET = p3a, FONT_COLOR = blueColor)
+t3a = text(0.0, -0.3, 'A Dark = 32 DN', /RELATIVE, TARGET = p3a, FONT_COLOR = orangeColor)
+t3b = text(1.0, -0.3, 'B Dark = 46 DN', ALIGNMENT = 1.0, /RELATIVE, TARGET = p3a, FONT_COLOR = blueColor)
 
 ; XRS A2 and B2 position
 p4a = bubbleplot(-0.4, 0.8, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = 'gold', /SHADED, AXIS_STYLE = 3, /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 4], FONT_COLOR = fontColor, $
@@ -112,31 +112,31 @@ p4a = bubbleplot(-0.4, 0.8, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, C
                 YRANGE = [-1, 1], YCOLOR = fontColor, $
                 XRANGE = [-1, 1], XCOLOR = fontColor)
 p4b = bubbleplot(0.2, -0.3, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = blueColor, AXIS_STYLE = 3, /SHADED, /OVERPLOT)
-t4a = text(-1.0, -0.83, 'A2 = [-0.4, 0.8]º', /DATA, TARGET = p4a, FONT_COLOR = orangeColor)
+t4a = text(-1.0, -0.80, 'A2 = [-0.4, 0.8]º', /DATA, TARGET = p4a, FONT_COLOR = orangeColor)
 t4b = text(-1.0, -0.95, 'B2 = [0.2, -0.3]º', /DATA, TARGET = p4a, FONT_COLOR = blueColor)
 
 p5a = bubbleplot(-2.5, 2.5, MAGNITUDE = .2E5, EXPONENT = 0.5, MAX_VALUE = 1E5, COLOR = 'gold', /SHADED, AXIS_STYLE = 3, /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 5], FONT_COLOR = fontColor, $
                  TITLE = 'SPS Position [º]', $
                  YRANGE = [-2.5, 2.5], YCOLOR = fontColor, $
                  XRANGE = [-2.5, 2.5], XCOLOR = fontColor)
-t5a = text(-2.5, -2.45, '[-2.5, 2.5]º', /DATA, TARGET = p5a, FONT_COLOR = orangeColor)
+t5a = text(-2.5, -2.5, '[-2.5, 2.5]º', /DATA, TARGET = p5a, FONT_COLOR = orangeColor)
 
 p6a = plot(indgen(1024)*0.0199933-0.052797, findgen(1024), COLOR = blueColor, '2*-', LINESTYLE = 'none', /CURRENT, LAYOUT = [numberOfPlotColumns, numberOfPlotRows, 6], FONT_COLOR = fontColor, $
            TITLE = 'X123 Spectra', $
            XTITLE = 'Energy', XCOLOR = fontColor, $
-           YRANGE = [0, 2000], YTITLE = 'Intensity', YCOLOR = fontColor, /ylog, $
+           YTITLE = 'Intensity', YCOLOR = fontColor, /ylog, $
            NAME = 'A6',xrange=[0,max(indgen(1024)*0.0199933-0.052797)],xstyle=1)
-t6a = text(0.0, 1.0, 'Fast Count = N/A', /RELATIVE, TARGET = p6a, FONT_COLOR = orangeColor)
-t6b = text(1.0, 1.0, 'Slow Count = N/A', /RELATIVE, ALIGNMENT = 1.0, TARGET = p6a, FONT_COLOR = blueColor)
+t6a = text(0.0, -0.3, 'Fast Count = N/A', /RELATIVE, TARGET = p6a, FONT_COLOR = orangeColor)
+t6b = text(1.0, -0.3, 'Slow Count = N/A', /RELATIVE, ALIGNMENT = 1.0, TARGET = p6a, FONT_COLOR = blueColor)
 
 ; Refresh text output
 t = text(0.0, 0.0, 'Last refresh: ' + JPMsystime(), FONT_COLOR = fontColor)
 
-; Open up a  to the ISIS computer stream
+; Open up a  to the Hydra computer stream
 ; Ports:
-; 10000 = housekeeping
-; 10001 = science
-; 10002 = SD card playback
+; 10000 = XRS
+; 10003 = SPS
+; 10001 = X123
 get_lun, lun
 socket, lun, isisIP, 10000, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
@@ -153,6 +153,7 @@ WHILE 1 DO BEGIN
   wrapperClock = TIC()
   
   ; Trigger when data shows up on port then write single packet to file
+  ; XRS instrument
   IF file_poll_input(lun, TIMEOUT = 60.0d) THEN BEGIN ; Timeout is in seconds
     
     ; Read data on the socket
@@ -208,9 +209,9 @@ WHILE 1 DO BEGIN
     p3a.SetData, timeArray[0:hkCounter - 1], hk[0:hkCounter - 1].dark_data   ; A dark
     p3b.SetData, timeArray[0:hkCounter - 1],  hk[0:hkCounter - 1].dark_data2 ; B dark  
     p4a.SetData, spsXposition, spsYposition                                  ; A2 position
-    ;p4a.MAGNITUDE = spsTotal                                                 ; A2 position magnitude
+    ;p4a.MAGNITUDE = spsTotal                                                ; A2 position magnitude
     p4b.SetData, sps2Xposition, sps2Yposition                                ; B2 position
-    ;p4b.MAGNITUDE = sps2Total                                                ; B2 position magnitude
+    ;p4b.MAGNITUDE = sps2Total                                               ; B2 position magnitude
     !Except = 1 ; Re-enable math error logging
     
     ; Update text
@@ -225,9 +226,10 @@ WHILE 1 DO BEGIN
     t4b.STRING = 'B2 = [' + strmid(JPMPrintNumber(sps2Xposition), 0, 7) + ', ' + strmid(JPMPrintNumber(sps2Yposition), 0, 6) + ']º'
 
   ENDIF ELSE begin
-    message, /INFO, 'HK socket connected but no data posted within 60 seconds.'
+    message, /INFO, JPMsystime() + ' XRS socket connected but no data posted within 60 seconds.'
   ENDELSE
   
+  ; SPS
   IF file_poll_input(lun2, TIMEOUT = 60.0d) THEN BEGIN ; Timeout is in seconds
 
     ; Read data on the socket
@@ -236,7 +238,7 @@ WHILE 1 DO BEGIN
       readu, lun2, socketDataTmp
     ENDIF ELSE BEGIN
       socketError = 1
-      message, /info, systime() + " -- " + "EOF reached on socket... trying to reopen in " + strtrim(retryWaitTime) + " seconds..."
+      message, /info, JPMsystime() + " -- " + "EOF reached on socket... trying to reopen in " + strtrim(retryWaitTime) + " seconds..."
       wait, retryWaitTime
       CONTINUE
     ENDELSE
@@ -286,9 +288,10 @@ WHILE 1 DO BEGIN
     
 
   ENDIF ELSE begin
-    message, /INFO, 'SPS socket connected but no data posted within 60 seconds.'
+    message, /INFO, JPMsystime() + ' SPS socket connected but no data posted within 60 seconds.'
   ENDELSE
   
+  ; X123
   IF file_poll_input(lun3, TIMEOUT = 60.0d) THEN BEGIN ; Timeout is in seconds
 
     ; Read data on the socket
@@ -297,14 +300,14 @@ WHILE 1 DO BEGIN
       readu, lun3, socketDataTmp
     ENDIF ELSE BEGIN
       socketError = 1
-      message, /info, systime() + " -- " + "EOF reached on socket... trying to reopen in " + strtrim(retryWaitTime) + " seconds..."
+      message, /info, JPMsystime() + " -- " + "EOF reached on socket... trying to reopen in " + strtrim(retryWaitTime) + " seconds..."
       wait, retryWaitTime
       CONTINUE
     ENDELSE
     socketData = socketDataTmp
 
     read_hydra_rxrs, socketData, sci=sciTemp, VERBOSE = VERBOSE
-
+    sci=!NULL
     ; The first time through this loop, create the array for time series
     IF sciTemp NE !NULL THEN BEGIN
       IF n_elements(sci) EQ 0 THEN BEGIN
@@ -345,7 +348,7 @@ WHILE 1 DO BEGIN
     ENDIF
 
   ENDIF ELSE begin
-    message, /INFO, 'SPS socket connected but no data posted within 60 seconds.'
+    message, /INFO, JPMsystime() + ' X123 socket connected but no data posted within 60 seconds.'
   ENDELSE
   
   IF n_elements(logTemp) GT 0 THEN FOR i = 0, n_elements(logTemp)-1 DO print, 'LOG: ' + logTemp[i].message
