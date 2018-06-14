@@ -70,6 +70,7 @@
 ;   2015-04-25: James Paul Mason: The last few days have seen extensive edits to this code to get it work in the field where real debugging could be done. 
 ;   2018-05-10: James Paul Mason: Support for Compact SOLSTICE (CSOL), which replaces XRI everywhere in the code. 
 ;   2018-05-29: James Paul Mason: Field updates to get CSOL image and housekeeping working. 
+;   2018-06-11: Don Woodraska: Ignoring bad values where csolRowNumberLatest>2000 to work with 5 sec int time
 ;-
 PRO rocket_eve_tm2_read_packets, socketData, VERBOSE = VERBOSE, DEBUG = DEBUG
 
@@ -261,7 +262,7 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
       ; Get row number and then handle image (rows 0-1999) vs housekeeping data (row 2000)
       IF n_elements(csolPacketData) LE (csolFrameStartIndex + 2) THEN CONTINUE
       csolRowNumberLatest = csolPacketData[csolFrameStartIndex + 2]
-      IF csolRowNumberLatest NE 2000 THEN BEGIN
+      IF csolRowNumberLatest LT 2000 THEN BEGIN
         
         ; Make sure the buffer (csolPacketData) is complete
         IF n_elements(csolPacketData) LT (csolFrameStartIndex + 444) THEN BEGIN ; 446 was the original value but it seems to skip rows sometimes then
@@ -290,13 +291,17 @@ IF numberOfFoundCsolPixels NE 0 THEN BEGIN
         csolTotalPixelsFound += 5L * 8L
         IF keyword_set(DEBUG) THEN message, /INFO, JPMsystime () + ' CSOL total pixels found in this image so far: ' + JPMPrintNumber(csolTotalPixelsFound, /NO_DECIMALS)
       ENDIF ELSE BEGIN ; End rows 0-1999 and now handle metadata in row 2000
-        IF n_elements(csolPacketData) GE (csolFrameStartIndex + 4) THEN BEGIN
-          csolHk = rocket_csol_extract_hk(csolPacketData[csolFrameStartIndex + 4:-1])
-        ENDIF ELSE BEGIN
-          IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
-            message, /INFO, JPMsystime() + ' CSOL partial housekeeping packet. Skipping.'
-          ENDIF
-        ENDELSE
+        ; 2000 is the HK packet, but when CSOL integration rate is faster than 10.24 seconds bad values are returned
+        ; so if csolRowNumberLatest is 0-1999 then it is good data, 2000 is HK, anything else is ignored
+        IF csolRowNumberLatest eq 2000 then begin
+          IF n_elements(csolPacketData) GE (csolFrameStartIndex + 4) THEN BEGIN
+            csolHk = rocket_csol_extract_hk(csolPacketData[csolFrameStartIndex + 4:-1])
+          ENDIF ELSE BEGIN
+            IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+              message, /INFO, JPMsystime() + ' CSOL partial housekeeping packet. Skipping.'
+            ENDIF
+          ENDELSE
+        ENDIF
       ENDELSE
     ENDFOR
   ENDIF ELSE BEGIN ; Didn't find CSOL row start sync
