@@ -99,6 +99,15 @@ STOP, 'Wait until DEWESoft is set to startacq. Then click go.'
 ; Prepare a separate logical unit (LUN) to read the actual incoming data
 get_lun, socketLun
 
+;prepare output file
+openw,file_lun,'/Users/minxss/Dropbox/minxss_dropbox/data/calibration/rocket_x123_xrs_picosim/tm1_files/rocket_analog_monitors_'+STRJOIN(STRSPLIT(jpmsystime(), /EXTRACT), '_')+'.csv',/get_lun
+
+printf,file_lun,'Time, megsp_temp, megsa_htr, xrs_5v, csol_5v, slr_pressure, '+$
+                'cryo_cold, megsb_htr, xrs_temp, megsa_ccd_temp, megsb_ccd_temp, cryo_hot, exprt_28v, '+$
+                'vac_valve_pos, hvs_pressure, exprt_15v, fpga_5v, tv_12v, megsa_ff_led, megsb_ff_led, '+$
+                'exprt_bus_cur, exprt_main_28v, esp_fpga_time, esp_rec_counter, esp1, esp2, esp3, esp4, '+$
+                'esp5, esp6, esp7, esp8, esp9, megsp_fpga_time, megsp1, megsp2'
+
 ; Wait for the connection from DEWESoft to be detected
 isConnected = 0
 WHILE isConnected EQ 0 DO BEGIN
@@ -113,7 +122,10 @@ socketDataBuffer = !NULL
 
 ; Mission specific setup. Edit this to tailor data.
 ; e.g., instrument calibration arrays such as gain to be used in the PROCESS DATA section below
-synctype=[0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1];Index which channels are synchronous (0) or async (1) corresponding to channel order pulled
+
+
+synctype=[0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1];Index which channels are synchronous (0) or async (1) corresponding to channel order pulled
+
 ;Arrays for thermal conversions for 36.336 monitors
 ;TODO move the thermal conversions to a different function call
 woods5=[0.00147408,0.00023701459,1.0839894e-7]
@@ -125,13 +137,28 @@ woods14=[15.0,12.22,5.881]
 woods15=[15.0,11.71,5.816]
 woods17=[257.122,-257.199]
 
+esp_d1=[]
+esp_d2=[]
+esp_d3=[]
+esp_d4=[]
+esp_d5=[]
+esp_d6=[]
+esp_d7=[]
+esp_d8=[]
+esp_d9=[]
+
+megsp_d1=[]
+megsp_d2=[]
 
 ;Initialize monitor structure
+
+
 analogMonitorsStructure = {megsp_temp: 0.0, megsa_htr: 0.0, xrs_5v:0.0, csol_5v:0.0, $
   slr_pressure:0.0,cryo_cold:0.0,megsb_htr:0.0,xrs_temp:0.0,$
   megsa_ccd_temp:0.0,megsb_ccd_temp:0.0,cryo_hot:0.0,exprt_28v:0.0,$
   vac_valve_pos:0.0,hvs_pressure:0.0,exprt_15v:0.0,fpga_5v:0.0,$
   tv_12v:0.0,megsa_ff_led:0.0,megsb_ff_led:0.0,exprt_bus_cur:0.0,$
+  sdoor_oc:0.0,$
   exprt_main_28v:0.0,esp_fpga_time:0.0,esp_rec_counter:0.0,esp1:0.0,$
   esp2:0.0,esp3:0.0,esp4:0.0,esp5:0.0,esp6:0.0,esp7:0.0,esp8:0.0,esp9:0.0,$
   megsp_fpga_time:0.0,megsp1:0.0,megsp2:0.0}
@@ -187,7 +214,7 @@ monitorsSerialRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(),
 
 ;Analog monitor window
 ;Displays limit checked hk
-wa = window(DIMENSIONS = [1000, 750], /NO_TOOLBAR, LOCATION = [406, 0], BACKGROUND_COLOR = backgroundColor, WINDOW_TITLE = 'Analog Monitors')
+wa = window(DIMENSIONS = [1000, 750], /NO_TOOLBAR, LOCATION = [406, 0], BACKGROUND_COLOR = backgroundColor, WINDOW_TITLE = 'EVE Rocket 36.336 Analog Monitors')
 
 ; Left column
 t =     text(0.25, 0.95, 'Payload', FONT_SIZE = fontSize + 6, FONT_COLOR = blueColor)
@@ -202,20 +229,22 @@ t =     text(0.35, topLinePosition - (1 * textVSpacing), 'A124 TM Exp Bus Volt [
 ta124 = text(0.35 + textHSpacing, topLinePosition - (1 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 t =     text(0.35, topLinePosition - (2 * textVSpacing), 'A106 TM Exp Bus Curr [A] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 ta106 = text(0.35 + textHSpacing, topLinePosition - (2 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (4 * textVSpacing), 'A25 Vac Valve Position = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta25 =  text(0.35 + textHSpacing, topLinePosition - (4 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (5 * textVSpacing), 'A26 HVS Pressure = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta26 =  text(0.35 + textHSpacing, topLinePosition - (5 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (6 * textVSpacing), 'A13 Solar Section Pressure = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta13 =  text(0.35 + textHSpacing, topLinePosition - (6 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (8 * textVSpacing), 'A14 Cryo Cold Finger Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta14 =  text(0.35 + textHSpacing, topLinePosition - (8 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (9 * textVSpacing), 'A22 Cryo Hot Side Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta22 =  text(0.35 + textHSpacing, topLinePosition - (9 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (11 * textVSpacing), 'A29 FPGA +5V Monitor [V] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta29 =  text(0.35 + textHSpacing, topLinePosition - (11 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.35, topLinePosition - (12 * textVSpacing), 'A30 Camera +12V Monitor [V] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta30 =  text(0.35 + textHSpacing, topLinePosition - (12 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (4 * textVSpacing), 'A82 Shutter Door = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta82 =  text(0.35 + textHSpacing, topLinePosition - (4 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (5 * textVSpacing), 'A25 Vac Valve Position = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta25 =  text(0.35 + textHSpacing, topLinePosition - (5 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (6 * textVSpacing), 'A26 HVS Pressure = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta26 =  text(0.35 + textHSpacing, topLinePosition - (6 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (7 * textVSpacing), 'A13 Solar Section Pressure = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta13 =  text(0.35 + textHSpacing, topLinePosition - (7 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (9 * textVSpacing), 'A14 Cryo Cold Finger Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta14 =  text(0.35 + textHSpacing, topLinePosition - (9 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (10 * textVSpacing), 'A22 Cryo Hot Side Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta22 =  text(0.35 + textHSpacing, topLinePosition - (10 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (12 * textVSpacing), 'A29 FPGA +5V Monitor [V] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta29 =  text(0.35 + textHSpacing, topLinePosition - (12 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.35, topLinePosition - (13 * textVSpacing), 'A30 Camera Charger [V] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta30 =  text(0.35 + textHSpacing, topLinePosition - (13 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 
 ;A8 (CSOL 5V) isn't decoded correctly on tm1 altair but it is displayed in tm2 real time code
 ;t =     text(0.25, topLinePosition - (13 * textVSpacing), 'CSOL', FONT_SIZE = fontSize + 6, FONT_COLOR = blueColor)
@@ -244,13 +273,52 @@ ta7 =   text(0.8 + textHSpacing, topLinePosition - (11 * textVSpacing), '--', FO
 t =     text(0.8, topLinePosition - (12 * textVSpacing), 'A16 XRS Temp = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 ta16 =  text(0.8 + textHSpacing, topLinePosition - (12 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 monitorsRefreshText = text(1.0, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = blueColor, ALIGNMENT = 1.0,font_size=14)
+counter=0
+
+;w = window(DIMENSIONS = windowSize, /DEVICE, LOCATION = [1415, 0], WINDOW_TITLE = 'EVE Rocket 36.336 ESP/MEGSP Science Data', BACKGROUND_COLOR = backgroundColor)
+;p1 = plot(findgen(10), sin(findgen(10)), COLOR = orangeColor, '2*-', LAYOUT=[1,2,1], /CURRENT, FONT_COLOR = fontColor, $
+;  TITLE = 'MEGSP', $
+;  XTITLE = 'Data Packet', XCOLOR = fontColor, $
+;  YTITLE = 'Intensity [DN]', YCOLOR = fontColor, $
+;  NAME = 'NULL')
+;p1a = plot(findgen(10), sin(findgen(10)), COLOR = orangeColor, '2*-', /OVERPLOT, $
+;    NAME = 'MEGS Diode 1')
+;p1b = plot(findgen(10), sin(findgen(10) + 0.3), COLOR = blueColor, '2*-', /OVERPLOT, $
+;  NAME = 'MEGS Diode 2')
+;t1a = text(0.0, -0.3, 'MEGSP FPGA Time = --', /RELATIVE, TARGET = p1, FONT_COLOR = fontColor)
+;
+;p2 = plot(findgen(10), tan(findgen(10)), COLOR = orangeColor, '2*-', /CURRENT, LAYOUT = [1, 2, 2], FONT_COLOR = fontColor, $
+;  TITLE = 'ESP', $
+;  YTITLE = 'Intensity [DN]', YCOLOR = fontColor, $
+;  XTITLE = 'Data Packet', XCOLOR = fontColor, $
+;  NAME = 'NULL')
+;p2a = plot(findgen(10), tan(findgen(10)), COLOR = orangeColor, '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 1') 
+;p2b = plot(findgen(10), tan(findgen(10) + 0.1), COLOR = blueColor, '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 2')
+;p2c = plot(findgen(10), tan(findgen(10) + 0.2), COLOR = greenColor, '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 3')
+;p2d = plot(findgen(10), tan(findgen(10) + 0.3), COLOR = greenColor, '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 4')
+;p2e = plot(findgen(10), tan(findgen(10) + 0.4), COLOR = 'white', '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 5')
+;p2f = plot(findgen(10), tan(findgen(10) - 0.1), COLOR = 'pink', '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 6')
+;p2g = plot(findgen(10), tan(findgen(10) - 0.2), COLOR = 'purple', '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 7')
+;p2h = plot(findgen(10), tan(findgen(10) - 0.3), COLOR = 'red', '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 8')
+;p2i = plot(findgen(10), tan(findgen(10) - 0.4), COLOR = 'yellow', '2*-', /OVERPLOT, $
+;  NAME = 'ESP Diode 9')
+;t2a = text(0.0, -0.3, 'ESP FPGA Time = --', /RELATIVE, TARGET = p2a, FONT_COLOR = fontColor)
+;t2b = text(1.0, -0.3, 'ESP Record Counter = --', /RELATIVE, ALIGNMENT = 1.0, TARGET = p2, FONT_COLOR = fontColor)
 
 ; Start an infinite loop to check the socket for data
 WHILE 1 DO BEGIN
 
+  
   ; Start a timer
-  IF !version.release GT '8.2.2' THEN wrapperClock = TIC() ELSE $
-                                      wrapperClock = JPMsystime(/SECONDS)
+  wrapperClock = TIC()
   
   ; Store how many bytes are on the socket
   socketDataSize = (fstat(socketLun)).size
@@ -296,7 +364,6 @@ WHILE 1 DO BEGIN
         
         ; Store the data to be processed between two DEWESoft sync patterns
         singleFullDeweSoftPacket = socketDataBuffer[verifiedSync7Index - 7:sync7Indices[sync7LoopIndex] - 8]
-        
         ;Checking if packet type is 0 (i.e.a data packet) else skip
         packetType=byte2ulong(singleFullDeweSoftPacket[12:12+3])
 
@@ -305,7 +372,9 @@ WHILE 1 DO BEGIN
           verifiedSync7Index = sync7Indices[sync7LoopIndex]
           continue
         endif
-        
+        counter=counter+1;
+        if counter gt 10 then begin
+          counter=0
         ; -= PROCESS DATA =- ;
         
         ;Offsets will be an array of where in the Dewesoft packet our data is per channel
@@ -333,7 +402,8 @@ WHILE 1 DO BEGIN
         
         ; -= INTERPRET DATA =- ;
         ;rocket_eve_tm1_read_packets actually processes the channel data using offsets and sample size and passes back a struct with our data
-        analogMonitors=rocket_eve_tm1_read_packets(singleFullDeweSoftPacket,analogMonitorsStructure, offsets,samplesize,monitorsRefreshText,monitorsSerialRefreshText, stale_a, stale_s)
+        analogMonitors = rocket_eve_tm1_read_packets(singleFullDeweSoftPacket, analogMonitorsStructure, offsets, samplesize, monitorsRefreshText, monitorsSerialRefreshText, $
+                                                     stale_a, stale_s, sdoor_state)
         
         ;Convert voltages to temperature for the 36.336 flight
         ;TODO move these to a seperate function
@@ -352,11 +422,55 @@ WHILE 1 DO BEGIN
         megsa_ccd=34.5*analogMonitors.megsa_ccd_temp-143
         megsb_ccd=34.45*analogMonitors.megsb_ccd_temp-156
         
-                
-        ; -= UPDATE PLOT WINDOWS WITH REASONABLE REFRESH RATE =- ;
-
-        !Except = 0 ; Disable annoying divide by 0 messages
-
+        ;write data to file if its new
+        if stale_a eq 0 then begin
+          printf,file_lun,string(systime(/julian),format='(F32.16)')+', '+jpmprintnumber(analogMonitors.megsp_temp)+', '+jpmprintnumber(analogMonitors.megsa_htr)+', '+jpmprintnumber(analogMonitors.xrs_5v)+$
+                          ', '+jpmprintnumber(analogMonitors.csol_5v)+', '+jpmprintnumber(analogMonitors.slr_pressure)+', '+jpmprintnumber(analogMonitors.cryo_cold)+', '+jpmprintnumber(analogMonitors.megsb_htr)+$
+                          ', '+jpmprintnumber(analogMonitors.xrs_temp)+', '+jpmprintnumber(analogMonitors.megsa_ccd_temp)+', '+jpmprintnumber(analogMonitors.megsb_ccd_temp)+', '+jpmprintnumber(analogMonitors.cryo_hot)+$
+                          ', '+jpmprintnumber(analogMonitors.exprt_28v)+', '+jpmprintnumber(analogMonitors.vac_valve_pos)+', '+jpmprintnumber(analogMonitors.hvs_pressure)+', '+jpmprintnumber(analogMonitors.exprt_15v)+$
+                          ', '+jpmprintnumber(analogMonitors.fpga_5v)+', '+jpmprintnumber(analogMonitors.tv_12v)+', '+jpmprintnumber(analogMonitors.megsa_ff_led)+', '+jpmprintnumber(analogMonitors.megsb_ff_led)+$
+                          ', '+jpmprintnumber(analogMonitors.exprt_bus_cur)+', '+jpmprintnumber(analogMonitors.exprt_main_28v)+', '+jpmprintnumber(analogMonitors.esp_fpga_time)+', '+jpmprintnumber(analogMonitors.esp_rec_counter)+$
+                          ', '+jpmprintnumber(analogMonitors.esp1)+', '+jpmprintnumber(analogMonitors.esp2)+', '+jpmprintnumber(analogMonitors.esp3)+', '+jpmprintnumber(analogMonitors.esp4)+$
+                          ', '+jpmprintnumber(analogMonitors.esp5)+', '+jpmprintnumber(analogMonitors.esp6)+', '+jpmprintnumber(analogMonitors.esp7)+', '+jpmprintnumber(analogMonitors.esp8)+$
+                          ', '+jpmprintnumber(analogMonitors.esp9)+', '+jpmprintnumber(analogMonitors.megsp_fpga_time)+', '+jpmprintnumber(analogMonitors.megsp1)+', '+jpmprintnumber(analogMonitors.megsp2)
+        endif
+        
+        ;save diode data for plotting
+;        if stale_s eq 0 then begin
+;          esp_d1=[esp_d1,analogMonitors.esp1]
+;          esp_d2=[esp_d2,analogMonitors.esp2]
+;          esp_d3=[esp_d3,analogMonitors.esp3]
+;          esp_d4=[esp_d4,analogMonitors.esp4]
+;          esp_d5=[esp_d5,analogMonitors.esp5]
+;          esp_d6=[esp_d6,analogMonitors.esp6]
+;          esp_d7=[esp_d7,analogMonitors.esp7]
+;          esp_d8=[esp_d8,analogMonitors.esp8]
+;          esp_d9=[esp_d9,analogMonitors.esp9]
+;          megsp_d1=[megsp_d1,analogMonitors.megsp1]
+;          megsp_d2=[megsp_d2,analogMonitors.megsp2] 
+;        endif   
+;         
+;        ; -= UPDATE PLOT WINDOWS WITH REASONABLE REFRESH RATE =- ;
+;        !Except = 0 ; Disable annoying divide by 0 messages
+;        ;plot the last 10 valid esp and megs readings
+;        if n_elements(megsp_d1) gt 10 then begin
+;          p1a.setdata,megsp_d1[n_elements(megsp_d1)-1-10:n_elements(megsp_d1)-1]
+;          p1b.setdata,megsp_d2[n_elements(megsp_d2)-1-10:n_elements(megsp_d2)-1]
+;          
+;          p2a.setdata,esp_d1[n_elements(esp_d1)-1-10:n_elements(esp_d1)-1]
+;          p2b.setdata,esp_d2[n_elements(esp_d2)-1-10:n_elements(esp_d2)-1]
+;          p2c.setdata,esp_d3[n_elements(esp_d3)-1-10:n_elements(esp_d3)-1]
+;          p2d.setdata,esp_d4[n_elements(esp_d4)-1-10:n_elements(esp_d4)-1]
+;          p2e.setdata,esp_d5[n_elements(esp_d5)-1-10:n_elements(esp_d5)-1]
+;          p2f.setdata,esp_d6[n_elements(esp_d6)-1-10:n_elements(esp_d6)-1]
+;          p2g.setdata,esp_d7[n_elements(esp_d7)-1-10:n_elements(esp_d7)-1]
+;          p2h.setdata,esp_d8[n_elements(esp_d8)-1-10:n_elements(esp_d8)-1]
+;          p2i.setdata,esp_d9[n_elements(esp_d9)-1-10:n_elements(esp_d9)-1]
+;        endif
+;        t1a.string='MEGSP FPGA Time = '+jpmprintnumber(analogMonitors.megsp_fpga_time)
+;        t2a.string='ESP FPGA Time = '+jpmprintnumber(analogMonitors.esp_fpga_time)
+;        t2b.string='ESP Record Counter = '+jpmprintnumber(analogMonitors.esp_rec_counter)
+        
         ;We continually update the display as, even if we don't get a new valid Dewesoft packet, the valid data is still in the monitor struct
         ;Window 1 display
         ta23.string = jpmprintnumber(analogMonitors.exprt_main_28v)
@@ -374,6 +488,7 @@ WHILE 1 DO BEGIN
         ta26.string = jpmprintnumber(analogMonitors.hvs_pressure)
         ta22.string = jpmprintnumber(t_Cryo_Hotside)
         ta16.string = jpmprintnumber(t_XRS1)
+        ;ta82.string = jpmprintnumber(analogMonitors.sdoor_oc)
         ;Window 0 display
         s3_time.string = jpmprintnumber(analogMonitors.esp_fpga_time)
         s3_cnt.string = jpmprintnumber(analogMonitors.esp_rec_counter)
@@ -474,6 +589,17 @@ WHILE 1 DO BEGIN
           ta32.string = "UNKNOWN ("+jpmprintnumber(analogMonitors.megsb_ff_led)+")"
         endelse
         
+        if sdoor_state eq "Closed" then begin
+          ta82.font_color=redcolor
+          ta82.string = "Closed ("+jpmprintnumber(analogMonitors.sdoor_oc)+")"
+        endif else if sdoor_state eq "Open" then begin
+          ta82.font_color=greencolor
+          ta82.string = "Open ("+jpmprintnumber(analogMonitors.sdoor_oc)+")"
+        endif else begin
+          ta82.font_color=redcolor
+          ta82.string = "UNKNOWN ("+jpmprintnumber(analogMonitors.sdoor_oc)+")"
+        endelse
+        
         if (analogMonitors.exprt_bus_cur le .9 or analogMonitors.exprt_bus_cur ge 2) then begin
           ta106.font_color=redcolor
         endif else begin
@@ -490,7 +616,7 @@ WHILE 1 DO BEGIN
         
         ; Set the index of this verified sync pattern for use in the next iteration of the DEWESoft sync7Loop
         verifiedSync7Index = sync7Indices[sync7LoopIndex]
-        
+      endif
       ENDFOR ; sync7LoopIndex = 0, numSync7s - 1
       
       ; Now that all processable data has been processed, overwrite the buffer to contain only bytes from the beginning of 
@@ -503,9 +629,11 @@ WHILE 1 DO BEGIN
     ;IF !version.release GT '8.2.2' THEN message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(TOC(wrapperClock)) ELSE $
   ;                                      message, /INFO, JPMsystime() + ' Finished processing socket data in time = ' + JPMPrintNumber(JPMsystime(/SECONDS) - wrapperClock)
   ;ENDIF
+  ;message, /INFO, JPMsystime() + ' Finished processing socket data in ' + JPMPrintNumber(TOC(wrapperClock), /SCIENTIFIC_NOTATION) + 'seconds'
 ENDWHILE ; Infinite loop
 
 ; These lines never get called since the only way to exit the above infinite loop is to stop the code
-free_lun, lun
+free_lun, socketlun
+free_lun,file_lun
 
 END
