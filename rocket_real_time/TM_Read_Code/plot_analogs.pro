@@ -20,25 +20,22 @@
 ;
 pro plot_analogs, filename, data, xrange=xrange, plotnum=plotnum, tzero=tzero, rocket=rocket, $
 				ccd=ccd, debug=debug, noplot=noplot, pdf=pdf, notimer=notimer, nogrid=nogrid
-
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
   filename = dialog_pickfile(title='Pick All Analogs Data File', filter='*analogs.dat')
 endif
-
 if (strlen(filename) lt 1) then begin
   print, 'No filename was given...'
   return
 endif
-
-rnum = 36.318
+rnum = 36.336
 if keyword_set(rocket) then rnum = rocket
 if (rnum ne 36.275) and (rnum ne 36.233) and (rnum ne 36.240) and (rnum ne 36.258) $
-	and (rnum ne 36.286) and (rnum ne 36.290) and (rnum ne 36.300) and (rnum ne 36.318) then begin
+	and (rnum ne 36.286) and (rnum ne 36.290) and (rnum ne 36.300) $
+	and (rnum ne 36.318) and (rnum ne 36.336) then begin
   stop, 'STOP:  ERROR with "rnum"...'
 endif
 rocket_str = string(rnum,format='(F6.3)')
-
 ;
 ;	configuration for timer times (T time for 36.290)
 ;
@@ -60,7 +57,6 @@ timer_names = ['A', 'B', 'D', 'E', 'H', 'G', 'M', 'N', 'F', 'K', 'L', 'P', 'R']
 ;		P = FPGA_5V goes from 0.45V to 0.0V (with 0.05V noise)
 ;		R = unable to confirm
 ;
-
 ;
 ;	needs to be same as what is defined in read_tm1_cd.pro
 ;
@@ -163,25 +159,40 @@ endif else if (rnum eq 36.300) then begin
   			shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
   			shutter_door_cur: 0.0 }
 endif else if (rnum eq 36.318) then begin
-  ;
-  ;   define the TM items for all of the analog monitors
-  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
-  ;
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
   numanalogs = 28L
+  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+    tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+    solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+    xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+    xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+    xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+    shutter_door_cur: 0.0 }
+endif else if (rnum eq 36.336) then begin
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
+  numanalogs = 33L
   atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  	hvs_press: 0.0, solar_press: 0.0, exp_15v: 0.0, $
     tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
-    solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+    gate_valve: 0.0, cryo_cold_temp: 0.0, cryo_hot_temp: 0.0, $
     xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
     megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
     megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
     xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
     xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
     shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
-    shutter_door_cur: 0.0 }
+    shutter_door_cur: 0.0, csol_5v: 0.0, csol_tec_temp: 0.0 }
 endif
-
 nbytes = n_tags(atemp,/length)
-
 ;
 ;  two options for reading data
 ;		1) *.dat reads binary file
@@ -197,27 +208,22 @@ if (rpos lt 0) then begin
 endif else begin
   extfile = strupcase(strmid(filename,rpos+1,3))
 endelse
-
 ;
 ;	READ IF block for *.DAT files
 ;
 if (extfile ne 'SAV') then begin
-
 if keyword_set(debug) then print, '    Reading BINARY file (slow) ...'
 openr,lun,filename, /get_lun
 a = assoc(lun, atemp)
-
 finfo = fstat(lun)
 fsize = finfo.size
 dcnt = fsize/nbytes
-
 if (dcnt le 0) then begin
   print, 'ERROR: only partial data set found, so nothing to plot"
   close, lun
   free_lun, lun
   return
 endif
-
 ;
 ;	read the data
 ;
@@ -225,10 +231,8 @@ data = replicate( atemp, dcnt )
 for k=0L,dcnt-1L do begin
   data[k] = a[k]
 endfor
-
 close, lun
 free_lun, lun
-
 endif else if (extfile eq 'SAV') then begin
   ;
   ;	READ IF block for *.SAV files
@@ -240,10 +244,8 @@ endif else if (extfile eq 'SAV') then begin
     analog = 0L
   endif ; else assume that "data" was in the save set
 endif
-
 ;  quick exit with just the data if /noplot option given
 if keyword_set(noplot) then return
-
 ;
 ;	now plot the data
 ;
@@ -252,7 +254,6 @@ if (!d.name eq 'X') and ((!d.x_size ne 800) or (!d.y_size ne 600)) then window,0
 setplot
 numplots = 3L  ; multiple plots per page
 !p.multi=[0,1,numplots]
-
 kstart = 0L
 kend = numanalogs-1L
 plotmax = numanalogs/numplots
@@ -264,7 +265,6 @@ if keyword_set(plotnum) then begin
   kend = kstart
   if (plotnum eq 0) then plotnum = 0.1   ; so keyword_set() works
 endif
-
 ; UT time for launch time
 if (rnum eq 36.217) then tz = 18*3600L + 23*60L + 30  $
 else if (rnum eq 36.240) then tz = 16*3600L + 58*60L + 0.72D0 $
@@ -273,16 +273,15 @@ else if (rnum eq 36.275) then tz = 17*3600L + 50*60L + 0.354D0 $
 else if (rnum eq 36.286) then tz = 18*3600L + 30*60L + 1.000D0 $
 else if (rnum eq 36.290) then tz = 18*3600L + 0*60L + 0.4D0 $
 else if (rnum eq 36.300) then tz = 19*3600L + 14*60L + 25.1D0 $
+else if (rnum eq 36.318) then tz = 19*3600L + 0*60L + 0.0D0 $
+else if (rnum eq 36.336) then tz = 19*3600L + 0*60L + 0.0D0 $
 else tz = data[0].time
-
 if keyword_set(tzero) then tz = tzero
 if (data[0].time-tz) lt -3600 then tz=data[0].time
 ptime = (data.time - tz)		; relative time
-
 xr = [min(ptime),max(ptime)]
 if (xr[1]-xr[0]) gt 1000 then xr = median(ptime)+[-500,500]
 if keyword_set(xrange) then xr=xrange
-
 ;  if /pdf is given, then prepare for PDF file to be made
 if keyword_set(pdf) then begin
   time_str = '_T'+strtrim(long(xr[0]),2)+'-'+strtrim(long(xr[1]),2)+'s'
@@ -290,7 +289,6 @@ if keyword_set(pdf) then begin
   ; if keyword_set(verbose) then $
     print, 'plot_analogs:  PDF file = ' +  pdf_file
 endif
-
 ; new IDL plot function used so easier to make PDF file
 num_col = 1L
 num_row = numplots
@@ -300,19 +298,15 @@ page_last = (kend-kstart+1)/numplots
 if (page_last*numplots lt (kend-kstart+1)) then page_last += 1L
 xdim = num_col * 800L
 ydim = num_row * 250L
-
 plotobj = objarr(num_plots_per_page)
 plotobj[0] = plot( indgen(10), indgen(10), dimension=[xdim,ydim], /current )  ; dummy plot so window will be erased
-
 yr = [0, 5]   ; Y-range
-
 if not keyword_set(nogrid) then begin
   plotGrid = objarr(num_plots_per_page)
   ; this assume Y-range is 0-5 V and grid lines are at every 1.0 Volts
   xGrid = [ xr[0], xr[1], xr[1], xr[0], xr[0], xr[1], xr[1], xr[0] ]
   yGrid = [ 1.0,   1.0,   2.0,   2.0,   3.0,   3.0,   4.0,   4.0 ]
 endif
-
 if not keyword_set(notimer) then begin
   plotTimer = objarr(num_plots_per_page)
   num_Timer = n_elements(timer_times)
@@ -327,14 +321,10 @@ if not keyword_set(notimer) then begin
     endelse
   endfor
 endif
-
 wgd = where((ptime ge xr[0]) and (ptime le xr[1]), numgd)
 if (numgd lt 2) then wgd = where(ptime ne 0)
-
 tnames = tag_names(atemp)
-
 title1=rocket_str + ' - Page '
-
 for k=kstart,kend,numplots do begin
   jend = k+numplots-1L
   if (jend ge numanalogs) then jend = numanalogs-1L
@@ -346,7 +336,6 @@ for k=kstart,kend,numplots do begin
     	w = plotobj[0].window
     	w.Erase
   endif
-
   for j=k,jend do begin
     if (j eq jend) then begin
       xtitle='Time (sec)'
@@ -358,7 +347,6 @@ for k=kstart,kend,numplots do begin
     ; old IDL plot procedure
     ;plot, ptime[wgd], data[wgd].(j+1), yr=[0,5], ys=1, xrange=xr, xs=1, $
     ;    xtitle=xtitle, ytitle='Volts', title=mtitle, xmargin=[7,2], ymargin=ymargin
-
     ;
     ; new IDL plot function
     ;
@@ -388,7 +376,6 @@ for k=kstart,kend,numplots do begin
     endif
   endelse
 endfor
-
 ;
 ;	extract out CCD temperature into data file and convert to degrees C
 ;
@@ -432,12 +419,8 @@ if keyword_set(ccd) then begin
   print, 'CCD data written to ', ccd_file
   stop, 'Debug CCD data results ...'
 endif
-
-
 exitplot:
 !p.multi=0
-
 if keyword_set(debug) then stop, 'DEBUG: stopped at end of plot_analogs.pro ...'
-
 return
 end
