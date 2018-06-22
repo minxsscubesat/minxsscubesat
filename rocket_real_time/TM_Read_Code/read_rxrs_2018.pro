@@ -1,13 +1,13 @@
 ;+
 ; NAME:
-;   read_isis_xrs
+;   read_rxrs_2018
 ;
 ; PURPOSE:
 ;   Read, interpret, and store in IDL structures the packets from binary file from Rocket XRS
 ;	This is 2015 version that uses MinXSS FSW and ISIS interface.
 ;
 ; USAGE
-;   read_isis_xrs, input, hk=hk, sci=sci, log=log, /hexdump, /verbose
+;   read_rxrs_2018, input, hk=hk, sci=sci, log=log, /hexdump, /verbose
 ;
 ; INPUTS:
 ;   input [string]:       Name of file to read (string) or a bytarr containing packet(s)
@@ -24,6 +24,7 @@
 ;   sci [structure]:          Return array of science (X123, SPS, XPS data) packets
 ;               **OR** -1 if science packet incomplete (for single-packet reader mode)
 ;   log [structure];          Return array of log messages
+;   sps_ps [structure];       Return array of SPS-PicoSIM packets
 ;
 ; OPTIONAL OUTPUTS:
 ;   None
@@ -33,9 +34,11 @@
 ; MODIFICATION HISTORY:
 ;	1)  Original version 6/2/2016 based on minxss_read_packets.pro, T. Woods
 ;			Modified to include different HK packet for dual ASIC XRS as used on rocket
+;	2)  Modified version of read_isis_xrs.pro to include addition of PicoSIM-SPS in 2018
+;			This includes new packet called SPS-PicoSIM (sps_ps)
 ;
 ;+
-pro read_isis_xrs, input, hk=hk, sci=sci, log=log, hexdump=hexdump, verbose=verbose
+pro read_rxrs_2018, input, hk=hk, sci=sci, log=log, sps_ps=sps_ps, hexdump=hexdump, verbose=verbose
 
 ; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
 junk = temporary(hk)
@@ -47,7 +50,7 @@ junk = temporary(hexdump)
   N_CHUNKS = 500
 
   if (n_params() lt 1) then begin
-    print, 'USAGE: read_isis_xrs, input_file, hk=hk, sci=sci, log=log,  $'
+    print, 'USAGE: read_rxrs_2018, input_file, hk=hk, sci=sci, log=log, sps_ps=sps_ps, $'
     print, '              /hexdump, /verbose'
     input=' '
   endif
@@ -100,6 +103,8 @@ junk = temporary(hexdump)
   PACKET_ID_ADCS3 = 40
   PACKET_ID_ADCS4 = 41
 
+  PACKET_ID_SPS_PS = 50	; New for Rocket XRS in 2018
+
   PACKET_ID_HK_PLAYBACK = PACKET_ID_HK + '40'X
   PACKET_ID_LOG_PLAYBACK = PACKET_ID_LOG + '40'X
   PACKET_ID_SCI_PLAYBACK = PACKET_ID_SCI + '40'X
@@ -111,6 +116,8 @@ junk = temporary(hexdump)
   PACKET_ID_ADCS2_PLAYBACK = PACKET_ID_ADCS2 + '40'X
   PACKET_ID_ADCS3_PLAYBACK = PACKET_ID_ADCS3 + '40'X
   PACKET_ID_ADCS4_PLAYBACK = PACKET_ID_ADCS4 + '40'X
+
+  ; There is no option to playback SPS-PicoSIM data
 
   ;  doPause allows interactive flow of printing for the Hex Dump option
   if keyword_set(hexdump) then doPause = 1 else doPause = 0
@@ -141,8 +148,8 @@ junk = temporary(hexdump)
     cdh_batt_v: 0.0, cdh_batt_v2: 0.0, cdh_5v: 0.0, cdh_3v: 0.0, cdh_temp: 0.0, $
     cdh_enables: 0U, $
     enable_comm: 0B, enable_adcs: 0B, enable_sps_xps: 0B, enable_x123: 0B, enable_batt_heater: 0B, $
-    enable_ant_deploy: 0B, enable_sa_deploy: 0B, enable_inst_heater: 0B, enable_spare: 0B, enable_comm_ext: 0B,  $
-    cdh_i2c_err: 0L, cdh_rtc_err: 0L, cdh_spi_sd_err: 0L, $
+    enable_ant_deploy: 0B, enable_sa_deploy: 0B, enable_inst_heater: 0B, enable_spare: 0B, $
+    enable_comm_ext: 0B, cdh_i2c_err: 0L, cdh_rtc_err: 0L, cdh_spi_sd_err: 0L, $
     cdh_uart1_err: 0L, cdh_uart2_err: 0L, cdh_uart3_err: 0L, cdh_uart4_err: 0L, $
     radio_counter: 0L, radio_temp: 0.0, radio_time: 0.0D0, radio_rssi: 0,  $
     radio_received: 0L, radio_transmitted: 0L, $
@@ -200,6 +207,18 @@ junk = temporary(hexdump)
     x123_read_errors: 0, x123_radio_flag: 0,  x123_write_errors: 0, x123_cmp_info: 0L, x123_spect_len: 0, $
     x123_group_count: 0, x123_spectrum: lonarr(X123_SPECTRUM_BINS), $
     checkbytes: 0L, SyncWord: 0.0}
+
+  ;
+  ; SPS-PicoSIM (sps_ps) Packet Structure definition
+  ;
+  sps_ps_count = 0L
+  sps_ps_struct1 = { apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, time: 0.0D0, $
+    checkbytes: 0L, SyncWord: 0.0, $
+    cmd_last_letter: 0, cmd_last_flag: 0, record_count: 0U, $
+    year: 0, month: 0, day: 0, hour: 0, minute: 0, second: 0, $
+    ps_type: 0, sps_temp_C: 0.0, eps_temp_C: 0.0, ps_temp_C: 0.0, $
+    ps_num_avg: 0U, ps_signal: fltarr(6), ps_integ_time: 0U, $
+    sps_num_avg: 0U, sps_signal: fltarr(4), sps_sum: 0.0, sps_x: 0.0, sps_y: 0.0 }
 
   ;
   ; Isolate each packet as being between the SYNC words (0xA5A5)
@@ -291,9 +310,6 @@ junk = temporary(hexdump)
 
       ;
       ;  parse packet data based on packet_id value
-      ;
-      ; NOTE that only LOG packet is fully parsed
-      ; The housekeeping (HK) packet is partially parsed
       ;
       if (packet_id eq PACKET_ID_HK) then begin
         ;
@@ -527,7 +543,7 @@ junk = temporary(hexdump)
         ;
         if arg_present(log) then begin
          ;  add another packet if have a full packet
-         if (pindex+60) lt n_elements(data) then begin
+         if (pindex+64) lt n_elements(data) then begin
           log_struct1.apid = packet_id_full  ; keep Playback bit in structure
           log_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           log_struct1.seq_count = packet_seq_count
@@ -643,7 +659,7 @@ junk = temporary(hexdump)
 
             sci_struct1.x123_cmp_info = (long(data[pindex+76]) + ishft(long(data[pindex+77]),8))  ; bytes
             sci_struct1.x123_spect_len = (long(data[pindex+78]) + ishft(long(data[pindex+79]),8))   ;bytes
-            ; ROCKET XRS changed x123_groun_count offste from 80 to 104
+            ; ROCKET XRS changed x123_group_count offset from 80 to 104
             sci_struct1.x123_group_count = (long(data[pindex+104]) + ishft(long(data[pindex+105]),8))  ;none
 
             ; for ii=0,55,1 do begin
@@ -654,10 +670,10 @@ junk = temporary(hexdump)
             ;
             ; Store Raw Spectrum Data and see if need to decompress it after last packet
             ;
-            ; ROCKET XRS changed X123_FIRST_LENGTH to be shorter
+            ; ROCKET XRS changed X123_FIRST_LENGTH to be shorter (changed offset from 82 to 106)
             sci_raw_count = 0L
             sci_raw_data = bytarr(X123_DATA_MAX)
-            for ii=0,X123_FIRST_LENGTH-1 do sci_raw_data[ii] = data[pindex+82+ii]
+            for ii=0,X123_FIRST_LENGTH-1 do sci_raw_data[ii] = data[pindex+106+ii]
             sci_raw_count = X123_FIRST_LENGTH
 
           endif else begin
@@ -697,6 +713,7 @@ junk = temporary(hexdump)
                 if sci_count ge n_elements(sci) then sci = [sci, replicate(sci_struct1, N_CHUNKS)]
               sci[sci_count] = sci_struct1
               sci_count += 1
+              ; if (sci_count eq 200) then stop, 'DEBUG X123 Decompression...'
             endif
 
             ; Unset "busy" flag since the science packet is now complete
@@ -709,6 +726,53 @@ junk = temporary(hexdump)
           ;   that we're dumping for bytarr input
           if (sciPacketIncomplete and (sci_count eq 0)) then sci = -1
          endif ; if data is large enough for packet
+        endif
+
+		endif else if (packet_id eq PACKET_ID_SPS_PS) then begin
+        ;
+        ;  ************************
+        ;  SPS-PicoSIM (SPS_PS) Packet (if user asked for it)
+        ;  ************************
+        ;
+        if arg_present(sps_ps) then begin
+         ;  add another packet if have a full packet
+         if (pindex+98) lt n_elements(data) then begin
+          sps_ps_struct1.apid = packet_id_full  ; keep Playback bit in structure
+          sps_ps_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
+          sps_ps_struct1.seq_count = packet_seq_count
+          sps_ps_struct1.data_length = packet_length
+          sps_ps_struct1.time = packet_time
+          sps_ps_struct1.checkbytes = uint(data[pindex+94]) + ishft(uint(data[pindex+95]),8)
+          sps_ps_struct1.SyncWord = (uint(data[pindex+96]) + ishft(uint(data[pindex+97]),8))  ;none
+
+    	  sps_ps_struct1.cmd_last_letter = uint(data[pindex+12])
+    	  sps_ps_struct1.cmd_last_flag = uint(data[pindex+13])
+    	  sps_ps_struct1.record_count = uint(data[pindex+14]) + ishft(uint(data[pindex+15]),8)
+    	  sps_ps_struct1.year = uint(data[pindex+16]) + ishft(uint(data[pindex+17]),8)
+    	  sps_ps_struct1.month = uint(data[pindex+18])
+    	  sps_ps_struct1.day = uint(data[pindex+19])
+    	  sps_ps_struct1.hour = uint(data[pindex+20])
+    	  sps_ps_struct1.minute = uint(data[pindex+21])
+    	  sps_ps_struct1.second = uint(data[pindex+22])
+    	  sps_ps_struct1.ps_type = uint(data[pindex+23])
+    	  sps_ps_struct1.sps_temp_C = float(data,pindex+24)
+    	  sps_ps_struct1.eps_temp_C = float(data,pindex+28)
+    	  sps_ps_struct1.ps_temp_C = float(data,pindex+58)
+    	  sps_ps_struct1.ps_num_avg = uint(data[pindex+32]) + ishft(uint(data[pindex+33]),8)
+    	  for ii=0,5 do sps_ps_struct1.ps_signal[ii] = float(data,pindex+34+ii*4)
+    	  sps_ps_struct1.ps_integ_time = (uint(data[pindex+92]) + ishft(uint(data[pindex+93]),8))*2.8
+    	  sps_ps_struct1.sps_num_avg = uint(data[pindex+62]) + ishft(uint(data[pindex+63]),8)
+    	  for ii=0,3 do sps_ps_struct1.sps_signal[ii] = float(data,pindex+64+ii*4)
+    	  sps_ps_struct1.sps_sum = float(data,pindex+80)
+    	  sps_ps_struct1.sps_x = float(data,pindex+84)
+    	  sps_ps_struct1.sps_y = float(data,pindex+88)
+
+
+          if (sps_ps_count eq 0) then sps_ps = replicate(sps_ps_struct1, N_CHUNKS) else $
+            if sps_ps_count ge n_elements(sps_ps) then sps_ps = [sps_ps, replicate(sps_ps_struct1, N_CHUNKS)]
+          sps_ps[sps_ps_count] = sps_ps_struct1
+          sps_ps_count += 1
+         endif ; if data large enough for SPS_PS packet
         endif
 
       endif ; end of IF blocks for Packet types
@@ -728,6 +792,7 @@ junk = temporary(hexdump)
   if arg_present(hk) and n_elements(hk) ne 0 then hk = hk[0:hk_count-1]
   if arg_present(log) and n_elements(log) ne 0 then log = log[0:log_count-1]
   if arg_present(sci) and n_elements(sci) ne 0 then sci = sci[0:sci_count-1]
+  if arg_present(sps_ps) and n_elements(sps_ps) ne 0 then sps_ps = sps_ps[0:sps_ps_count-1]
 
 ;  if (hk_count gt 0) and (sci_count eq 0) then begin
 ;    ; create one empty science packet
@@ -743,6 +808,7 @@ junk = temporary(hexdump)
     if (hk_count gt 0) then  print, 'Number of HK   Packets = ', hk_count
     if (log_count gt 0) then print, 'Number of LOG  Packets = ', log_count
     if (sci_count gt 0) then print, 'Number of SCI  Packets = ', sci_count
+    if (sps_ps_count gt 0) then print, 'Number of SPS-PS Packets = ', sps_ps_count
   endif
 
   return    ; end of reading packets

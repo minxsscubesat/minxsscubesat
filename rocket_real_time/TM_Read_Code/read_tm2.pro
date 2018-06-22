@@ -25,20 +25,23 @@
 ;	Updated May 2016 to merge read_tm2_all_cd.pro and read_tm2_rt.pro
 ;		Just use the /CD option to read the CD log files, default is DataView Dump file (RT)
 ;
+;	Updated June 2018 to process Compact SOLSTICE (CSOL) images (uses CLASSIC items)
+;
 pro  read_tm2, filename, cd=cd, launchtime=launchtime, time=time, $
-					classic=classic, amegs=amegs, bmegs=bmegs, rocket=rocket, debug=debug
+					amegs=amegs, bmegs=bmegs, classic=classic, csol=csol, $
+					rocket=rocket, debug=debug
 
 ;  new code to check for CD or RT file type
 if keyword_set(cd) then begin
 	fileRT = 0
-	fileType = 'DataView Raw Dump File'
-	fileFilter = 'Raw*TM2_*.*'
+	fileType = 'CD Raw Log File'
+	fileFilter = 'LOGFILE*.*'
 	ncol = 85L	; CD has 6 extra header bytes (3 words) for Time
 	nrow = 3L
 endif else begin
 	fileRT = 1
-	fileType = 'CD Raw Log File'
-	fileFilter = 'LOGFILE*.*'
+	fileType = 'DataView Raw Dump File'
+	fileFilter = 'Raw*TM2_*.*'
 	ncol = 82L
 	nrow = 3L
 endelse
@@ -65,11 +68,11 @@ fbase = strmid( filename, fb1+1, fb2-fb1-1 ) + '_'
 ;  just use the full input file name
 fbase = filename + '_'
 
-if keyword_set(rocket) then rnum = rocket else rnum = 36.318
-if (rnum ne 36.318) and (rnum ne 36.300) and (rnum ne 36.290) and $
+if keyword_set(rocket) then rnum = rocket else rnum = 36.336
+if (rnum ne 36.336) and (rnum ne 36.318) and (rnum ne 36.300) and (rnum ne 36.290) and $
 		(rnum ne 36.286) and (rnum ne 36.240) and (rnum ne 36.233) then begin
   print, 'ERROR: rocket number is not valid, resetting to 36.318'
-  rnum = 36.318
+  rnum = 36.336
 endif
 print, 'Processing for rocket # ', string(rnum,format='(F7.3)')
 
@@ -84,6 +87,7 @@ if (not keyword_set(launchtime)) and (fpos ge 0) then begin
   if (rnum eq 36.290) then launchtime = 12*3600L + 0*60L + 0.4D0
   if (rnum eq 36.300) then launchtime = 13*3600L + 14*60L + 25.1D0
   if (rnum eq 36.318) then launchtime = 19*3600L + 0*60L + 0.0D0
+  if (rnum eq 36.336) then launchtime = 19*3600L + 0*60L + 0.0D0  ; TBD !!!
   print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
 endif
 
@@ -266,7 +270,47 @@ if keyword_set(debug) then stop, 'DEBUG first packet = data1 and last packet = d
 fbase = fbase + timestr
 fend = '.dat'
 
-if keyword_set(classic) then begin
+if arg_present(amegs) or keyword_set(amegs) then begin
+  famegs = fbase + 'raw_amegs' + fend
+  print, 'Saving MEGS-A images in ', famegs
+  mnumx = 2048L
+  mnumy = 1024L
+  afirst = 0L
+  atotal = mnumx * mnumy
+  awmin = long((10.D6/16.)*(33./82.)*10.)
+  amegs1 = { time: 0.0D0, numbuffer: 0L, buffer: uintarr(awmin) }
+  openw,alun,famegs,/get_lun
+  aa = assoc(alun,amegs1)
+  aacnt = 0L
+  mfidvalue1 = 'FFFF'X
+  mfidvalue2 = 'AAAA'X
+  awcnt = 0L
+  axy = [18,0,2,1,33,0]
+  if not keyword_set(CD) then begin
+  	axy[0] = axy[0] + RToffset	; convert from CD to RT "X"
+  endif
+endif
+if arg_present(bmegs) or keyword_set(bmegs) then begin
+  fbmegs = fbase + 'raw_bmegs' + fend
+  print, 'Saving MEGS-B images in ', fbmegs
+  mnumx = 2048L
+  mnumy = 1024L
+  bfirst = 0L
+  btotal = mnumx * mnumy
+  bwmin = long((10.D6/16.)*(33./82.)*10.)
+  bmegs1 = { time: 0.0D0, numbuffer: 0L, buffer: uintarr(bwmin) }
+  openw,blun,fbmegs,/get_lun
+  ba = assoc(blun,bmegs1)
+  bacnt = 0L
+  mfidvalue1 = 'FFFF'X
+  mfidvalue2 = 'AAAA'X
+  bwcnt = 0L
+  bxy = [19,0,2,1,33,0]
+  if not keyword_set(CD) then begin
+  	bxy[0] = bxy[0] + RToffset	; convert from CD to RT "X"
+  endif
+endif
+if (arg_present(classic) or keyword_set(classic)) and (rnum le 36.217) then begin
   cnumx = 1066L
   cnumy = 1064L
   classic1 = { time: 0.0D0, pixelerror: 0L, integbits: 0, buffer: 0, image: uintarr(cnumx,cnumy) }
@@ -289,55 +333,77 @@ if keyword_set(classic) then begin
   	cxy[0] = cxy[0] + RToffset	; convert from CD to RT "X"
   endif
 endif
-if keyword_set(amegs) then begin
-  famegs = fbase + 'raw_amegs' + fend
-  print, 'Saving MEGS-A images in ', famegs
-  mnumx = 2048L
-  mnumy = 1024L
-  afirst = 0L
-  atotal = mnumx * mnumy
-  awmin = long((10.D6/16.)*(33./82.)*10.)
-  amegs1 = { time: 0.0D0, numbuffer: 0L, buffer: uintarr(awmin) }
-  openw,alun,famegs,/get_lun
-  aa = assoc(alun,amegs1)
-  aacnt = 0L
-  mfidvalue1 = 'FFFF'X
-  mfidvalue2 = 'AAAA'X
-  awcnt = 0L
-  axy = [18,0,2,1,33,0]
+if (arg_present(csol) or keyword_set(csol)) and (rnum eq 36.336) then begin
+  csnumx = 2000L
+  csnumy = 440L
+  csnumy5 = long(csnumy/5L)
+  csol_meta1 = { time_counter: 0L, temp_det0: 0.0, temp_det1: 0.0, temp_fpga: 0.0, mon_5v: 0.0, $
+  				mon_current: 0.0, tec_enable: 0, led_enable: 0, integ_period: 0.0, $
+  				sdcard_start: 0U, sdcard_address: 0U, error_code: 0U }
+  csol1 = { time: 0.0D0, pixelerror: 0L, frameid: 0U, image: uintarr(csnumx,csnumy), $
+  				metadata: csol_meta1 }
+  fcsol = fbase + 'csol' + fend
+  print, 'Saving CSOL images in ', fcsol
+  openw,cslun,fcsol,/get_lun
+  csa = assoc(cslun,csol1)
+  csacnt = 0L
+  csfidmask = 'FFFF'X
+  csfidvalue1 = '5555'X
+  csfidoffset1 = 0
+  csfidvalue2 = 'A5A5'X
+  csfidoffset2 = 1
+  csfidvalue3 = '0000'X
+  csfidoffset3 = 2
+  cstemp_last = uintarr(6)
+  csframeid = 0U
+  cswcnt = 0L
+  cswtotal = csnumx*csnumy*4L
+  cswords = uintarr(cswtotal)
+  csoferr = 0L
+  csxy = [6,0,1,1,12,0]
   if not keyword_set(CD) then begin
-  	axy[0] = axy[0] + RToffset	; convert from CD to RT "X"
-  endif
-endif
-if keyword_set(bmegs) then begin
-  fbmegs = fbase + 'raw_bmegs' + fend
-  print, 'Saving MEGS-B images in ', fbmegs
-  mnumx = 2048L
-  mnumy = 1024L
-  bfirst = 0L
-  btotal = mnumx * mnumy
-  bwmin = long((10.D6/16.)*(33./82.)*10.)
-  bmegs1 = { time: 0.0D0, numbuffer: 0L, buffer: uintarr(bwmin) }
-  openw,blun,fbmegs,/get_lun
-  ba = assoc(blun,bmegs1)
-  bacnt = 0L
-  mfidvalue1 = 'FFFF'X
-  mfidvalue2 = 'AAAA'X
-  bwcnt = 0L
-  bxy = [19,0,2,1,33,0]
-  if not keyword_set(CD) then begin
-  	bxy[0] = bxy[0] + RToffset	; convert from CD to RT "X"
+  	cxy[0] = cxy[0] + RToffset	; convert from CD to RT "X"
   endif
 endif
 
+;  ********************************   READ DATA  ****************************
 ;
 ;	read all of the data and get the TIME
 ;		TIME_millisec:  [(((byte 5) & 0xF0) << 9) + (byte 3) << 8 + (byte 2) ] * 1000. +
 ;				[ ((byte 5) & 0x03) << 8 + (byte 4) ] +
 ;				[ ((byte 7) & 0x03) << 8 + (byte 6) ] / 1000.
 ;
+;	2018:  Updated so Row 0 doesn't have to be first row in file
+;
+sfidxy = [4,0,0,1]
+sfid_mask = '000F'X
+if not keyword_set(CD) then sfidxy[0] = sfidxy[0] + RToffset	; convert from CD to RT "X"
+data_last = a[kstart > 0? kstart-1 : kstart]
+sfid_last = extract_item(data_last, sfidxy)
+
 for k=kstart,kend do begin
-  data = a[k]
+  datanew = a[k]
+  ;  2018: new make sure SFID is in right order
+  sfid = extract_item(datanew, sfidxy)
+  data = datanew
+  if (sfid[0] and sfid_mask) ne 0 then begin
+  	; file alignment is NOT OK for Row 0
+  	; use data from data_last to start new data packet
+  	for ii=0,nrow-1 do begin
+  		if (sfid_last[ii] and sfid_mask) eq 0 then begin
+  			; found Row 0
+  			ii_last = nrow-ii-1
+  			data[*,0:ii_last] = data_last[*,ii:nrow-1]
+  			if (ii gt 0) then data[*,ii_last+1:nrow-1] = datanew[*,0:ii-1]
+  			break
+  		endif
+  	endfor
+  	if keyword_set(debug) then stop, 'DEBUG two data packet merging ...'
+  endif
+  ;  remember data for next packet read merging option
+  data_last = datanew
+  sfid_last = sfid
+
   swap_endian_inplace, data, /swap_if_big_endian		; only MACs will flip bytes
 
   if ((data[sync1offset] and wordmask) eq sync1value) and $
@@ -360,7 +426,7 @@ for k=kstart,kend do begin
   	endelse
   	aindex[acnt] = k
 
-    if keyword_set(amegs) then begin
+    if arg_present(amegs) or keyword_set(amegs) then begin
       if (afirst eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, axy )
@@ -438,7 +504,7 @@ anotyet:
       endelse
   	endif
 
-    if keyword_set(bmegs) then begin
+    if arg_present(bmegs) or keyword_set(bmegs) then begin
       if (bfirst eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, bxy )
@@ -516,7 +582,7 @@ bnotyet:
       endelse
   	endif
 
-     if keyword_set(classic) then begin
+     if (arg_present(classic) or keyword_set(classic)) and (rnum le 36.217) then begin
       if (cwcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, cxy )
@@ -585,6 +651,85 @@ cnotyet2:
       endelse
   	endif
 
+     if (arg_present(csol) or keyword_set(csol)) and (rnum eq 36.336) then begin
+      if (cswcnt eq 0L) then begin
+        ; wait until see fiducial before storing data
+        cstemp = extract_item( data, csxy )
+        temp = [cstemp_last, cstemp]
+        cstemp_last = cstemp
+        jend = n_elements(temp)
+        for jj=0,jend-3 do begin
+        	if (temp[jj+csfidoffset1] eq csfidvalue1) and $
+        		(temp[jj+csfidoffset2] eq csfidvalue2) and $
+        		(temp[jj+csfidoffset3] eq csfidvalue3) then goto, csgotfid
+        endfor
+        ; stop, 'Debug CSOL temp search array ...'
+        goto, csnotyet
+csgotfid:
+		; Found Row 0 of CSOL image
+		; print, 'CSOL found SYNC for Row 0'
+		nw = jend-jj
+        cswords[cswcnt:cswcnt+nw-1] = temp[jj:jend-1]
+        cswcnt = cswcnt + nw
+        csol1.time = atime[acnt]	; save time of the fiducial (in sec)
+		if (nw ge 4) then csol1.frameid = temp[jj+3]
+		cstemp_last = uintarr(6)
+csnotyet:
+		; read some more data
+      endif else begin
+        ; store data until see next image fiducial
+        cstemp = extract_item( data, csxy )
+        if (cswcnt lt 4) and (n_elements(cstemp) gt 4) then csol1.frameid = cstemp[3-cswcnt]
+        temp = [cstemp_last, cstemp]
+        cstemp_last = cstemp
+        jend = n_elements(temp)
+        for jj=0,jend-3 do begin
+        	if (temp[jj+csfidoffset1] eq csfidvalue1) and $
+        		(temp[jj+csfidoffset2] eq csfidvalue2) and $
+        		(temp[jj+csfidoffset3] eq csfidvalue3) then goto, csgotfid2
+        endfor
+        jend = n_elements(cstemp)
+        if ((cswcnt+jend) lt cswtotal) then begin
+          cswords[cswcnt:cswcnt+jend-1] = cstemp
+          cswcnt = cswcnt + jend
+        endif else begin
+          jmax = cswtotal - cswcnt - 1L
+          if (jmax ge 0) then begin
+            cswords[cswcnt:cswcnt+jmax] = cstemp[0:jmax]
+            cswcnt = cswcnt + jmax
+          endif
+          csoferr = csoferr + jend - jmax + 1L
+        endelse
+        goto, csnotyet2
+csgotfid2:
+		nw = jj
+		if (jj gt 0) and ((cswcnt+jj) le cswtotal) then begin
+          cswords[cswcnt:cswcnt+jj-1] = temp[0:jj-1]
+          cswcnt = cswcnt + nw
+        endif else csoferr = csoferr + nw
+        if (csoferr ne 0) then begin
+          print, 'WARNING: ', strtrim(csoferr,2), ' words thrown away for CSOL @ ',strtrim(csol1.time,2)
+          csoferr = 0L     ;  reset overflow flag
+        endif
+        ;  process the data stream into CSOL image and meta data structure
+        csol_raw2image, cswords, cswcnt, csol1
+        ;  save the record
+        ; if (csacnt eq 0) then stop, 'Check out first CSOL image in "csol1" ...'
+        csa[csacnt] = csol1
+        csacnt = csacnt + 1L
+        ;  start new image stream
+        cswcnt = 0L
+		nw = jend-jj
+        cswords[cswcnt:cswcnt+nw-1] = temp[jj:jend-1]
+        cswcnt = cswcnt + nw
+        csol1.time = atime[acnt]	; save time of the fiducial (in sec)
+		if (nw ge 4) then csol1.frameid = temp[jj+3]
+		cstemp_last = uintarr(6)
+csnotyet2:
+		; read some more data
+      endelse
+  	endif
+
   	acnt = acnt + 1L
   endif
 
@@ -610,16 +755,7 @@ close, lun
 free_lun, lun
 
 ans = 'Y'
-if keyword_set(classic) then begin
-  close, clun
-  free_lun, clun
-  print, ' '
-  print, strtrim(cacnt,2), ' CLASSIC images saved.'
-  read, 'Show CLASSIC image movie (Y/N) ? ', ans
-  ans = strupcase(strmid(ans,0,1))
-  if (ans eq 'Y') then movie_classic, fclassic
-endif
-if keyword_set(amegs) then begin
+if arg_present(amegs) or keyword_set(amegs) then begin
   close, alun
   free_lun, alun
   print, ' '
@@ -633,7 +769,7 @@ if keyword_set(amegs) then begin
   	save, amegs, file=aSaveFile
   endif
 endif
-if keyword_set(bmegs) then begin
+if arg_present(bmegs) or keyword_set(bmegs) then begin
   close, blun
   free_lun, blun
   print, ' '
@@ -646,6 +782,24 @@ if keyword_set(bmegs) then begin
   	print, 'Saving processed MEGS-B data (bmegs) in ', bSaveFile
   	save, bmegs, file=bSaveFile
   endif
+endif
+if (arg_present(classic) or keyword_set(classic)) and (rnum le 36.217) then begin
+  close, clun
+  free_lun, clun
+  print, ' '
+  print, strtrim(cacnt,2), ' CLASSIC images saved.'
+  read, 'Show CLASSIC image movie (Y/N) ? ', ans
+  ans = strupcase(strmid(ans,0,1))
+  if (ans eq 'Y') then movie_classic, fclassic
+endif
+if (arg_present(csol) or keyword_set(csol)) and (rnum eq 36.336) then begin
+  close, cslun
+  free_lun, cslun
+  print, ' '
+  print, strtrim(csacnt,2), ' CSOL images saved.'
+  read, 'Show CSOL image movie (Y/N) ? ', ans
+  ans = strupcase(strmid(ans,0,1))
+  if (ans eq 'Y') then movie_csol, fcsol
 endif
 
 if keyword_set(debug) then stop, 'STOP: Check out results, atime, aindex, acnt ...'

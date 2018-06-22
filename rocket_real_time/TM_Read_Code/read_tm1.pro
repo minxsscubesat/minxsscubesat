@@ -44,23 +44,24 @@
 ;	Updated May 2016 for 36.318 and also so RT and CD version works under
 ;		one procedure with CD option flag (default is RT)
 ;
-;	Updated June 2018 for 36.336
+;	Updated June 2018 for 36.336 for CSOL analog monitors and new SPS-CSOL serial data
+;		Also fixed so file doesn't have to start on Row 0
 ;
 pro  read_tm1, filename, cd=cd, launchtime=launchtime, time=time, single=single, $
 				analog=analog, esp=esp, pmegs=pmegs, xps=xps, axs=axs, xrs=xrs, x123=x123, $
-				cmd=cmd, debug=debug, rocket=rocket
+				cmd=cmd, sps_csol=sps_csol, debug=debug, rocket=rocket
 
 ;  new code to check for CD or RT file type
 if keyword_set(cd) then begin
 	fileRT = 0
-	fileType = 'DataView Raw Dump File'
-	fileFilter = 'Raw*TM1_*.*'
+	fileType = 'CD Raw Log File'
+	fileFilter = 'LOGFILE*.*'
 	ncol = 83L	; CD has 6 extra header bytes (3 words) for Time
 	nrow = 8L
 endif else begin
 	fileRT = 1
-	fileType = 'CD Raw Log File'
-	fileFilter = 'LOGFILE*.*'
+	fileType = 'DataView Raw Dump File'
+	fileFilter = 'Raw*TM1_*.*'
 	ncol = 80L
 	nrow = 8L
 endelse
@@ -111,7 +112,10 @@ if (not keyword_set(launchtime)) and (fpos ge 0) then begin
   if (rnum eq 36.318) then launchtime = 19*3600L + 0*60L + 0.0D0
   if (rnum eq 36.336) then launchtime = 19*3600L + 0*60L + 0.0D0
   print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
-endif
+endif else begin
+  ; stop, 'DEBUG: Did not set Launch Time (tzero)...'
+endelse
+
 
 ;  36.336 TM1 packet size is same as before but some monitor placements changed
 ;  36.233 and 36.240 TM1 packet size and sync are the same but monitor placements are different
@@ -127,7 +131,7 @@ ntotal = ncol * nrow
 ntime = 2L                 ; DataView time is 4-bytes of milliseconds of time
 packetrate = ntotal * 10L / 1.D6    ; number_words * 10_bits / bit_rate ==> sec per packet
 
-RToffset = -1L		; offset between CD data and RT data for the "X" value
+RToffset = -1L		; X offset between CD data and RT data for the "X" value
 
 ;
 ;	define constants / arrays for finding sync values
@@ -332,7 +336,7 @@ if keyword_set(single) then begin
     sdata = dblarr(numsingle+1L)
   endelse
 endif
-if arg_present(analog) then begin
+if arg_present(analog) or keyword_set(analog) then begin
   ;
   ;   define the TM items for all of the analog monitors
   ;     X = WD + 3, Y = FR - 1
@@ -565,7 +569,7 @@ endif
 ;	Serial Data
 ;		X = WD + 3 (CD, -1 for RT),  Y = FR - 1
 ;
-if arg_present(esp) then begin
+if arg_present(esp) or keyword_set(esp) then begin
   fesp = fbase + 'esp' + fend
   print, 'Saving ESP spectra in ', fesp
   numesp = 9L
@@ -590,7 +594,7 @@ if arg_present(esp) then begin
   edebugcnt = 0
 endif
 
-if arg_present(xps) and (rnum lt 36.290) then begin
+if (arg_present(xps) or keyword_set(xps)) and (rnum lt 36.290) then begin
   fxps = fbase + 'xps' + fend
   print, 'Saving XPS spectra in ', fxps
   numxps = 12L
@@ -614,7 +618,7 @@ if arg_present(xps) and (rnum lt 36.290) then begin
   endif
 endif
 
-if arg_present(pmegs) then begin
+if arg_present(pmegs) or keyword_set(pmegs) then begin
   fpmegs = fbase + 'pmegs' + fend
   print, 'Saving MEGS-P spectra in ', fpmegs
   numpcnt = 2L
@@ -639,7 +643,7 @@ if arg_present(pmegs) then begin
   endif
 endif
 
-if arg_present(axs) and (rnum lt 36.290) then begin
+if (arg_present(axs) or keyword_set(axs)) and (rnum lt 36.290) then begin
 	;  S1 = Serial 1 (no longer used)
   faxs = fbase + 'axs' + fend
   print, 'Saving axs spectra in ', faxs
@@ -666,7 +670,7 @@ if arg_present(axs) and (rnum lt 36.290) then begin
   endif
 endif
 
-if arg_present(xrs) then begin
+if arg_present(xrs) or keyword_set(xrs) then begin
   fgxrs = fbase + 'goes_xrs' + fend
   print, 'Saving GOES-R XRS serial data in ', fgxrs
   openw,gxlun,fgxrs,/get_lun
@@ -684,7 +688,7 @@ if arg_present(xrs) then begin
   endif
   glastchar = -1
 endif
-if arg_present(x123) and ((rnum eq 36.290) or (rnum lt 36.300)) then begin
+if (arg_present(x123) or keyword_set(x123)) and ((rnum eq 36.290) or (rnum lt 36.300)) then begin
   fx123 = fbase + 'x123' + fend
   print, 'Saving X123 serial data in ', fx123
   openw,x123lun,fx123,/get_lun
@@ -694,7 +698,8 @@ if arg_present(x123) and ((rnum eq 36.290) or (rnum lt 36.300)) then begin
 	x123xy[0] = x123xy[0] + RToffset	; convert from CD to RT "X"
   endif
 endif
-if arg_present(cmd) and (rnum ge 36.290) then begin
+
+if (arg_present(cmd) or keyword_set(cmd)) and (rnum ge 36.290) then begin
   fcmd = fbase + 'cmd_fpga' + fend
   print, 'Saving CMD Box / FPGA serial data in ', fcmd
   openw,cmdlun,fcmd,/get_lun
@@ -707,17 +712,60 @@ if arg_present(cmd) and (rnum ge 36.290) then begin
   endif
 endif
 
+if (arg_present(sps_csol) or keyword_set(sps_csol)) and (rnum eq 36.336) then begin
+  fsps = fbase + 'sps_csol' + fend
+  print, 'Saving SPS-CSOL serial data in ', fsps
+  openw,spslun,fsps,/get_lun
+  spscnt = 0L
+  if (rnum eq 36.336) then begin
+    spsxy = [17,1,0,2]
+  endif
+  if (not keyword_set(CD)) then begin
+	spsxy[0] = spsxy[0] + RToffset	; convert from CD to RT "X"
+  endif
+  spslastchar = -1
+endif
+
 kfullcnt = kend - kstart
 print, 'Reading ', strtrim(kfullcnt,2), ' records...'
 
-;
+; **************************************   READ DATA  ************************************
 ;   read all of the data
 ;
 ;   Save the TIME
 ;     TIME_millisec:  data[ntotal] + ISHFT(ulong(data[ntotal+1]),16)
 ;
+;	2018:  Updated so Row 0 doesn't have to be first row in file
+;
+sfidxy = [4,0,0,1]
+sfid_mask = '000F'X
+if not keyword_set(CD) then sfidxy[0] = sfidxy[0] + RToffset	; convert from CD to RT "X"
+data_last = a[kstart > 0? kstart-1 : kstart]
+sfid_last = extract_item(data_last, sfidxy)
+
 for k=kstart,kend do begin
-  data = a[k]
+  datanew = a[k]
+  ;  2018: new make sure SFID is in right order
+  sfid = extract_item(datanew, sfidxy)
+  data = datanew
+  if (sfid[0] and sfid_mask) ne 0 then begin
+  	; file alignment is NOT OK for Row 0
+  	; use data from data_last to start new data packet
+  	for ii=0,nrow-1 do begin
+  		if (sfid_last[ii] and sfid_mask) eq 0 then begin
+  			; found Row 0
+  			ii_last = nrow-ii-1
+  			data[*,0:ii_last] = data_last[*,ii:nrow-1]
+  			if (ii gt 0) then data[*,ii_last+1:nrow-1] = datanew[*,0:ii-1]
+  			break
+  		endif
+  	endfor
+  	if keyword_set(debug) then stop, 'DEBUG two data packet merging ...'
+  endif
+  ;  remember data for next packet read merging option
+  data_last = datanew
+  sfid_last = sfid
+
   swap_endian_inplace, data, /swap_if_big_endian       ; only MACs will flip bytes
 
   if ((data[sync1offset] and wordmask) eq sync1value) and $
@@ -750,7 +798,7 @@ for k=kstart,kend do begin
       sa[acnt] = sdata  ; write data to file
     endif
 
-    if arg_present(analog) then begin
+    if arg_present(analog) or keyword_set(analog) then begin
       for jj=0,numanalogs-1 do begin
         dummy = extract_item( data, reform(axy[*,jj]), /analog )
         atemp.(jj+1) = dummy[0]
@@ -765,7 +813,7 @@ for k=kstart,kend do begin
       endif
     endif
 
-    if arg_present(esp) then begin
+    if arg_present(esp) or keyword_set(esp) then begin
       if (ewcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, exy )
@@ -829,7 +877,7 @@ enotyet2:
       endelse
     endif
 
-    if arg_present(xps) and (rnum lt 36.290) then begin
+    if (arg_present(xps) or keyword_set(xps)) and (rnum lt 36.290) then begin
       if (xwcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, xxy )
@@ -877,7 +925,7 @@ xnotyet2:
       endelse
     endif
 
-    if arg_present(pmegs) then begin
+    if arg_present(pmegs) or keyword_set(pmegs) then begin
       if (pwcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, pxy )
@@ -925,7 +973,7 @@ pnotyet2:
       endelse
     endif
 
-    if arg_present(axs) and (rnum lt 36.290)  then begin
+    if (arg_present(axs) or keyword_set(axs)) and (rnum lt 36.290)  then begin
       if (axswcnt eq 0L) then begin
         ; wait until see fiducial before storing data
         temp = extract_item( data, axsxy )
@@ -990,7 +1038,7 @@ axsnotyet2:
       endelse
     endif
 
-  	if arg_present(xrs) and (rnum lt 36.290) then begin
+  	if (arg_present(xrs) or keyword_set(xrs)) and (rnum lt 36.290) then begin
   	  dummy = extract_item( data, gxxy )
   	  ndummy = n_elements(dummy)
   	  if (glastchar eq -1) and keyword_set(debug) then begin
@@ -1015,7 +1063,7 @@ axsnotyet2:
 	  endfor
   	endif
 
-  	if arg_present(xrs) and (rnum ge 36.290) then begin
+  	if (arg_present(xrs) or keyword_set(xrs)) and (rnum ge 36.290) then begin
   	  dummy = extract_item( data, gxxy )
   	  ndummy = n_elements(dummy)
   	  ; change in 2015 so XRS-X123 data are binary packets (CCSDS, MinXSS)
@@ -1037,7 +1085,7 @@ axsnotyet2:
 	  ; if cnt2 gt 0 and (gxrscnt lt 10000L) then print, 'XRS:',dummy2[0:cnt2-1],format='(A8,8Z5)'
   	endif
 
-  	if arg_present(x123) and ((rnum eq 36.290) or (rnum eq 36.300)) then begin
+  	if (arg_present(x123) or keyword_set(x123)) and ((rnum eq 36.290) or (rnum eq 36.300)) then begin
    	  dummy = extract_item( data, x123xy )
   	  ndummy = n_elements(dummy)
   	  for jj=0,ndummy-1 do begin
@@ -1049,7 +1097,7 @@ axsnotyet2:
 	  endfor
   	endif
 
-  	if arg_present(cmd) and (rnum ge 36.290) then begin
+  	if (arg_present(cmd) or keyword_set(cmd)) and (rnum ge 36.290) then begin
   	  dummy = extract_item( data, cmdxy )
   	  ndummy = n_elements(dummy)
   	  for jj=0,ndummy-1 do begin
@@ -1060,6 +1108,19 @@ axsnotyet2:
 	    endif
 	  endfor
   	endif
+
+	if (arg_present(sps_csol) or keyword_set(sps_csol)) and (rnum eq 36.336) then begin
+	  dummy = extract_item( data, spsxy )
+  	  ndummy = n_elements(dummy)
+  	  ; if (ndummy gt 0) then stop, 'DEBUG SPS-CSOL ...'
+  	  for jj=0,ndummy-1 do begin
+  	    if (dummy[jj] ne 0) then begin
+  	      ; write 8-bit BYTE to file (bit-shift 2 bits down)
+  	      writeu,spslun,byte(ishft(dummy[jj],-2) and 'FF'X)
+	      spscnt = spscnt + 1
+	    endif
+	  endfor
+	endif
 
     acnt = acnt + 1L
   endif
@@ -1090,14 +1151,14 @@ if keyword_set(single) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_single, fsingle
 endif
-if arg_present(analog) then begin
+if arg_present(analog) or keyword_set(analog) then begin
   close, alun
   free_lun, alun
   read, 'Plot All Analogs time series (Y/N) ? ', ans
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_analogs, fanalog, tzero=launchtime
 endif
-if arg_present(esp) then begin
+if arg_present(esp) or keyword_set(esp) then begin
   close, elun
   free_lun, elun
   print, ' '
@@ -1106,7 +1167,7 @@ if arg_present(esp) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_esp, fesp
 endif
-if arg_present(xps) and (rnum lt 36.290) then begin
+if (arg_present(xps) or keyword_set(xps)) and (rnum lt 36.290) then begin
   close, xlun
   free_lun, xlun
   print, ' '
@@ -1115,7 +1176,7 @@ if arg_present(xps) and (rnum lt 36.290) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_xps, fxps
 endif
-if arg_present(pmegs) then begin
+if arg_present(pmegs) or keyword_set(pmegs) then begin
   close, plun
   free_lun, plun
   print, ' '
@@ -1124,7 +1185,7 @@ if arg_present(pmegs) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then plot_megsp, fpmegs, /all
 endif
-if arg_present(axs) and (rnum lt 36.290) then begin
+if (arg_present(axs) or keyword_set(axs)) and (rnum lt 36.290) then begin
   close, axslun
   free_lun, axslun
   print, ' '
@@ -1133,7 +1194,7 @@ if arg_present(axs) and (rnum lt 36.290) then begin
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then movie_axs, faxs
 endif
-if arg_present(xrs) then begin
+if arg_present(xrs) or keyword_set(xrs) then begin
   close, gxlun
   free_lun, gxlun
   print, ' '
@@ -1142,17 +1203,23 @@ if arg_present(xrs) then begin
   ; ans = strupcase(strmid(ans,0,1))
   ; if (ans eq 'Y') then plot_goes_xrs, fgxrs
 endif
-if arg_present(x123) and ((rnum eq 36.290) or (rnum eq 36.300)) then begin
+if (arg_present(x123) or keyword_set(x123)) and ((rnum eq 36.290) or (rnum eq 36.300)) then begin
   close, x123lun
   free_lun, x123lun
   print, ' '
   print, strtrim(x123cnt,2), ' X123 serial stream characters saved.'
 endif
-if arg_present(cmd) and (rnum ge 36.290) then begin
+if (arg_present(cmd) or keyword_set(cmd)) and (rnum ge 36.290) then begin
   close, cmdlun
   free_lun, cmdlun
   print, ' '
   print, strtrim(cmdcnt,2), ' CMD Box / FPGA serial stream characters saved.'
+endif
+if (arg_present(sps_csol) or keyword_set(sps_csol)) and (rnum eq 36.336) then begin
+  close, spslun
+  free_lun, spslun
+  print, ' '
+  print, strtrim(spscnt,2), ' SPS-CSOL serial stream characters saved.'
 endif
 
 if keyword_set(debug) then stop, 'STOP:  Check out results, atime, aindex, acnt ...'

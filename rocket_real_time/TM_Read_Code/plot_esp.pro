@@ -125,8 +125,9 @@ endif
 if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.286
   if (rocket ne 36.258) or (rocket ne 36.275) or (rocket ne 36.286) $
-  		or (rocket ne 36.290) or (rocket ne 36.300) or (rocket ne 36.318) then rocket = 36.318
-endif else rocket = 36.318
+  		or (rocket ne 36.290) or (rocket ne 36.300) or (rocket ne 36.318) $
+  		or (rocket ne 36.336) then rocket = 36.336
+endif else rocket = 36.336
 
 print, 'Processing ESP data for rocket = ', rocket
 
@@ -192,6 +193,16 @@ endif else if (rocket eq 36.318) then begin
     twindow = 315.
     dtwindow=2.
     dtmove=2.
+endif else if (rocket eq 36.336) then begin
+    tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
+    tapogee = 276.
+    dtlight = 15.
+    tdark1 = 60.
+    tdark2 = 490.
+    dtdark=5.
+    twindow = 332.
+    dtwindow=3.
+    dtmove=2.
 endif else begin
     ; force plot to not look for dark and visible light
     rocket = 0.0
@@ -225,7 +236,9 @@ if not keyword_set(xrange) then xrange = [min(ptime), max(ptime)]
 for k=kstart,kend do begin
     mtitle='ESP #' + strtrim(k+1,2)
 
-    if keyword_set(yrange) then yr = yrange else yr = [0, max(edata.cnt[k])]
+	wgdx = where(ptime ge xrange[0] and ptime le xrange[1])
+    if keyword_set(yrange) then yr = yrange else $
+    	yr = [min(edata[wgdx].cnt[k])*0.9, max(edata[wgdx].cnt[k])*1.1]
     plot, ptime, edata.cnt[k], ys=1, xrange=xrange, yrange=yr, $
         xtitle=xtitle, ytitle='Counts', title=mtitle, xmargin=xmargin, ymargin=ymargin
 
