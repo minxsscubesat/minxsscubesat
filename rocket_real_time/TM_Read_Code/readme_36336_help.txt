@@ -32,7 +32,9 @@ SDO EVE MEGS-P:	$rocket_data/Flight/TM1/flight_TM1_pmegs.sav
 Rocket XRS:		$rocket_data/Flight/TM1/flight_TM1_goes_xrs.sav  (includes X123, SPS, PS-NIR)
 
 CSOL Realtime:	$rocket_data/Flight/TM2/flight_TM2.log_0_600_csol.dat   (binary file)
-CSOL 5-sec:		TBD file
+CSOL 5-sec:		This appeared to fail (probably due to uplink issues during flight).
+CSOL Full Images:  TBD file
+					(SD-Card address = 200 to 247 for T+0 to T+600)
 CSOL SPS:		$rocket_data/Flight/TM1/flight_TM1_sps_csol.txt
 
 FPGA Commands:	$rocket_data/Flight/TM1/flight_TM1_cmd_fpga.txt

@@ -124,15 +124,15 @@ endif
 
 if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.286
-  if (rocket ne 36.258) or (rocket ne 36.275) or (rocket ne 36.286) $
-  		or (rocket ne 36.290) or (rocket ne 36.300) or (rocket ne 36.318) $
-  		or (rocket ne 36.336) then rocket = 36.336
+  if (rocket ne 36.258) and (rocket ne 36.275) and (rocket ne 36.286) $
+  		and (rocket ne 36.290) and (rocket ne 36.300) and (rocket ne 36.318) $
+  		and (rocket ne 36.336) then rocket = 36.336
 endif else rocket = 36.336
 
 print, 'Processing ESP data for rocket = ', rocket
 
 if (rocket eq 36.258) then begin
-    tzero = 18*3600L+32*60L+2.00D0  ; launch time in UT
+    rkt_tzero = 18*3600L+32*60L+2.00D0  ; launch time in UT
     tapogee = 274.
     dtlight = 15.
     tdark1 = 50.
@@ -141,7 +141,7 @@ if (rocket eq 36.258) then begin
     twindow = 305.
     dtwindow=5.
 endif else if (rocket eq 36.275) then begin
-    tzero = 17*3600L+50*60L+0.354D0  ; launch time in UT
+    rkt_tzero = 17*3600L+50*60L+0.354D0  ; launch time in UT
     tapogee = 275.
     dtlight = 15.
     tdark1 = 60.
@@ -153,7 +153,7 @@ endif else if (rocket eq 36.275) then begin
     tyaw5 = 445.
     dtmove=2.
 endif else if (rocket eq 36.286) then begin
-    tzero = 19*3600L+30*60L+1.000D0  ; launch time in UT
+    rkt_tzero = 19*3600L+30*60L+1.000D0  ; launch time in UT
     tapogee = 276.
     dtlight = 15.
     tdark1 = 60.
@@ -163,7 +163,7 @@ endif else if (rocket eq 36.286) then begin
     dtwindow=2.
     dtmove=2.
 endif else if (rocket eq 36.290) then begin
-    tzero = 18*3600L+0*60L+0.000D0  ; launch time in UT
+    rkt_tzero = 18*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 275.
     dtlight = 15.
     tdark1 = 60.
@@ -173,7 +173,7 @@ endif else if (rocket eq 36.290) then begin
     dtwindow=2.
     dtmove=2.
 endif else if (rocket eq 36.300) then begin
-    tzero = 19*3600L+15*60L+0.000D0  ; launch time in UT
+    rkt_tzero = 19*3600L+15*60L+0.000D0  ; launch time in UT
     ;  launch failure - BB cut down
     tapogee = 180
     dtlight = 15.
@@ -184,7 +184,7 @@ endif else if (rocket eq 36.300) then begin
     dtwindow=2.
     dtmove=2.
 endif else if (rocket eq 36.318) then begin
-    tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
+    rkt_tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 275.
     dtlight = 15.
     tdark1 = 60.
@@ -194,7 +194,7 @@ endif else if (rocket eq 36.318) then begin
     dtwindow=2.
     dtmove=2.
 endif else if (rocket eq 36.336) then begin
-    tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
+    rkt_tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 276.
     dtlight = 15.
     tdark1 = 60.
@@ -209,7 +209,9 @@ endif else begin
 endelse
 
 tz = edata[0].time
-if keyword_set(tzero) or keyword_set(rocket) then tz = tzero
+if keyword_set(rocket) then tz = rkt_tzero
+if keyword_set(tzero) then tz = tzero 		; keyword tzero has higher priority
+
 ptime = (edata.time - tz)
 xtitle='Time (sec)'
 if keyword_set(notime) then begin

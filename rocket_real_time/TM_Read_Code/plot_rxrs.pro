@@ -35,9 +35,9 @@ endif
 
 if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.336
-  if (rocket ne 36.258) or (rocket ne 36.275) or (rocket ne 36.286) $
-  		or (rocket ne 36.290) or (rocket ne 36.300) or (rocket ne 36.318) $
-  		or (rocket ne 36.336) then rocket = 36.336
+  if (rocket ne 36.258) and (rocket ne 36.275) and (rocket ne 36.286) $
+  		and (rocket ne 36.290) and (rocket ne 36.300) and (rocket ne 36.318) $
+  		and (rocket ne 36.336) then rocket = 36.336
 endif else rocket = 36.336
 print, 'Processing XRS data for rocket #', strtrim(rocket,2)
 
@@ -353,6 +353,9 @@ plot, x123_energy, x123_sp, psym=10, /ylog, xrange=[0,5], yrange=[3E-1,max(x123_
 
 !p.multi = 0
 
+;  only plot SPS and PicoSIM for rocket GE 36.336
+if rocket lt 36.336 then goto, rxrs_end
+
 ;
 ;	now plot SPS data
 ;
@@ -403,6 +406,7 @@ for ii=0,5 do begin
 	xyouts, xx, yy-dy*ii, strtrim(ii+1,2), color=cc[ii], charsize=cs
 endfor
 
+rxrs_end:
 if keyword_set(debug) then stop, 'DEBUG at end ...'
 
 return
