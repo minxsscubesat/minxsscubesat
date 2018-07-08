@@ -60,9 +60,9 @@ PRO minxss_make_level0c, fm = fm, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
 ;
 ;	check for valid input parameters
 ;
-IF ~keyword_set(fm) THEN fm = 1
-if (fm gt 2) or (fm lt 1) then begin
-  print, "ERROR: minxss_make_level0c needs a valid 'fm' value.  FM can be 1 or 2."
+IF ~keyword_set(fm) THEN fm = 2
+if (fm gt 3) or (fm lt 1) then begin
+  print, "ERROR: minxss_make_level0c needs a valid 'fm' value. FM can be 1, 2, or 3."
   return
 endif
 
@@ -245,7 +245,12 @@ for k=0L,numDays-1 do begin
   else if strlen(doy_str) eq 2 then doy_str = '0' + doy_str
   str_yd = strtrim(year,2) + '_' + doy_str
   outputFilename = 'minxss'+strtrim(fm,2)+'_l0c_'+str_yd
-  full_Filename = getenv('minxss_data') + '/fm' + strtrim(fm,2) + '/level0c/' + outputFilename + '.sav'
+  IF FM EQ 3 THEN BEGIN
+    flightModelString = 'fs' + strtrim(fm, 2)
+  ENDIF ELSE BEGIN
+    flightModelString = 'fm' + strtrim(fm, 2)
+  ENDELSE
+  full_Filename = getenv('minxss_data') + '/' + flightModelString + '/level0c/' + outputFilename + '.sav'
 
   ;  rename variables to be like Level 0B names
   if all_hk NE !NULL then hk = all_hk else hk = !NULL & all_hk = !NULL

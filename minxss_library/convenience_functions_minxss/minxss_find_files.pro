@@ -60,8 +60,8 @@ if n_params() lt 1 then begin
   print, 'USAGE: file_list = minxss_find_files(level, fm=fm, yyyydoy=yyyydoy, numfiles=numfiles, /VERBOSE)'
   return, -1L
 endif
-IF ~keyword_set(fm) THEN fm = 1
-if (fm lt 1) or (fm gt 2) then fm = 1  ; default FM = 1
+IF ~keyword_set(fm) THEN fm = 2
+if (fm lt 1) or (fm gt 3) then fm = 2
 IF keyword_set(yyyymmdd) THEN BEGIN
   yyyydoy = lonarr(0)
   yearDoy1 = JPMDate2DOY(double(yyyymmdd[0]))
@@ -132,14 +132,19 @@ FOREACH yyyydoy, yyyydoysArray DO BEGIN
   ;
   ;   1. Call IDL's file_search procedure with specified level and date in $minxss_data/fmX/levelYY/
   ;
+  IF fm EQ 3 THEN BEGIN
+    flightModelString = 'fs' + strtrim(fm, 2)
+  ENDIF ELSE BEGIN
+    flightModelString = 'fm' + strtrim(fm, 2)
+  ENDELSE
   search_dir = getenv('minxss_data') + '/'
   if strlevel ne 'l0b' then begin
   	;  ../data/fmA/levelBB/minxssA_lBB_YYYY_DOY.*
-  	search_dir += 'fm' + strtrim(fm, 2) + '/' + 'leve' + strlevel + '/'
+  	search_dir += flightModelString + '/' + 'leve' + strlevel + '/'
   	search_name = 'minxss' + strtrim(fm, 2) + '_' + strlevel + '_' + strdate + '.*'
   endif else begin
   	; special case for Level 0B files: ;  ../data/level0b/minxss_l0b_YYYY_DOY.*
-  	search_dir += 'fm' + strtrim(fm, 2) + '/' + 'leve' + strlevel + '/'
+  	search_dir += flightModelString + '/' + 'leve' + strlevel + '/'
   	search_name = 'minxss' + '_' + strlevel + '_' + strdate + '.*'
   endelse
   if keyword_set(verbose) then begin

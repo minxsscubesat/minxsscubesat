@@ -184,8 +184,11 @@ yyyydoy = yyyy + doy
 ;
 
 ; Figure out the directory name to make
-;flightModelString = 'fm' + strtrim(hk[0].flight_model, 2)
-flightModelString = 'fm' + strtrim(FM, 2)
+IF FM EQ 3 THEN BEGIN
+  flightModelString = 'fs' + strtrim(fm, 2)
+ENDIF ELSE BEGIN
+  flightModelString = 'fm' + strtrim(fm, 2)
+ENDELSE
 outputFilename = 'minxss_l0b_' + strmid(yyyydoy, 0, 4) + '_' + strmid(yyyydoy, 4, 3)
 fullFilename = getenv('minxss_data') + '/' + flightModelString + '/level0b/' + outputFilename + '.sav'
 
