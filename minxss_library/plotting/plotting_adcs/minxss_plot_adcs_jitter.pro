@@ -77,6 +77,22 @@ adcs3 = adcs3[insolatedIndices]
 goodTrackerIndices = where(adcs3.TRACKER_ATTITUDE_STATUS EQ 0)
 adcs3 = adcs3[goodTrackerIndices]
 
+; Filter out cruciform data -- just based on times in event logs with adcs_cruciform_scan script since there is no flag to indicate a cruciform scan
+excludeCruciform1Indices = where(adcs3.time_jd LT jpmiso2jd('2016-09-09T09:05:29Z') OR adcs3.time_jd GT jpmiso2jd('2016-09-09T10:05:29Z'))
+adcs3 = adcs3[excludeCruciform1Indices]
+excludeCruciform2Indices = where(adcs3.time_jd LT jpmiso2jd('2016-11-10T08:18:22Z') OR adcs3.time_jd GT jpmiso2jd('2016-11-10T09:18:22Z'))
+adcs3 = adcs3[excludeCruciform2Indices]
+excludeCruciform3Indices = where(adcs3.time_jd LT jpmiso2jd('2016-11-12T07:44:57Z') OR adcs3.time_jd GT jpmiso2jd('2016-11-12T08:44:57Z'))
+adcs3 = adcs3[excludeCruciform3Indices]
+excludeCruciform4Indices = where(adcs3.time_jd LT jpmiso2jd('2017-01-03T10:52:19Z') OR adcs3.time_jd GT jpmiso2jd('2017-01-03T11:52:19Z'))
+adcs3 = adcs3[excludeCruciform4Indices]
+excludeCruciform5Indices = where(adcs3.time_jd LT jpmiso2jd('2017-01-04T08:08:05Z') OR adcs3.time_jd GT jpmiso2jd('2017-01-04T09:08:05Z'))
+adcs3 = adcs3[excludeCruciform5Indices]
+excludeCruciform6Indices = where(adcs3.time_jd LT jpmiso2jd('2017-01-04T09:43:02Z') OR adcs3.time_jd GT jpmiso2jd('2017-01-04T10:43:02Z'))
+adcs3 = adcs3[excludeCruciform6Indices]
+STOP
+
+
 ; Determine jitter over 10-second period (MinXSS requirement)
 timeJd = !NULL
 FOR i = 0, n_elements(adcs3) - 1 DO BEGIN
@@ -86,8 +102,8 @@ FOR i = 0, n_elements(adcs3) - 1 DO BEGIN
   IF numInBin EQ 1 THEN CONTINUE
   
   minmax1 = minmax(-adcs3[within10SecondsIndices].attitude_error2 * !RADEG) ; MinXSS +X = XACT -Y
-  minmax2 = minmax(adcs3[within10SecondsIndices].attitude_error1 * !RADEG) ; MinXSS +Y = XACT +X
-  minmax3 = minmax(adcs3[within10SecondsIndices].attitude_error3 * !RADEG) ; MinXSS +Z = XACT +Z
+  minmax2 = minmax(adcs3[within10SecondsIndices].attitude_error1 * !RADEG)  ; MinXSS +Y = XACT +X
+  minmax3 = minmax(adcs3[within10SecondsIndices].attitude_error3 * !RADEG)  ; MinXSS +Z = XACT +Z
   
   jitter1 = (jitter1 EQ !NULL) ? minmax1[1] - minmax1[0] : [jitter1, minmax1[1] - minmax1[0]]
   jitter2 = (jitter2 EQ !NULL) ? minmax2[1] - minmax2[0] : [jitter2, minmax2[1] - minmax2[0]]
