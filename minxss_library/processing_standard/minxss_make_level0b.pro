@@ -80,7 +80,7 @@ ENDIF ELSE FM = fix(FM) ; Use fix() just in case someone passed in a string
 IF keyword_set(verbose) THEN message, /INFO, "Using flight model FM = " + strtrim(FM, 2)
 IF telemetryFileNamesArray NE !NULL THEN numfiles = n_elements(telemetryFileNamesArray)
 IF yyyymmdd NE !NULL THEN yyyydoy = JPMyyyymmdd2yyyydoy(yyyymmdd, /RETURN_STRING)
-IF yyyydoy NE !NULL THEN telemetryFileNamesArray = minxss_find_tlm_files(yyyydoy, numfiles=numfiles, verbose=verbose)
+IF yyyydoy NE !NULL THEN telemetryFileNamesArray = minxss_find_tlm_files(yyyydoy, fm=fm, numfiles=numfiles, verbose=verbose)
 IF numfiles LT 1 THEN BEGIN
     message, /INFO, 'No files found for specified input.'
     return
@@ -104,6 +104,12 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
     ; version of code for FM-2
     minxss2_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, /EXPORT_RAW_ADCS_TLM, $
                           adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
+   
+   ; Handle special case of flatsat (uses minxss2_read_packets [for now at least] but don't want fmTmp to be overridden to 2
+   IF fm EQ 3 THEN BEGIN
+    fmTmp = 3
+    hkTmp.flight_model = 3 ; FIXME: 2018-07-12: JPM: This is a hack! Flight software in the flatsat should be setting fm=3 not 2.
+   ENDIF
   endelse
   
   ; Continue loop if no data in telemetry file

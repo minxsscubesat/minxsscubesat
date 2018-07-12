@@ -331,7 +331,11 @@ endfor
 ; Compile into mission length saveset for each type of data
 MERGE_ONLY:
 IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
-  dataPath = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/'
+  if fm eq 3 then begin
+    dataPath = getenv('minxss_data') + '/fs' + strtrim(fm, 2) + '/level0c/'
+  endif else begin
+    dataPath = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/'
+  endelse
   
   ; Prepare for concatenation 
   hkTemp = !NULL
@@ -392,10 +396,10 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   ; Export to CSV as well (mainly for use with LASP WebTCAD
   write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'hk_latest.csv', hk, HEADER = tag_names(hk)
   adcs1 = JPMRemoveTags(adcs1, 'ADCS_LEVEL')
-  write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs1_latest.csv', adcs1, HEADER = tag_names(adcs1)
-  write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs2_latest.csv', adcs2, HEADER = tag_names(adcs2)
-  write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs3_latest.csv', adcs3, HEADER = tag_names(adcs3)
-  write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs4_latest.csv', adcs4, HEADER = tag_names(adcs4)
+  if (adcs1 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs1_latest.csv', adcs1, HEADER = tag_names(adcs1)
+  if (adcs2 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs2_latest.csv', adcs2, HEADER = tag_names(adcs2)
+  if (adcs3 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs3_latest.csv', adcs3, HEADER = tag_names(adcs3)
+  if (adcs4 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs4_latest.csv', adcs4, HEADER = tag_names(adcs4)
   
 ENDIF ; MAKE_MISSION_LENGTH
 
