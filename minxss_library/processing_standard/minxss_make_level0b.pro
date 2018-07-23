@@ -102,7 +102,7 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
   		                   adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
   endif else begin
     ; version of code for FM-2
-    minxss2_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, /EXPORT_RAW_ADCS_TLM, $
+    minxss2_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, $/EXPORT_RAW_ADCS_TLM, $
                           adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
    
    ; Handle special case of flatsat (uses minxss2_read_packets [for now at least] but don't want fmTmp to be overridden to 2
