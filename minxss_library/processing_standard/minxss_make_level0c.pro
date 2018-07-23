@@ -88,7 +88,11 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
       stop_yd = long(JPMjd2yyyydoy(systime(/JULIAN)+1.5))
     END
     2: BEGIN
-      start_yd = 2017001 ; FIXME: Replace these numbers once FM-2 launches
+      start_yd = 2018185 ; FIXME: Replace these numbers once FM-2 launches
+      stop_yd = long(jd2yd(systime(/julian))+0.5)
+    END
+    3: BEGIN ; FlatSat
+      start_yd = 2018185
       stop_yd = long(jd2yd(systime(/julian))+0.5)
     END
     ELSE: BEGIN
