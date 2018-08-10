@@ -79,7 +79,7 @@
 ;+
 pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xactimage, $
                          hexdump=hexdump, adcs1=adcs1, adcs2=adcs2, adcs3=adcs3, adcs4=adcs4, fm=fm, $
-                         EXPORT_RAW_ADCS_TLM = EXPORT_RAW_ADCS_TLM, VERBOSE=VERBOSE, KISS=KISS, HAM_HEADER, $
+                         EXPORT_RAW_ADCS_TLM = EXPORT_RAW_ADCS_TLM, VERBOSE=VERBOSE, KISS=KISS, HAM_HEADER=HAM_HEADER, $
                          _extra=_extra
 
   ; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
