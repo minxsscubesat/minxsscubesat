@@ -33,7 +33,7 @@
 ; OUTPUTS:
 ;   hk [structure]:           Return array of housekeeping (monitors, status) packets
 ;   sci [structure]:          Return array of science (X123, SPS, XPS data) packets
-;               **OR** -1 if science packet incomplete (for single-packet reader mode)
+;                             **OR** -1 if science packet incomplete (for single-packet reader mode)
 ;   adcs [structure]:         Return array of ADCS (BCT XACT data) packets
 ;   log [structure];          Return array of log messages
 ;   diag [structure]:         Return array of Diagnostic (single monitor at 1000 Hz) packets
@@ -45,44 +45,7 @@
 ; RESTRICTIONS:
 ;
 ; MODIFICATION HISTORY:
-;   1)  Hex Dump implemented first to view the file's data  (T. Woods, 5-June-2014)
-;   2)  HK and SCI packets added (Chritina Wilson, July 2014)
-;   3)  HK and SCI updated for TLM handbook revision D.25 (Chris Moore, 20 Aug 2014)
-;   4)  Updated SCI to handle X123 compression (T. Woods, 24 Aug 2014)
-;   5) Updated to ignore CDI packet headers, which don't show up from ISIS socket output, and
-;    Beth will soon be updating ISIS to not include CDI in the telemetry .out files (James Paul Mason, 2014/10/08)
-;   6)  HK and SCI updated for TLM handbook revision D.28 (Chris Moore, 10/13/2014)
-;   7) Can now handle real time data passed as a bytarr or work the standard way.
-;   Now adds two sync bytes to the beginning
-;    so that the first packet is not lost. (James Paul Mason, 2014/10/08)
-;   8) Found error in SPS interpretation. Last byte was being added by 4 instead of multiplied
-;   by 4 like the other bytes (James Paul Mason, 2014/10/17)
-;   9) Returns -1 in sci output if in bytarr input mode and input does not contain complete sci packet
-;   10) Added structure and functionality to read Star Tracker Images (Chris Moore 2014/1/15)
-;   11)  2015/01/26: James Paul Mason: Reformatted header.
-;   12) Added playback IDs and four different ADCS packets (but incomplete read of them)
-;     and made consistent structure defines (APID, SEQ_FLAG, SEQ_COUNT, DATA_LENGTH, TIME)
-;     (Tom Woods 2015/01/31)
-; 13) Version 34: Added ADCS data extraction  (T. Woods, 2015/03/06)
-; 14) Version 35: Added ADCS extras  (C. Moore, 2015/03/06)
-; 15) Version 36: Merged Version 34 & 35  (T. Woods, 2015/03/09)
-;   2015/08/18: James Paul Mason: Filled out definitions for adcs3. adcs1 and adcs2 still need definition. Tom already did adcs4.
-;     2015/08/20: James Paul Mason: Filled out definition for adcs2, but upon plotting telemetry points found that there must've been errors in
-; 16) Version 37: Merged ADCS 1-4 packet decomposition (T. Woods, 2015/03/21; J. Mason 2015/08/24; T. Woods 2015/08/26)
-;   17) Version 38: 2015/09/01: James Paul Mason: Added keyword EXPORT_RAW_ADCS_TLM to dump raw bytes for BCT.
-;   2015/09/07: Tom Woods:   Expanded HK.fsw_patch_version into its 4 different bit-flag variables
-;   2015/10/23: James Paul Mason: Refactored minxss_processing -> minxss_data and changed affected code to be consistent
-;                                 Also refactored minxss_read_packets38 -> minxss_read_packets, including impacts on all other .pro's
-;   2016/01/16: Chris Moore: Broke out CDH_INFO and power enables
-;   2016/02/29: Tom Woods:  Broke out ADCS_INFO for both HK and SCI packets and CDH_INFO for SCI packet
-;   2016/05/16: Amir Caspi: Added flight model output variable (needed for Level 0B), added code to clear input values from output vars
-;   2016/05/17: Tom Woods: Fixed HK ADCS sun vector to be SINT8
-;   2016/05/25: Amir Caspi: Added KISS support
-;   2016/06/11: Tom Woods, Amir Caspi: fix partial packets (gaps) for SCI packets
-;   2016/06/22: James Paul Mason: EXPORT_RAW_ADCS_TLM keyword now just copies the ISIS telemetry file rather than trying to interpret it
-;   2016/08/21: Tom Woods: fix the MOSFET switch enable flags
-;   
-;   SVN check
+;   2017-03-15: James Paul Mason: Copied from minxss_read_packets. Having two different procedures/files isn't preferred but distinguishing internally is also complicated. 
 ;   
 ;+
 pro minxss2_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xactimage, $
@@ -144,6 +107,13 @@ junk = temporary(adcs4)
   IF keyword_set(kiss) THEN BEGIN
     IF keyword_set(verbose) THEN message, /info, "Converting KISS escape sequences..."
     data = minxss_unkiss(temporary(data), verbose=verbose)
+  ENDIF
+  
+  ; If "ham" shows up in the input filepath/name, then set the HAM_HEADER keyword
+  IF isA(input, 'string') THEN BEGIN
+    IF strmatch(input, '*ham*') THEN BEGIN
+      HAM_HEADER = 1
+    ENDIF
   ENDIF
 
   SYNC_BYTE1 = byte('A5'X)
@@ -478,7 +448,7 @@ junk = temporary(adcs4)
       indexLast = index3 + 12  ; JPM 2014/10/08: If there is no CDI header, maximum header length with CCSDS headers.
                   ; 2014/10/17: ISIS now strips all CDI headers, so reduce offset by 10 bytes.
                   ; 2016/05/25: Sync word moved to end of frame a long time ago... so remove another 2 bytes (=12 total)
-      IF keyword_set(kiss) THEN indexLast += 18 ; Additional header length from KISS+AX25
+      IF keyword_set(KISS) OR keyword_set(HAM_HEADER) THEN indexLast += 18 ; Additional header length from KISS+AX25
       if (indexLast gt (index2-8)) then indexLast = index2-8
       while (index3 lt indexLast) do begin
         if ((data[index3] eq CCSDS_BYTE1) and (data[index3+4] eq CCSDS_BYTE5)) then begin
@@ -546,6 +516,13 @@ junk = temporary(adcs4)
         ;  ************************
         ;
         if arg_present(hk) then begin
+          ; Deal with strange offset that sometimes appears in HAM data
+          IF keyword_set(HAM_HEADER) THEN BEGIN
+            IF (pindex + 253) GE n_elements(data) THEN BEGIN
+              pindex = pindex - ((pindex + 253) - (n_elements(data) - 1))
+            ENDIF
+          ENDIF
+          
           pkt_expectedCheckbytes = fletcher_checkbytes(data[pindex:pindex+249])
           pkt_expectedCheckbytes = long(pkt_expectedCheckbytes[0]) + ishft(long(pkt_expectedCheckbytes[1]),8)
           pkt_actualCheckbytes = long(data[pindex+250]) + ishft(long(data[pindex+251]),8)
