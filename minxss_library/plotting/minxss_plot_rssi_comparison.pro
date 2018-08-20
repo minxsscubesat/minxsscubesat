@@ -10,7 +10,7 @@
 ;   the local hard disk. 
 ;
 ; OPTIONAL INPUTS:
-;   fm [integer]: Set to 1 or 2 depending on MinXSS flight model. Defaults to 1. 
+;   None
 ;
 ; KEYWORD PARAMETERS:
 ;   None
@@ -28,57 +28,52 @@
 ;
 ;
 ; MODIFICATION HISTORY:
-;   2016/06/04: James Paul Mason: Wrote script.
+;   2016-06-04: James Paul Mason: Wrote script.
+;   2018-08-20: James Paul Mason: Replaced MinXSS-1 over Japan with MinXSS-2.
 ;-
-PRO minxss_plot_rssi_comparison, fm = fm
-
-; Defaults
-IF ~keyword_set(fm) THEN fm = 1
+PRO minxss_plot_rssi_comparison
 
 ; Restore data 
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/minxss1_l0c_all_mission_length.sav'
-cssweRssiCsv = read_csv('/Users/' + getenv('username') + '/Dropbox/CubeSat/csswe flight data/CSSWE RSSI Beacon.csv', RECORD_START = 1)
+restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav'
+hk1 = hk
+restore, getenv('minxss_data') + '/fm2/level0c/minxss2_l0c_all_mission_length.sav'
+hk2 = hk
+cssweRssiCsv = read_csv('/Users/jmason86/Dropbox/Research/CubeSat/CSSWE Flight Data/CSSWE RSSI Beacon.csv', RECORD_START = 1)
 cssweRssi = float(cssweRssiCsv.Field1)
 
-; Generate Japanese-only beacon data
-japaneseFiles = file_search('/Users/' + getenv('username') + '/Dropbox/isis_rundirs/', '*ja0caw*')
-hkJapan = !NULL
-FOR fileLoop = 0, n_elements(japaneseFiles) - 1 DO BEGIN
-  minxss_read_packets, japaneseFiles[fileLoop], hk = hkTemp, /VERBOSE
-  hkJapan = [hkJapan, hkTemp]
-ENDFOR
-
 ; Change RSSI to negative for MinXSS
-minxssRssi = -hk.radio_rssi 
-japanRssi = -hkJapan.radio_rssi
+minxss1Rssi = -hk1.radio_rssi 
+minxss2Rssi = -hk2.radio_rssi
+
+; Filter out bad data
+minxss2Rssi = minxss2Rssi[where(minxss2Rssi NE 0)]
 
 ; Create histograms
-minxssHist = histogram(minxssRssi, LOCATIONS = minxssRssiBins)
-japanHist = histogram(japanRssi, LOCATIONS = japanRssiBins)
+minxss1Hist = histogram(minxss1Rssi, LOCATIONS = minxss1RssiBins)
+minxss2Hist = histogram(minxss2Rssi, LOCATIONS = minxss2RssiBins)
 cssweHist = histogram(cssweRssi, LOCATIONS = cssweRssiBins)
 
 ; Compute medians
-minxssMedian = median(minxssRssi)
-japanMedian = median(japanRssi)
+minxss1Median = median(minxss1Rssi)
+minxss2Median = median(minxss2Rssi)
 cssweMedian = median(cssweRssi)
 
 ; Create plot
 w = window(DIMENSIONS = [1000, 1000]) 
-p1 = barplot(minxssRssiBins, minxssHist, /CURRENT, LAYOUT = [1, 3, 1], $
-             TITLE = 'MinXSS RF Noise - All: Median = ' + JPMPrintNumber(minxssMedian, /NO_DECIMAL), $
+p1 = barplot(minxss1RssiBins, minxss1Hist, /CURRENT, LAYOUT = [1, 3, 1], $
+             TITLE = 'MinXSS-1 RF Noise: Median = ' + JPMPrintNumber(minxss1Median, /NO_DECIMAL), $
              XTITLE = 'RSSI [dB]', XRANGE = [-120, -40], $
              YTITLE = '#')
-p2 = barplot(japanRssiBins, japanHist, /CURRENT, LAYOUT = [1, 3, 2], $
-             TITLE = 'MinXSS RF Noise - Japan: Median = ' + JPMPrintNumber(japanMedian, /NO_DECIMAL), $
-             XTITLE = 'RSSI [dB]', XRANGE = [-120, -40], $
+p2 = barplot(minxss2RssiBins, minxss2Hist, /CURRENT, LAYOUT = [1, 3, 2], $
+             TITLE = 'MinXSS-2 RF Noise: Median = ' + JPMPrintNumber(minxss2Median, /NO_DECIMAL), $
+             XTITLE = 'RSSI [dB]', XRANGE = p1.xrange, $
              YTITLE = '#')
 p3 = barplot(cssweRssiBins, cssweHist, /CURRENT, LAYOUT = [1, 3, 3], $
              TITLE = 'CSSWE RF Noise: Median = ' + JPMPrintNumber(cssweMedian, /NO_DECIMAL), $ 
-             XTITLE = 'RSSI [dB]', XRANGE = [-120, -40], $
+             XTITLE = 'RSSI [dB]', XRANGE = p1.xrange, $
              YTITLE = '#')
 
 p1.save, 'MinXSS RSSI Comparison.png'
 STOP
-
 
 END
