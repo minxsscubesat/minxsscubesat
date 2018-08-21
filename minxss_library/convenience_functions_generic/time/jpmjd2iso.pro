@@ -34,6 +34,8 @@
 ;   2016-09-03: James Paul Mason: Changed method from using a loop and ssw routine to using where statement and built-in caldat
 ;                                 to improve processing time by a factor of 10,000
 ;   2016-09-08: James Paul Mason: Added a check that lowMonth etc are not -1, to avoid getting results for month like 010 instead of 10
+;   2018-08-21: James Paul Mason: Round seconds before converting to string and truncating the fraction of a second off.
+;                                 For example, 1.45e-5 seconds should be 0 seconds, not 1 second. 
 ;-
 FUNCTION JPMjd2iso, jd, NO_T_OR_Z = NO_T_OR_Z
 
@@ -59,6 +61,7 @@ lowMinute = where(minuteAll LT 10)
 minuteAllString = strtrim(minuteAll, 2)
 IF lowMinute NE [-1] THEN minuteAllString[lowMinute] = '0' + minuteAllString[lowMinute]
 
+secondAll = round(secondAll)
 lowSecond = where(secondAll LT 10)
 secondAllString = strtrim(secondAll, 2)
 IF lowSecond NE [-1] THEN secondAllString[lowSecond] = '0' + secondAllString[lowSecond]
