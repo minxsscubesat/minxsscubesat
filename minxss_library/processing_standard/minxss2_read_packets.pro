@@ -27,23 +27,24 @@
 ;   KISS:                Option to deal with KISS-formatted input
 ;
 ; OUTPUTS:
+;   None enforced but this procedure is only useful if you use at least one of the optional outputs.
+;
+; OPTIONAL OUTPUTS:
 ;   hk [structure]:        Return array of housekeeping (monitors, status) packets
 ;   sci [structure]:       Return array of science (X123, SPS, XPS data) packets
-;                          **OR** -1 if science packet incomplete (for single-packet reader mode)
-;   adcs [structure]:      Return array of ADCS (BCT XACT data) packets
 ;   log [structure];       Return array of log messages
 ;   diag [structure]:      Return array of Diagnostic (single monitor at 1000 Hz) packets
 ;   xactimage [structure]: Return array of XACT Star Tracker image packets
-;
-; OPTIONAL OUTPUTS:
-;   None
+;   adcs1-4 [structure]:   Return array of ADCS (BCT XACT data) packets in four separate variables (adcs1, adcs2, adcs3, adcs4)
+;   fm [int]:              
 ;
 ; RESTRICTIONS:
 ;   Requires MinXSS processing suite.
 ;+
-pro minxss2_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xactimage, $
-                          adcs1=adcs1, adcs2=adcs2, adcs3=adcs3, adcs4=adcs4, fm=fm, _extra=_extra, $
-                          HEXDUMP=HEXDUMP, EXPORT_RAW_ADCS_TLM = EXPORT_RAW_ADCS_TLM, VERBOSE=VERBOSE, KISS=KISS
+pro minxss2_read_packets, input, _extra = _extra, $
+                          HEXDUMP=HEXDUMP, EXPORT_RAW_ADCS_TLM = EXPORT_RAW_ADCS_TLM, VERBOSE=VERBOSE, KISS=KISS, $
+                          hk = hk, sci = sci, log = log, diag = diag, xactimage = xactimage, $
+                          adcs1 = adcs1, adcs2 = adcs2, adcs3 = adcs3, adcs4 = adcs4, fm = fm
 
 ; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
 junk = temporary(hk)
@@ -621,31 +622,31 @@ while (index lt (inputSize-1)) do begin
         hk_struct1.enable_eclipse_use_css = ISHFT(hk_struct1.cdh_enables AND '0400'X, -10) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
        
         
-        hk_struct1.cdh_i2c_err = (long(data[pindex+90]) + ishft(long(data[pindex+91]),8))  ;none
-        hk_struct1.cdh_rtc_err = (long(data[pindex+92]) + ishft(long(data[pindex+93]),8))  ;none
-        hk_struct1.cdh_spi_sd_err = (long(data[pindex+94]) + ishft(long(data[pindex+95]),8))   ;none
+        hk_struct1.cdh_i2c_err = (long(data[pindex+90]) + ishft(long(data[pindex+91]),8))  ; [no unit]
+        hk_struct1.cdh_rtc_err = (long(data[pindex+92]) + ishft(long(data[pindex+93]),8))  ; [no unit]
+        hk_struct1.cdh_spi_sd_err = (long(data[pindex+94]) + ishft(long(data[pindex+95]),8))   ; [no unit]
 
-        hk_struct1.cdh_uart1_err = (long(data[pindex+96]) + ishft(long(data[pindex+97]),8))  ;none
-        hk_struct1.cdh_uart2_err = (long(data[pindex+98]) + ishft(long(data[pindex+99]),8))  ;none
-        hk_struct1.cdh_uart3_err = (long(data[pindex+100]) + ishft(long(data[pindex+101]),8))  ;none
-        hk_struct1.cdh_uart4_err = (long(data[pindex+102]) + ishft(long(data[pindex+103]),8))  ;none
+        hk_struct1.cdh_uart1_err = (long(data[pindex+96]) + ishft(long(data[pindex+97]),8))  ; [no unit]
+        hk_struct1.cdh_uart2_err = (long(data[pindex+98]) + ishft(long(data[pindex+99]),8))  ; [no unit]
+        hk_struct1.cdh_uart3_err = (long(data[pindex+100]) + ishft(long(data[pindex+101]),8))  ; [no unit]
+        hk_struct1.cdh_uart4_err = (long(data[pindex+102]) + ishft(long(data[pindex+103]),8))  ; [no unit]
 
-        hk_struct1.Radio_Counter = (long(data[pindex+104]) + ishft(long(data[pindex+105]),8))  ;none
-        hk_struct1.Radio_Temp = (long(data[pindex+106]) + ishft(long(data[pindex+107]),8))  ;deg C
+        hk_struct1.Radio_Counter = (long(data[pindex+104]) + ishft(long(data[pindex+105]),8))  ; [no unit]
+        hk_struct1.Radio_Temp = (long(data[pindex+106]) + ishft(long(data[pindex+107]),8))  ; deg C
         hk_struct1.Radio_Time = (long(data[pindex+108]) + ishft(long(data[pindex+109]),8) $
           + ishft(long(data[pindex+110]),16)) ; TBD
-        hk_struct1.radio_rssi = (long(data[pindex+111]))  ;TBD
+        hk_struct1.radio_rssi = (long(data[pindex+111]))  ; TBD
         hk_struct1.radio_received = (long(data[pindex+112]) + ishft(long(data[pindex+113]),8) $
           + ishft(long(data[pindex+114]),16) + ishft(long(data[pindex+115]),24))  ; bytes
         hk_struct1.radio_transmitted = (long(data[pindex+116]) + ishft(long(data[pindex+117]),8) $
           + ishft(long(data[pindex+118]),16) + ishft(long(data[pindex+119]),24))  ; bytes
 
-        hk_struct1.COMM_last_Cmd = (long(data[pindex+120])) ;none range: (1 - 32)
-        hk_struct1.COMM_last_Status = (long(data[pindex+121])) ;none
+        hk_struct1.COMM_last_Cmd = (long(data[pindex+120])) ; [no unit] range: (1 - 32)
+        hk_struct1.COMM_last_Status = (long(data[pindex+121])) ; [no unit]
 
-        hk_struct1.comm_temp = (FIX(data[pindex+122]) + ishft(FIX(data[pindex+123]),8))/256.0  ;deg C
-        hk_struct1.mb_temp1 = (FIX(data[pindex+124]) + ishft(FIX(data[pindex+125]),8))/256.0  ;deg C
-        hk_struct1.mb_temp2 = (FIX(data[pindex+126]) + ishft(FIX(data[pindex+127]),8))/256.0  ;deg C
+        hk_struct1.comm_temp = (FIX(data[pindex+122]) + ishft(FIX(data[pindex+123]),8))/256.0  ; deg C
+        hk_struct1.mb_temp1 = (FIX(data[pindex+124]) + ishft(FIX(data[pindex+125]),8))/256.0  ; deg C
+        hk_struct1.mb_temp2 = (FIX(data[pindex+126]) + ishft(FIX(data[pindex+127]),8))/256.0  ; deg C
 
         hk_struct1.eps_temp1 = (FIX(data[pindex+128]) + ishft(FIX(data[pindex+129]),8)) / 256.0 ; deg C
         hk_struct1.eps_temp2 = (FIX(data[pindex+130]) + ishft(FIX(data[pindex+131]),8)) / 256.0 ; deg C
@@ -689,7 +690,7 @@ while (index lt (inputSize-1)) do begin
 
         hk_struct1.sps_xps_dac1 = (long(data[pindex+188]) + ishft(long(data[pindex+189]),8)) * 2.28 / 4096.  ; Volts
 
-        hk_struct1.x123_brd_temp = (long(data[pindex+190]))    ; deg C (signed)
+        hk_struct1.x123_brd_temp = (long(data[pindex+190])) ; deg C (signed)
         ;Because the value can be positive or negative we have to calculate the two's compliment
         if hk_struct1.x123_brd_temp GE (2L^(7)) then hk_struct1.x123_brd_temp -=  (2L^(8))
 
@@ -1629,7 +1630,7 @@ if keyword_set(verbose) then begin
   if (adcs4_count gt 0) then     print, 'Number of ADCS-4     Packets = ', adcs4_count
 endif
 
-return    ; end of reading packets
+return ; end of reading packets
 
 exit_read:
 ; Exit Point on File Open or Read Error

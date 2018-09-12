@@ -13,7 +13,7 @@
 ;                                Defaults to 5 days ago. 
 ;   end_date [long or string]:   Same as start_date but for the end date to process. 
 ;                                Defaults to today. 
-;   fm [integer]: Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
+;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
 ;
 ; KEYWORD PARAMETERS:
 ;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
@@ -32,7 +32,7 @@
 ;   Just run it! 
 ;
 ;-
-pro minxss_processing, start_date = start_date, end_date = end_date, fm=fm, $
+PRO minxss_processing, start_date = start_date, end_date = end_date, fm = fm, $
                        DEBUG = DEBUG, TO_0C_ONLY = TO_0C_ONLY, COPY_GOES = COPY_GOES
 
 TIC
@@ -65,7 +65,7 @@ if keyword_set(debug) then stop, 'DEBUG minxss_processing at start...'
 
 for jd=start_jd, end_jd, 1.0 do begin
     yd = long(jd2yd(jd))
-    minxss_make_level0b, yyyydoy=yd, fm=fm, /VERBOSE, /FORCE
+    minxss_make_level0b, fm, yyyydoy=yd, /VERBOSE
     wait, 1
 endfor
 
@@ -114,5 +114,5 @@ if keyword_set(debug) THEN stop, 'DEBUG minxss_processing at end...'
 
 message, /INFO, JPMsystime() + ' Processing completed in ' + JPMPrintNumber(toc(), /NO_DECIMALS) + ' seconds'
 
-end
+END
 

@@ -14,58 +14,38 @@
 ;   minxss_make_level0b, telemetryFileNamesArray
 ;
 ; INPUTS:
-;   Must provide one of the optional inputs. They aren't listed as regular inputs because any one isn't more "required"
-;   than the other. 
+;   Must provide one of the optional inputs. They aren't listed as regular inputs because any one isn't more "required" than the other. 
 ;
 ; OPTIONAL INPUTS:
-;   telemetryFileNamesArray [strarr]: A string array containing the paths/filenames of the telemetry files to be sorted and stitched.
-;   yyyydoy [long]:                   The date in yyyydoy format that you want to process. 
-;   yyyymmdd [long]:                  The date in yyyymmdd format that you want to process. 
-;   FM [int]:                         Flight model designation; defaults to 1
-;
+;   FM [int]: Flight model designation; defaults to 1.
+;   You MUST specifiy one and only one of these inputs:
+;     telemetryFileNamesArray [strarr]: A string array containing the paths/filenames of the telemetry files to be sorted and stitched.
+;     yyyydoy [long]:                   The date in yyyydoy format that you want to process. 
+;     yyyymmdd [long]:                  The date in yyyymmdd format that you want to process. 
+;     
 ; KEYWORD PARAMETERS:
-;   VERBOSE: Set this to print out processing messages while running
+;   VERBOSE: Set this to print out processing messages while running.
 ;
 ; OUTPUTS:
-;   None
+;   None.
 ;
 ; OPTIONAL OUTPUTS:
-;   None
+;   None.
 ;
 ; COMMON BLOCKS:
-;   None
+;   None.
 ;
 ; RESTRICTIONS:
-;   Requires minxss_read_packets.pro
-;   Requires minxss_sort_telemetry.pro
-;   Requires JPMPrintNumber.pro
-;   Requires ParsePathAndFilename.pro
+;   Requires MinXSS processing suite.
 ;
 ; PROCEDURE:
 ;   1. Task 1: Concatenate data for all telemetry files.
 ;   2. Task 2: Now that all data has been concatenated, sort it by time.
 ;   3. Write MinXSS data structures to disk as IDL save file
 ;
-; MODIFICATION HISTORY:
-;   2015-01-26: James Paul Mason: Wrote script.
-;	  2015-01-31: Tom Woods: Updated for 4 different ADCS packets from minxss_read_packets.pro
-;					                 and added option for passing YYYYDOY instead of file names
-;   2015-04-13: James Paul Mason: Edited formatting for consistency and removed a STOP that was commented out anyway
-;   2015-10-23: James Paul Mason: Refactored minxss_processing -> minxss_data and changed affected code to be consistent
-;   2016-03-25: James Paul Mason: Updated this header and changed telemetryFileNamesArray to an optional input
-;                                 to make it clear that either it or yyyydoy or the also newly added yyyymmdd can be specified. 
-;                                 Also got rid of KEYWORD call to minxss_read_packets EXPORT_RAW_ADCS_TLM since BCT can now read
-;                                 raw ISIS telemetry themselves. 
-;   2016-05-16: Amir Caspi: Updated to check for absolute file paths, added FM input (default = 1), added 2017 support,
-;                           optimized and cleaned up code
-;   2016-05-22: Amir Caspi: Changed calls to minxss_sort_telemetry to allow for time correction of early commissioning data
-;   2016-06-06: Amir Caspi: Added option to force FM for files that don't have it
-;   2016-06-22: James Paul Mason: Made the call to minxss_read_packets pass the new EXPORT_RAW_ADCS_TLM keyword by default. 
-;   2016-08-21: Tom Woods:  Separated out FM1 and FM2 to call different minxss_read_packets() procedures
-;   2016-10-31: James Paul Mason: Handled edge case of telemetry file with no data in it
 ;+
-PRO minxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
-                         VERBOSE=VERBOSE, FM=FM, forceFM = forceFM, _extra=_extra
+PRO minxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, fm = fm, _extra = _extra, $
+                         VERBOSE = VERBOSE
 
 ; Input checks
 IF telemetryFileNamesArray EQ !NULL AND yyyydoy EQ !NULL AND yyyymmdd EQ !NULL THEN BEGIN
@@ -73,17 +53,19 @@ IF telemetryFileNamesArray EQ !NULL AND yyyydoy EQ !NULL AND yyyymmdd EQ !NULL T
   message, /INFO, 'USAGE: minxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, FM = FM'
   return
 ENDIF
-IF FM EQ !NULL THEN BEGIN
-  message, /INFO, "WARNING: No flight model specified; defaulting to FM = 1"
-  FM = 1
-ENDIF ELSE FM = fix(FM) ; Use fix() just in case someone passed in a string
+IF fm EQ !NULL THEN BEGIN
+  fm = 1
+ENDIF
+IF isa(fm, /STRING) THEN BEGIN
+  fm = fix(fm)
+ENDIF
 IF keyword_set(verbose) THEN message, /INFO, "Using flight model FM = " + strtrim(FM, 2)
 IF telemetryFileNamesArray NE !NULL THEN numfiles = n_elements(telemetryFileNamesArray)
 IF yyyymmdd NE !NULL THEN yyyydoy = JPMyyyymmdd2yyyydoy(yyyymmdd, /RETURN_STRING)
 IF yyyydoy NE !NULL THEN telemetryFileNamesArray = minxss_find_tlm_files(yyyydoy, fm=fm, numfiles=numfiles, verbose=verbose)
 IF numfiles LT 1 THEN BEGIN
-    message, /INFO, 'No files found for specified input.'
-    return
+  message, /INFO, 'No files found for specified input.'
+  return
 ENDIF
 
 ; Loop through each telemetry file
@@ -101,16 +83,19 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
     minxss_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, /EXPORT_RAW_ADCS_TLM, $
   		                   adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
   endif else begin
-    ; version of code for FM-2
     minxss2_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, $/EXPORT_RAW_ADCS_TLM, $
                           adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
    
-   ; Handle special case of flatsat (uses minxss2_read_packets [for now at least] but don't want fmTmp to be overridden to 2
-   IF fm EQ 3 THEN BEGIN
-    fmTmp = 3
-    hkTmp.flight_model = 3 ; FIXME: 2018-07-12: JPM: This is a hack! Flight software in the flatsat should be setting fm=3 not 2.
-   ENDIF
   endelse
+  
+  ; fm is the user specified input, fmTmp is what minxss(2)_read_packets found in the telemetry
+  IF fm NE fmTmp THEN BEGIN
+    IF keyword_set(VERBOSE) THEN BEGIN
+      message, /INFO, JPMsystime() + ' Flight model in telemetry does not match user specification. This is likely due to erroneous flight software firmware burns. Overwriting with user specification.'
+    ENDIF
+    fmTmp = fm
+    hkTmp.flight_model = fm
+  ENDIF
   
   ; Continue loop if no data in telemetry file
   IF hkTmp EQ !NULL AND sciTmp EQ !NULL AND logTmp EQ !NULL AND diagTmp EQ !NULL AND imageTmp EQ !NULL AND adcs1Tmp EQ !NULL AND adcs2Tmp EQ !NULL AND $
@@ -119,20 +104,8 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
   ;
   ; 1. Task 1: Concatenate data for all telemetry files.
   ;
-  ; Only do this if flight model is the desired one!
-  ; We need this since ISIS doesn't segregate flight models...
-
-  ; Check if a flight model was found in the file, and if not, force it if keyword set
-  IF (fmTmp EQ -1) THEN BEGIN
-    message, /INFO, "No flight model found in file " + parsedFilename.filename + " ... CHECK THIS FILE MANUALLY!!!"
-    IF keyword_set(forceFM) THEN BEGIN
-      fmTmp = FM
-      message, /info, "*** FORCING flight model (FM = " + strtrim(fmTmp,2) + ") for file " + parsedFilename.filename
-    ENDIF
-  ENDIF
 
   ; If the flight model is the desired one, save data
-  ; (This will be called if flight model is forced, above)
   IF (fmTmp eq FM) THEN BEGIN
     IF hkTmp NE !NULL AND hk EQ !NULL THEN hk = hkTmp $
     ELSE IF hkTmp NE !NULL AND hk NE !NULL THEN hk = [hk, hkTmp]
