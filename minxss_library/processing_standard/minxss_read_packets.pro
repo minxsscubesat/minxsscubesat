@@ -1694,7 +1694,17 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     if (adcs2_count gt 0) then     print, 'Number of ADCS-2     Packets = ', adcs2_count
     if (adcs3_count gt 0) then     print, 'Number of ADCS-3     Packets = ', adcs3_count
     if (adcs4_count gt 0) then     print, 'Number of ADCS-4     Packets = ', adcs4_count
-  endif
+    print, ' '
+    if (hk_count gt 0) then  begin & temp=where(hk.apid gt 64,numplay) & print, 'Number of HK  Playback = ', numplay & end
+    if (log_count gt 0) then begin & temp=where(log.apid gt 64,numplay) & print, 'Number of LOG Playback = ', numplay & end
+    if (diag_count gt 0) then begin & temp=where(diag.apid gt 64,numplay) & print, 'Number of DIAG  Playback = ', numplay & end
+    if (sci_count gt 0) then begin & temp=where(sci.apid gt 64,numplay) & print, 'Number of SCI Playback = ', numplay & end
+    if (xactimage_count gt 0) then begin & temp=where(xactimage.apid gt 64,numplay) & print, 'Number of XACTIMAGE Playback = ', numplay & end
+    if (adcs1_count gt 0) then     begin & temp=where(adcs1.apid gt 64,numplay) & print, 'Number of ADCS-1 Playback = ', numplay & end
+    if (adcs2_count gt 0) then     begin & temp=where(adcs2.apid gt 64,numplay) & print, 'Number of ADCS-2 Playback = ', numplay & end
+    if (adcs3_count gt 0) then     begin & temp=where(adcs3.apid gt 64,numplay) & print, 'Number of ADCS-3 Playback = ', numplay & end
+    if (adcs4_count gt 0) then     begin & temp=where(adcs4.apid gt 64,numplay) & print, 'Number of ADCS-4 Playback = ', numplay & end
+ endif
 
   return    ; end of reading packets
 
