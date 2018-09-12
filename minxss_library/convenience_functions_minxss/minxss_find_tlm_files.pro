@@ -139,6 +139,15 @@ IF fm EQ 3 THEN BEGIN
       count = count + countTmp
     ENDIF
   ENDIF
+  
+  ;Add lab data if available
+  IF getenv('hydra_data_lab_minxss2') NE '' THEN BEGIN
+    filesTmp = file_search(getenv('hydra_data_lab_minxss2'), search_name, count = countTmp)
+    IF countTmp NE 0 THEN BEGIN
+      file_list = [file_list, filesTmp]
+      count = count + countTmp
+    ENDIF
+  ENDIF
 ENDIF
 
 ; Add telemetry from HAM operators
