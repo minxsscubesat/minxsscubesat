@@ -21,7 +21,7 @@
 ;   VERBOSE: Set this to print processing messages to console
 ;
 ; OUTPUTS:
-;   All MinXSS processing output files for level 0b, 0c, 0d, and level 1
+;   All MinXSS processing output files for level 0b, 0c, 0d, 1, and 3
 ;
 ; OPTIONAL OUTPUTS:
 ;   None
