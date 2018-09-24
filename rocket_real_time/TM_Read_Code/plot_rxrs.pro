@@ -211,7 +211,8 @@ tsci = (ydsci - long(ydsci[0]))* 24.D0*3600.  ; convert to seconds of day
 ;  ERROR in ISIS Setting time is off by 2 hours
 tsci += 7200.
 tz2 = tsci[0]
-if keyword_set(tzero) or keyword_set(rocket) then tz2 = tzero
+if keyword_set(rocket) then tz2 = rkt_tzero
+if tzero_org ne 0 then tz2 = tzero_org	; force tzero to be the one in the keyword "tzero"
 ptime2 = (tsci - tz2)
 
 ; also generate time for SPS_PS packet
@@ -221,7 +222,8 @@ if (rocket ge 36.336) then begin
 	;  ERROR in ISIS Setting time is off by 2 hours
 	tsps += 7200.
 	tz3 = tsps[0]
-	if keyword_set(tzero) or keyword_set(rocket) then tz3 = tzero
+	if keyword_set(rocket) then tz3 = rkt_tzero
+	if tzero_org ne 0 then tz3 = tzero_org	; force tzero to be the one in the keyword "tzero"
 	ptime3 = (tsps - tz3)
 endif
 
@@ -326,7 +328,7 @@ if (num_gdx123 gt 1) then begin
 	x123_sp = sci[wgdx123[0]].x123_spectrum / (sci[wgdx123[0]].x123_accum_time/1000.)
 	for ii=1,num_gdx123-1 do x123_sp += sci[wgdx123[ii]].x123_spectrum / (sci[wgdx123[ii]].x123_accum_time/1000.)
 	x123_sp /= float(num_gdx123)
-	x123_energy = 0.03 * findgen(1024) - 0.05
+	x123_energy = 0.0199 * findgen(1024) - 0.013
 endif
 
 ans = ' '
@@ -348,8 +350,16 @@ oplot, ptime2, slow2, color=cc[3]
 oplot, ptime-1.5, slow, color=cc[3], line=2
 
 ;  SECOND X123 plot is spectrum at Apogee
-plot, x123_energy, x123_sp, psym=10, /ylog, xrange=[0,5], yrange=[3E-1,max(x123_sp)*1.5], ys=1, $
+plot, x123_energy, x123_sp, psym=10, /ylog, xrange=[0,4], yrange=[1E-1,max(x123_sp)*1.5], ys=1, $
 	xtitle='Energy (keV)', ytitle='X123 Signal (cps)', title='Apogee', xmargin=xmargin2, ymargin=ymargin
+
+file_chianti = '/Users/' + getenv('USER') + $
+	 '/Dropbox/minxss_dropbox/rocket_eve_docs/36.336/TM_Data/Flight/CHIANTI/ch_spectrum_dem_qs.dat'
+if (file_test(file_chianti) ne 0) then begin
+	ch_qs = read_dat( file_chianti )
+	ch_factor = (interpol(x123_sp, x123_energy, [1.0]) / interpol( ch_qs[1,*], ch_qs[0,*], [1.0] ))[0]
+	oplot, ch_qs[0,*], ch_qs[1,*] * ch_factor, color=cc[1]
+endif
 
 !p.multi = 0
 

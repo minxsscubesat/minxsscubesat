@@ -3,11 +3,11 @@ Instructions for Extracting and Quicklook for NASA 36.336
 Tom Woods
 
 36.336 Launch Date = June 18, 2018 (DOY 169)  Time = 19:00:00 UT (68400.0 sec)
-Apogee of 285 km at T+274sec  (Preliminary Values)
+Apogee of 293.3 km at T+279.15 sec  (Radar Values)
 
 Earth-Sun Distance = 1.01605 AU  (Earth Irradiance Correction to 1 AU = 0.9687)
-F10.7 = 76  <F10.7> = ???
-Ap = 19 (high activity)
+F10.7 = 76.3  <F10.7> = 73.4   (MSIS: previous day F10.7=73.2, previous day Ap=5)
+Ap = 20 (high activity)
 
 IDL SETUP
 ---------
