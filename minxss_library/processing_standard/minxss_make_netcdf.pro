@@ -19,10 +19,10 @@
 ;	2.  Read Level file (IDL save set restore)
 ;	3.	Write NetCDF file
 ;
-;	6/6/2017	Tom Woods.  Original code.
-;	6/11/2017	Tom Woods.	Updated with new file names:
-;								minxssM_solarSXR_levelNN_2016-05-16-mission_V002.ncdf
-;								where M=1 or 2, NN = 0C, 0D, 1, or 3
+;	2017-06-06: Tom Woods: Original code.
+;	2017-06-11: Tom Woods: Updated with new file names:
+;								         minxssM_solarSXR_levelNN_2016-05-16-mission_V002.ncdf
+;								         where M=1 or 2, NN = 0C, 0D, 1, or 3
 ;
 pro minxss_make_netcdf, level, fm=fm, version=version, verbose=verbose, debug=debug
 
@@ -57,8 +57,11 @@ dir_metadata = dir_data + 'metadata' + slash
 ;
 ;	define Version number
 ;
-ver_str = '002'
-if keyword_set(version) then ver_str = string(long(version),format='(I03)')
+if keyword_set(version) then begin
+  ver_str = string(long(version),format='(I03)')
+endif else begin
+  ver_str = '002'
+endelse
 
 ;
 ;	1.  Setup directory and file names based on Level name provided
