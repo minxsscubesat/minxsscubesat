@@ -43,8 +43,8 @@
 ;	9.	NCDF_CLOSE: Close the file.
 ;
 ; MODIFICATION HISTORY:
-;	9/20/1999		Tom Woods		Original release of code, Version 1.00
-;	12/3/1999		Tom Woods		Removed BYTE array conversion to STRING
+;	  9/20/1999		Tom Woods		Original release of code, Version 1.00
+;	  12/3/1999		Tom Woods		Removed BYTE array conversion to STRING
 ;   05/23/2004  Don Woodraska  Prevents IDL reserved words by appending an
 ;                              underscore to tag names if necessary.
 ;
@@ -123,7 +123,7 @@ endif
 status = OK_STATUS
 
 if (debug_mode gt 2) and ( !d.name eq 'MAC' ) then begin
-	SEE_MAC_CODE = !dir + ':SEE DPS Ä:'
+	SEE_MAC_CODE = !dir + ':SEE DPS ï¿½:'
 	full_file = SEE_MAC_CODE + 'see_data:' + filename
 endif else begin
 	full_file = filename
