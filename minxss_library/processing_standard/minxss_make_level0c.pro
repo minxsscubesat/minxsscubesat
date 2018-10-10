@@ -397,7 +397,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   ; Save mission length file
   save, hk, sci, log, diag, image, adcs1, adcs2, adcs3, adcs4, FILENAME = dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'all_mission_length.sav', /COMPRESS, description = 'MinXSS Level 0C data ... All ... FM = '+strtrim(fm,2)+'; FULL MISSION ('+strmid(strtrim(start_yd, 2), 0, 4) + '/' + strmid(strtrim(start_yd, 2), 4, 3)+' - '+strmid(strtrim(stop_yd, 2), 0, 4) + '/' + strmid(strtrim(stop_yd, 2), 4, 3)+') ... FILE GENERATED: '+systime()
 
-  ; Export to CSV as well (mainly for use with LASP WebTCAD
+  ; Export to CSV as well (mainly for use with LASP WebTCAD)
   write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'hk_latest.csv', hk, HEADER = tag_names(hk)
   adcs1 = JPMRemoveTags(adcs1, 'ADCS_LEVEL')
   if (adcs1 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs1_latest.csv', adcs1, HEADER = tag_names(adcs1)
@@ -405,6 +405,9 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   if (adcs3 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs3_latest.csv', adcs3, HEADER = tag_names(adcs3)
   if (adcs4 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs4_latest.csv', adcs4, HEADER = tag_names(adcs4)
   
+  
+  ; Export to netCDF
+  minxss_make_netcdf, '0c', fm = fm
 ENDIF ; MAKE_MISSION_LENGTH
 
 END

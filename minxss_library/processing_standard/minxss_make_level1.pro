@@ -857,7 +857,8 @@ endfor
   save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
     minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
     
-  ; Save to NETCDF files, one per variable since it can't hold multiple
+  ; Save to netCDF files, one per variable since it can't hold multiple
+  ; TODO: Chris Moore is working on consolidating these into a single variable so we can save to a single netCDF file
   write_netcdf, minxsslevel1_x123, outdir + file_basename(outfile, '.sav') + '_x123.ncdf', $
                 att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
   write_netcdf, minxsslevel1_x123_dark, outdir + file_basename(outfile, '.sav') + '_x123_dark.ncdf', $
@@ -866,7 +867,10 @@ endfor
                 att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
   write_netcdf, minxsslevel1_xp_dark, outdir + file_basename(outfile, '.sav') + '_xp_dark.ncdf', $
                 att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
-
+  
+  ; Export to netCDF
+  ; minxss_make_netcdf, '1', fm = fm ; TODO: use this code to replace the 4 lines above when Chris finishes that consolidation
+  
   if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
 
   if keyword_set(debug) then stop, 'DEBUG at end of minxss_make_level1.pro ...'
