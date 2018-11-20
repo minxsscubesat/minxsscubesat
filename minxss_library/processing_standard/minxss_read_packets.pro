@@ -1467,7 +1467,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
         ; Note that (BCT XACT Offset - 563) is the value to use with pindex for the ADCS4 variables
         ;  ************************
         ;
-        if arg_present(adcs4) then begin
+        if arg_present(adcs4) AND n_elements(data) GT (pindex + 213) then begin
           adcs4_struct1.apid = packet_id_full  ; keep Playback bit in structure
           adcs4_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           adcs4_struct1.seq_count = packet_seq_count
