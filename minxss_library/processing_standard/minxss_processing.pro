@@ -65,7 +65,7 @@ if keyword_set(debug) then stop, 'DEBUG minxss_processing at start...'
 
 for jd=start_jd, end_jd, 1.0 do begin
     yd = long(jd2yd(jd))
-    minxss_make_level0b, fm, yyyydoy=yd, /VERBOSE
+    minxss_make_level0b, fm=fm, yyyydoy=yd, /VERBOSE
     wait, 1
 endfor
 
