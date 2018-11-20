@@ -88,18 +88,18 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
    
   endelse
   
+  ; Continue loop if no data in telemetry file
+  IF hkTmp EQ !NULL AND sciTmp EQ !NULL AND logTmp EQ !NULL AND diagTmp EQ !NULL AND imageTmp EQ !NULL AND adcs1Tmp EQ !NULL AND adcs2Tmp EQ !NULL AND $
+     adcs3Tmp EQ !NULL AND adcs4Tmp EQ !NULL AND fmTmp EQ !NULL THEN CONTINUE
+ 
   ; fm is the user specified input, fmTmp is what minxss(2)_read_packets found in the telemetry
-  IF fm NE fmTmp THEN BEGIN
+  IF fm NE fmTmp AND hkTmp NE !NULL THEN BEGIN
     IF keyword_set(VERBOSE) THEN BEGIN
       message, /INFO, JPMsystime() + ' Flight model in telemetry does not match user specification. This is likely due to erroneous flight software firmware burns. Overwriting with user specification.'
     ENDIF
     fmTmp = fm
     hkTmp.flight_model = fm
   ENDIF
-  
-  ; Continue loop if no data in telemetry file
-  IF hkTmp EQ !NULL AND sciTmp EQ !NULL AND logTmp EQ !NULL AND diagTmp EQ !NULL AND imageTmp EQ !NULL AND adcs1Tmp EQ !NULL AND adcs2Tmp EQ !NULL AND $
-     adcs3Tmp EQ !NULL AND adcs4Tmp EQ !NULL AND fmTmp EQ !NULL THEN CONTINUE
   
   ;
   ; 1. Task 1: Concatenate data for all telemetry files.
