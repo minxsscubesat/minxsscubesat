@@ -39,14 +39,14 @@
 ;
 ; PROCEDURE:
 ;   1. Read the MinXSS Level 0D mission-length file
-;   2. Select (filter) the data for good (valid) data
+; 2. Select (filter) the data for good (valid) data
 ;   not in eclipse by at least one minute, radio flag is greater than 1,
 ;   low energy counts are below the low_limit
 ;   3. Choose the timeframe of the data to be considered
 ;   4. First order correction for deadtime
 ;   5. Average the data over x-minute intervals, make irradiance values calculate XP background subtracted data and compare to X123 estimates
-;   6. Make meta-data for Level 1
-;   7. Save the Level 1 results (mission-length file)
+; 6. Make meta-data for Level 1
+; 7. Save the Level 1 results (mission-length file)
 ;
 ; MODIFICATION HISTORY:
 ;   2016/07/25: Tom Woods: Original code
@@ -62,8 +62,11 @@
 ;   2017/06/20: Chris Moore added X123 uncertainties
 ;   2017/06/20: Chris Moore added XP background subtracted data
 ;   2017/06/20: Chris Moore added XP estimated signal from X123 spectrum
+
+
+
 ;+
-PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
+PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, write_cdf_file=write_cdf_file, verbose=verbose, debug=debug
 
   ;seconds_per_day = 60.0*60.0*24.0
   seconds_per_day = 60.0*60.0*24.0
@@ -87,13 +90,26 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
   ;
   ;   1. Read the MinXSS Level 0D mission-length file
   ;
-  ddir = getenv('minxss_data')
+  if keyword_set(directory_minxss_data) then begin
+    ddir = directory_minxss_data
+  endif else begin
+    ddir = getenv('minxss_data')
+  endelse
   if strlen(ddir) lt 1 then begin
-    print, '*** ERROR finding MinXSS data, you need to define $minxss_data environment variable.'
-      return
+    print, '*** ERROR finding MinXSS data, you need to define $minxss_data environment variable. But will continue.... Chris Moore edit.'
+ ;     return
   endif
-  fmdir = ddir + path_sep() + 'fm' + fm_str + path_sep()
-  indir = fmdir + 'level0d' +  path_sep()
+;add keyword call for directory
+  if keyword_set(directory_flight_model) then begin
+    fmdir = directory_flight_model
+  endif else begin
+    fmdir = ddir + path_sep() + 'fm' + fm_str + path_sep()
+  endelse
+  if keyword_set(directory_input_file) then begin
+    indir = directory_input_file
+  endif else begin
+    indir = fmdir + 'level0d' +  path_sep()
+  endelse
   infile = 'minxss' + fm_str + '_l0d_mission_length.sav'
   if keyword_set(verbose) then print, '     Reading L0D data'
   restore, indir+infile    ; variable is MINXSSLEVEL0D
@@ -101,7 +117,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;for testing purposes just run the ~ 1,000 entries
-  ; minxsslevel0d_old = minxsslevel0d
+  ;  minxsslevel0d_old = minxsslevel0d
   ; minxsslevel0d = minxsslevel0d[4E3:4.1E3]
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -121,7 +137,16 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
   num_sci = n_elements(minxsslevel0d)
   ; convert to counts per sec (cps) with smallest time
   ; Note that Version 1 used x123_live_time instead of x123_accum_time
-  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (minxsslevel0d[ii].x123_accum_time/1000.)
+;  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (minxsslevel0d[ii].x123_accum_time/1000.)
+
+;  PROPOSED NEW LEVEL 1 CODE by Tom Woods on 11/11/2018
+; *****************************************
+; REPLACEMENT FOR LINE 124  ( add code to adjust x123_accum_time to be 263 millisec shorter if x123_radio_flag EQ 1 )
+;  Adjust  X123 integration time to account for shorter integration time when X123_RADIO_FLAG is 1 263 millisec shorter effective integration)
+;  The x123_accum_time is adjusted in-line in minxsslevel0d because it is used several times in this procedure
+  wradio1 = where(minxsslevel0d.x123_radio_flag eq 1, num_radio1)
+  if (num_radio1 gt 0) then minxsslevel0d[wradio1].x123_accum_time -= minxsslevel0d[wradio1].x123_radio_flag * 263L  ; note the “-“ before the “="
+  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (minxsslevel0d[ii].x123_accum_time/1000.)   ;  This line is same as in original Line 124
 
   fast_count = minxsslevel0d.x123_fast_count / (minxsslevel0d.x123_accum_time/1000.)
   fast_limit = 3.E4  ; New version 2 value.  Version 1 values was 1.E5 for FM-1
@@ -137,7 +162,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
   lowcnts = total( sp[20:24,*], 1 )
   peakcnts = total( sp[36:40,*], 1 )
   PEAK_SLOPE_DEFAULT = 3.0
-  lowlimit = 4.0    ; M5 Flare is lt 20
+  lowlimit = 20.0    ; M5 Flare is lt 20
   slow_count_min = lowlimit
   slow_count_max = fast_limit
 
@@ -151,22 +176,74 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
   fe_cnts = total( sp[210:250,*], 1 )
   FE_CNTS_MAX = 200.
 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Add a new check using the initial estimated MinXSS X123 irradiance
+  ;Pass in the level 0D counts in the integration spectrum. We will be taking a ratio of counts in particular energy bins so the units will not matter
+  ;put in the actual spectrum for the uncert
+  ;  add path for the calibration file
+  if keyword_set(directory_calibration_file) then begin
+    cal_dir = directory_calibration_file
+  endif else begin
+    cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
+  endelse
+
+
+n_spectra = n_elements(sp[*,0])
+n_times_nominal = n_elements(sp[0,*])
+initial_x123_irradiance = dblarr(n_spectra, n_times_nominal)
+
+for k = 0, n_times_nominal - 1 do begin
+  minxss_x123_irradiance_wrapper_cm, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
+  initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
+endfor
+  
+  ;find where the ratio of counts is less than a critical ratio (minimal slope)
+  dimension = 1
+  e_low_band_1 = 1.3
+  e_high_band_1 = 1.4
+  index_range_band_1 = where((initial_x123_irradiance_structure[0].energy_bins ge e_low_band_1) and (initial_x123_irradiance_structure[0].energy_bins le e_high_band_1))
+  initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1 = total(initial_x123_irradiance[index_range_band_1,*], dimension, /double, /nan)
+  e_low_band_2 = 1.0
+  e_high_band_2 = 1.1
+  index_range_band_2 = where((initial_x123_irradiance_structure[0].energy_bins ge e_low_band_2) and (initial_x123_irradiance_structure[0].energy_bins le e_high_band_2))
+  initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = total(initial_x123_irradiance[index_range_band_2,*], dimension, /double, /nan)
+
+  ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2/initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1
+  limit_value_Photon_Flux = 5.0E1
+;  index_ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = where(ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux, n_index_ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2)
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
   ; Version 1 logic used (lowcnts lt low_limit).  Version 2 uses ((lowcnts-new_low_limit) lt 0)
   ; wsci1 = Version 1 selection (when low_limit = 7.0)
-  ;make sure the spacecraft is not in the Aouth Atlantic Anomally (SAA)
+  ;make sure the spacecraft is not in the South Atlantic Anomally (SAA)
 
   ;  wsci1 = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
   ;    and (minxsslevel0d.adcs_mode eq 1) and (lowcnts lt 7.0) $
   ;    and (fast_count lt fast_limit) and (slow_count gt slow_count_min), num_sp1 )
 
   ; Version 2 also requires that peakcnts > lowcnts and peakcnts > 0
-  wsci = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
+;  wsci = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
+; REPLACEMENT FOR LINE 164:  ( change “lt” to “le”  for the x123_radio_flag check) suggested by Tom Woods on 11/11/2018
+  wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
+;  ****   I think we should also store the x123_radio_flag in Level 1  (which is near Line 303 to define it and near Line 459 to store it). suggested by Tom Woods on 11/11/2018
     and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
     and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
     and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
     and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
-    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), num_sp )
+ ;   and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), num_sp )
+    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
+    and (ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux), num_sp )
+
+  wsci_comparison = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
+    and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
+    and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
+    and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
+    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
+    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), num_sp_comparison )
 
   wsci_xp = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
     and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
@@ -241,7 +318,11 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
   endif
 
   ;  add path for the calibration file
-  cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
+  if keyword_set(directory_calibration_file) then begin
+    cal_dir = directory_calibration_file
+  endif else begin
+    cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
+  endelse
 
   if fm eq 1 then begin
     ; FM-1 values
@@ -280,11 +361,12 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
     spectrum_cps_stddev: fltarr(1024), $
     deadtime_correction_factor: 0.0, $
     valid_flag: fltarr(1024), $
+    x123_radio_flag: 0L, $
     spectrum_total_counts: fltarr(1024), $
     spectrum_total_counts_accuracy: fltarr(1024), $
     spectrum_total_counts_precision: fltarr(1024),$
     integration_time: 0.0, $
-    number_spectra: 0, $
+    number_spectra: 0L, $
     x123_fast_count: 0.0, $
     x123_slow_count: 0.0, $
     sps_on: 0, $
@@ -314,7 +396,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
     spectrum_total_counts_accuracy: fltarr(1024), $
     spectrum_total_counts_precision: fltarr(1024),$
     integration_time: 0.0, $
-    number_spectra: 0, $
+    number_spectra: 0L, $
     x123_fast_count: 0.0, $
     x123_slow_count: 0.0, $
     sps_on: 0, $
@@ -343,7 +425,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
     x123_estimated_xp_fc: 0.0, $
     x123_estimated_xp_fc_uncertainty: 0.0, $
     fractional_difference_x123_estimated_xp_fc: 0.0, $
-    number_xp_datum: 0}
+    number_xp_datum: 0L}
 
 
   ;minxss-1 xp dark data structure
@@ -357,7 +439,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, verbose=verbose, debug=debug
     x123_estimated_xp_fc: 0.0, $
     x123_estimated_xp_fc_uncertainty: 0.0, $
     fractional_difference_x123_estimated_xp_fc: 0.0, $
-    number_xp_datum: 0}
+    number_xp_datum: 0L}
 
 
 ;set the xp dark to the x123 dark times
@@ -408,7 +490,7 @@ num_xp_dark = num_dark
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_accuracy, $
       X123_Summed_Integration_time_seconds=X123_total_integration_time)
 
-    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(x123_counts_deadtime_corrected, x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wsci[k]].x123_accum_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
+    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(x123_counts_deadtime_corrected, x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wsci[k]].x123_accum_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
       x123_mean_count_rate = x123_cps_mean_count_rate, $
       x123_count_rate = x123_cps_count_rate, $
       uncertainty_x123_measured_count_rate_array=x123_cps_count_rate_uncertainty_precision, $
@@ -416,10 +498,10 @@ num_xp_dark = num_dark
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;  6.  Calculate the MinXSS X123 irradiance
-    minxss_x123_irradiance_wrapper_cm, x123_cps_count_rate, x123_cps_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, fm=fm
+    minxss_x123_irradiance_wrapper_cm, x123_cps_count_rate, x123_cps_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; 8. Put data into structures
+    ; 7. Put data into structures
     ; fill the variables in the level1_x123 structure
     ;
     correct_1AU = (minxsslevel0d[wsci[k]].earth_sun_distance)^2.
@@ -439,6 +521,7 @@ num_xp_dark = num_dark
     minxsslevel1_x123[num_L1].spectrum_total_counts_accuracy = X123_total_counts_uncertainty_accuracy
     minxsslevel1_x123[num_L1].spectrum_total_counts_precision = X123_total_counts_uncertainty_precision
     minxsslevel1_x123[num_L1].valid_flag = x123_irradiance_structure.valid_flag
+    minxsslevel1_x123[num_L1].x123_radio_flag = minxsslevel0d[wsci[k]].x123_radio_flag
     minxsslevel1_x123[num_L1].integration_time = X123_total_integration_time
     minxsslevel1_x123[num_L1].number_spectra = 1
     minxsslevel1_x123[num_L1].x123_fast_count = fast_count[wsci[k]]
@@ -579,14 +662,14 @@ endfor
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_accuracy, $
       X123_Summed_Integration_time_seconds=X123_total_integration_time)
 
-    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(float(minxsslevel0d[wdark[k]].x123_spectrum), x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wdark[k]].x123_accum_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
+    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(float(minxsslevel0d[wdark[k]].x123_spectrum), x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wdark[k]].x123_accum_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
       x123_mean_count_rate = x123_cps_mean_count_rate, $
       x123_count_rate = x123_cps_count_rate, $
       uncertainty_x123_measured_count_rate_array=x123_cps_count_rate_uncertainty_precision, $
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_precision)
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; 8. Put data into structures
+    ; 6. Put data into structures
     ; fill the variables in the level1_x123 structure
     ;
     correct_1AU = (minxsslevel0d[wdark[k]].earth_sun_distance)^2.
@@ -655,7 +738,7 @@ endfor
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;Precision
 
-    XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
+    XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wdark[k]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wdark[k]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wdark[k]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wdark[k]].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
       uncertainty_XP_measured_count_rate_array=xp_data_uncertainty_DN_rate_precision, $
       uncertainty_background_subtracted_mean_count_rate = xp_data_uncertainty_background_subtracted_mean_DN_rate_precision, $
       uncertainty_background_subtracted_count_rate = xp_data_uncertainty_background_subtracted_DN_rate_precision, $
@@ -729,12 +812,16 @@ endfor
 
   ;
 
-  VERSION = '2.0'
-  REVISION = '2.0.1'
+  VERSION = '3.0'
+  REVISION = '3.0.1'
   FORM_VER = 'IDL Save Set'
-  SOFT_VER = '2.0.1'
-  CAL_VER = '2.0.1'
-  outfile = 'minxss' + fm_str + '_l1_mission_length.sav'
+  SOFT_VER = '3.0.1'
+  CAL_VER = '3.0.1'
+  if keyword_set(output_filename) then begin
+    outfile = output_filename + '.sav'
+  endif else begin
+    outfile = 'minxss' + fm_str + '_l1_mission_length.sav'
+  endelse
 
   ;x123 information structure
   minxsslevel1_x123_meta = { $
@@ -847,30 +934,41 @@ endfor
 
 
 
-  ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file
+  ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .fits files also
   ;
   ;create the file name extension that changes with the minute average chossen as a variable
   ;  outdir = fmdir + 'level1' + x_minute_average_string +'minute' + path_sep()
-  outdir = fmdir + 'level1' + path_sep()
+  
+  if keyword_set(directory_output_file) then begin
+    outdir = directory_output_file
+  endif else begin
+    outdir = fmdir + 'level1' + path_sep()
+  endelse
 
   if keyword_set(verbose) then print, '   Saving Level 1 save set in ', outdir+outfile
-  save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
-    minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
-    
-  ; Save to netCDF files, one per variable since it can't hold multiple
-  ; TODO: Chris Moore is working on consolidating these into a single variable so we can save to a single netCDF file
-  write_netcdf, minxsslevel1_x123, outdir + file_basename(outfile, '.sav') + '_x123.ncdf', $
-                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
-  write_netcdf, minxsslevel1_x123_dark, outdir + file_basename(outfile, '.sav') + '_x123_dark.ncdf', $
-                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
-  write_netcdf, minxsslevel1_xp, outdir + file_basename(outfile, '.sav') + '_xp.ncdf', $
-                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
-  write_netcdf, minxsslevel1_xp_dark, outdir + file_basename(outfile, '.sav') + '_xp_dark.ncdf', $
-                att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
-  
-  ; Export to netCDF
-  ; minxss_make_netcdf, '1', fm = fm ; TODO: use this code to replace the 4 lines above when Chris finishes that consolidation
-  
+;  save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
+;    minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
+
+;combine all the individual structures into one big structure (structures in structures in sructures in structures! :)
+minxsslevel1 = {x123:minxsslevel1_x123, $
+                x123_meta:minxsslevel1_x123_meta, $
+                x123_dark:minxsslevel1_x123_dark, $
+                xp:minxsslevel1_xp, $
+                xp_meta:minxsslevel1_xp_meta, $
+                xp_dark:minxsslevel1_xp_dark}
+                
+;save the data as a .sav file
+save, /compress, minxsslevel1, file=outdir+outfile
+
+if keyword_set(write_cdf_file) then begin
+  ; Save to netCDF files
+;  write_netcdf, minxsslevel1, outdir + file_basename(outfile, '.sav') + '.ncdf', $
+;    att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
+
+;  Export to netCDF
+   minxss_make_netcdf, '1', fm = fm 
+endif
+
   if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
 
   if keyword_set(debug) then stop, 'DEBUG at end of minxss_make_level1.pro ...'
