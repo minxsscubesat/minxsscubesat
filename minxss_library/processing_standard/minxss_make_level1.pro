@@ -21,7 +21,7 @@
 ;    low_count=low_count, verbose=verbose, debug=debug
 ;
 ; KEYWORD PARAMETERS:
-;     fm        Flight Model number 1 or 2 (default is 1)
+;   fm          Flight Model number 1 or 2 (default is 1)
 ;   low_limit   Option to change  limit on selecting low energy counts for good X123 spectra
 ;               Default for low_limit is 7.0
 ;   VERBOSE     Set this to print processing messages
@@ -39,32 +39,15 @@
 ;
 ; PROCEDURE:
 ;   1. Read the MinXSS Level 0D mission-length file
-; 2. Select (filter) the data for good (valid) data
+;   2. Select (filter) the data for good (valid) data
 ;   not in eclipse by at least one minute, radio flag is greater than 1,
 ;   low energy counts are below the low_limit
 ;   3. Choose the timeframe of the data to be considered
 ;   4. First order correction for deadtime
 ;   5. Average the data over x-minute intervals, make irradiance values calculate XP background subtracted data and compare to X123 estimates
-; 6. Make meta-data for Level 1
-; 7. Save the Level 1 results (mission-length file)
+;   6. Make meta-data for Level 1
+;   7. Save the Level 1 results (mission-length file)
 ;
-; MODIFICATION HISTORY:
-;   2016/07/25: Tom Woods: Original code
-;   2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and added 1-AU correction
-;   2016/08/04: Tom Woods: Updated SPS with SURF calibration results and temperature correction
-;   2017/06/02: Tom Woods and James Mason: Version 2 with updates to use x123_accum_time and low-counts limit
-;   2017/06/19: Tom Woods: Updated with mean of parameters in 1-min instead of center point
-;   2017/06/20: Chris Moore and James Mason: Added first order deadtime correction for the slow counts using the function minxss_x123_correct_deadtime.pro
-;   2017/06/20: Chris Moore added spacecraft_in_saa check for science data filtering
-;   2017/06/20: Chris Moore added eclipse state check for science data filtering
-;   2017/06/20: Chris Moore added slow count minimum check for science data filtering (for eclipse transitions)
-;   2017/06/20: Chris Moore added science quality dark time data to the L1 output
-;   2017/06/20: Chris Moore added X123 uncertainties
-;   2017/06/20: Chris Moore added XP background subtracted data
-;   2017/06/20: Chris Moore added XP estimated signal from X123 spectrum
-
-
-
 ;+
 PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, write_cdf_file=write_cdf_file, verbose=verbose, debug=debug
 
