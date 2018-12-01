@@ -29,5 +29,6 @@ function load_tle,infn,sort=do_sort,no_filter=no_filter
     result=result[s]
   end
   if ~keyword_set(no_filter) then filter_tle,result
+  ; stop, 'STOP in load_tle: Check out result ...'
   return,result
 end

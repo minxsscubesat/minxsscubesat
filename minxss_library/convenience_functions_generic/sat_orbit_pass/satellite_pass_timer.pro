@@ -13,6 +13,8 @@
 ;		station		Option to specify ground station by name; default is 'Boulder'
 ;		dual_station Option to specify second ground station: /dual defaults to 'Fairbanks'
 ;		add_pass	Option to add manual pass with start_JD and end_JD
+;		smaller   Option to make display smaller
+;		larger    Option to make display larger
 ;
 ;	OUTPUT
 ;		Plot is updated every second with Pass time information
@@ -34,7 +36,8 @@ function rgb2long, rgb
    return, ishft(long(rgb[0]),16) + ishft(long(rgb[1]),8) + rgb[2]
 end
 
-pro satellite_pass_timer, station, dual_station=dual_station, add_pass=add_pass, debug=debug, verbose=verbose
+pro satellite_pass_timer, station, dual_station=dual_station, add_pass=add_pass, debug=debug, verbose=verbose, $
+        smaller=smaller, larger=larger
 
 ;  check inputs
 if n_params() lt 1 then station ='Boulder'
@@ -50,6 +53,11 @@ if keyword_set(dual_station) then begin
 	dual_station_caps = strupcase(dual_station)
 endif
 if keyword_set(debug) then verbose = 1
+
+if not keyword_set(smaller) then begin
+  if keyword_set(larger) then smaller=0 else smaller=1
+endif
+if (smaller eq 0) then larger=1
 
 ;
 ;	setup path for reading Satellite Pass info that was stored by plan_satellite_pass.pro
@@ -78,29 +86,44 @@ logo_ok = query_png( logo_file, logo_status )
 if (logo_ok) then begin
 	logo_pulse = 0
 	logo_img = read_png( logo_file )
-	logo_img1 = rebin(logo_img[0:2,*,*],3,187,200)
-	logo_img2 = rebin(logo_img[1:3,*,*],3,187,200)
+	if keyword_set(smaller) then begin
+    logo_img1 = rebin(logo_img[0:2,0:371,*],3,93,100)
+    logo_img2 = rebin(logo_img[1:3,0:371,*],3,93,100)
+	endif else begin
+	  logo_img1 = rebin(logo_img[0:2,*,*],3,187,200)
+	  logo_img2 = rebin(logo_img[1:3,*,*],3,187,200)
+	endelse
 endif
 logo2_file = path_name + 'pass_saveset' + slash + 'MinXSS_2_Logo.png'
 logo2_ok = query_png( logo2_file, logo2_status )
 if (logo2_ok) then begin
 	logo2_pulse = 0
 	logo2_img = read_png( logo2_file )
-	logo2_img1 = rebin(logo2_img[0:2,*,*],3,187,200)
-	logo2_img2 = rebin(logo2_img[1:3,*,*],3,187,200)
+	if keyword_set(smaller) then begin
+    logo2_img1 = rebin(logo2_img[0:2,0:371,*],3,93,100)
+    logo2_img2 = rebin(logo2_img[1:3,0:371,*],3,93,100)
+  endif else begin
+    logo2_img1 = rebin(logo2_img[0:2,*,*],3,187,200)
+    logo2_img2 = rebin(logo2_img[1:3,*,*],3,187,200)
+  endelse
 endif
 
 ;
 ;	Configure standard window (user can resize if they want)
 ;	Use old style IDL plots so objects don't have to be destroyed continously
 ;
+; Option for larger window
 wxmin = 1850L
 wymin = 450L
+if keyword_set(smaller) then begin
+  wxmin = 1200L
+  wymin = 300L
+endif
 ydual = wymin
 fdual = 0.5
 if (doDual ne 0) then wymin *= 2
 wtitle = station_caps + ' Pass Information'
-window, 0, XSIZE=wxmin, YSIZE=wymin, TITLE=wtitle
+window, 0, XSIZE=wxmin, YSIZE=wymin, xpos = 0, ypos = 40, TITLE=wtitle
 device, SET_FONT='Helvetica', /TT_FONT
 cc = rainbow(7)
 
@@ -163,21 +186,22 @@ print, '*** Use Control-C to exit this loop of displaying time...'
 
 wxsize = 0L
 wysize = 0L
-xaos = 0.15
-xlos = 0.35
-xsun = 0.52
-xtime = 0.62
+xaos = 0.10   ; originally was 0.15
+xlos = 0.30   ; originally was 0.35
+xsun = 0.52   ; originally was 0.52
+xtime = 0.65  ; originally was 0.62
 yy = [ 0.94, 0.75, 0.45, 0.35, 0.25, 0.15, 0.05 ]
 dyy = 0.1
 dyy2 = 0.18
 csize = [ 3, 3, 1.8, 1.8, 1.8, 1.8, 1.8 ]
+if keyword_set(smaller) then csize=csize/1.5
 cthick = [ 1, 2, 1, 1, 1, 1, 1 ]
 ccolor = [ rgb2long(!color.white), cc[4], rgb2long(!color.white), $
 		rgb2long(!color.white),  rgb2long(!color.white), rgb2long(!color.white),  rgb2long(!color.white) ]
 color_wait = cc[3]
 color_pass = cc[0]
 pextra = 5
-xerase = [ 0.60, 1, 1, 0.6, 0.6]
+xerase = [ xtime, 1, 1, xtime, xtime]
 yerase = [0.5, 0.5, 0.995, 0.995, 0.5]
 xtv = 0.7
 ytv = 0.07
@@ -236,7 +260,7 @@ if (k eq ipass) or (ipassLast lt 0) then begin
 		if (!d.x_size lt wxmin) then wxsize = wxmin
 		if (!d.y_size lt wymin) then wysize = wymin
 		;  force window to be same Min. size
-		window, 0, XSIZE=wxsize, YSIZE=wysize, xpos = -1920, ypos = (1050 - wysize - 40), title=wtitle
+		window, 0, XSIZE=wxsize, YSIZE=wysize, title=wtitle
 		erase
 		plot, [0,1], [0,1], /nodata, yr=[0,1], ys=1+4, xr=[0,1], xs=1+4, xmargin=[0,0], ymargin=[0,0], $
 			font=1, background=rgb2long(!color.black), color=rgb2long(!color.white)
@@ -246,7 +270,7 @@ if (k eq ipass) or (ipassLast lt 0) then begin
 		endif
 		xyouts, xaos, yy[0], 'AOS Time', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
 		xyouts, xlos, yy[0], 'LOS Time', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
-		xyouts, xsun, yy[0], 'Satellite-Phase', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
+		xyouts, xsun, yy[0], 'Satellite-Phase-MaxEL', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
 		jmax = ipass + pextra
 		if (jmax ge num_passes) then jmax=num_passes-1
 		for j=ipass,jmax do begin
@@ -275,8 +299,9 @@ if (k eq ipass) or (ipassLast lt 0) then begin
 			xyouts, xlos, yyout, los_time, charsize=csize[ii], charthick=cthick[ii], $
 					color=ccolor[ii], align=0.5
 			if (passes[j].sunlight eq 0) then phase = 'Eclipse' $
-			else if (passes[j].sunlight eq 1) then phase = 'Sunlight' else phase = 'Extra Pass'
-			phase = strtrim(passes[j].satellite_name,2) + '-' + phase
+			else if (passes[j].sunlight eq 1) then phase = 'Sun' else phase = 'Extra Pass'
+			elev_str = string(long(passes[j].max_elevation+0.5), format='(I2)')
+			phase = strtrim(passes[j].satellite_name,2) + '-' + phase + '-' + elev_str
 			xyouts, xsun, yy[ii], phase, charsize=csize[ii], charthick=cthick[ii], $
 					color=ccolor[ii], align=0.5
 		endfor
@@ -359,7 +384,7 @@ if (doDual ne 0) then begin
 		oplot, [0,1],[0.5,0.5],thick=3,color=ccolor[0]
 		xyouts, xaos, fdual+yy[0], 'AOS Time', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
 		xyouts, xlos, fdual+yy[0], 'LOS Time', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
-		xyouts, xsun, fdual+yy[0], 'Satellite-Phase', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
+		xyouts, xsun, fdual+yy[0], 'Satellite-Phase-MaxEL', charsize=csize[0], charthick=cthick[0], color=ccolor[0], align=0.5
 		jmax = ipass2 + pextra
 		if (jmax ge num_passes2) then jmax=num_passes2-1
 		for j=ipass2,jmax do begin
@@ -388,8 +413,9 @@ if (doDual ne 0) then begin
 			xyouts, xlos, fdual+yyout, los_time, charsize=csize[ii], charthick=cthick[ii], $
 					color=ccolor[ii], align=0.5
 			if (passes2[j].sunlight eq 0) then phase = 'Eclipse' $
-			else if (passes2[j].sunlight eq 1) then phase = 'Sunlight' else phase = 'Extra Pass'
-			phase = strtrim(passes2[j].satellite_name,2) + '-' + phase
+			else if (passes2[j].sunlight eq 1) then phase = 'Sun' else phase = 'Extra Pass'
+			elev_str = string(long(passes2[j].max_elevation+0.5), format='(I2)')
+			phase = strtrim(passes2[j].satellite_name,2) + '-' + phase + '-' + elev_str
 			xyouts, xsun, fdual+yy[ii], phase, charsize=csize[ii], charthick=cthick[ii], $
 					color=ccolor[ii], align=0.5
 		endfor

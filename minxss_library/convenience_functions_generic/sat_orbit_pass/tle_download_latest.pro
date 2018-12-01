@@ -39,6 +39,9 @@ pro tle_download_latest, tle, satid=satid, mission=mission, $
 		catalog=catalog, url=url, user=user, password=password, $
 		nodownload=nodownload, output=output, verbose=verbose, path=path, SatPC=SatPC, debug=debug
 
+; temporary debug
+; debug=1
+
 ; define slash and quote depending if Mac or Windows
 if !version.os_family eq 'Windows' then begin
   slash = '\'

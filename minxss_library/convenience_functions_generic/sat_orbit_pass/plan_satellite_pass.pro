@@ -22,6 +22,7 @@
 ;		verbose		Option to print information while running
 ;		auto_pass	Option to generate AUTO pass scripts based on Pass Elevation
 ;		no_orbit_number  Option to not generate Satellite Orbit Number
+;		no_update	Option to turn off update for satellite TLE from Space-Track
 ;
 ;	OUTPUT
 ;		IDL save set of passes in minxss_passes_latest.sav
@@ -57,8 +58,9 @@
 ;	MinXSS-2 = IRIS (ESRO 2B)	 (for initial testing)
 ;
 
-pro plan_satellite_pass, station, date_range, debug=debug, verbose=verbose, elevation_min=elevation_min, $
-	pass_data=pass_data, pass_conflict=pass_conflict, auto_pass=auto_pass, no_orbit_number=no_orbit_number
+pro plan_satellite_pass, station, date_range, debug=debug, verbose=verbose, $
+	elevation_min=elevation_min, pass_data=pass_data, pass_conflict=pass_conflict, $
+	auto_pass=auto_pass, no_orbit_number=no_orbit_number, no_update=no_update
 
 ;
 ;	configure inputs
@@ -130,8 +132,9 @@ if keyword_set(verbose) then print, '*** TLE path = ', path_name
 
 ;
 ; option to also copy latest pass files to dropbox folders too
-;
-dropbox_tle_dir = getenv('Dropbox_dir')
+;		OBSOLETE as TLE_dir is now in Dropbox
+;  dropbox_tle_dir = getenv('Dropbox_dir')
+dropbox_tle_dir = ''
 if strlen(dropbox_tle_dir) ne 0 then dropbox_tle_dir += slash + 'tle' + slash
 
 ;
@@ -243,7 +246,7 @@ endif
 ;	1.  Download latest TLE for the satellites in the list
 ;				configure SatPC32 file with those TLEs
 ;
-if not keyword_set(debug) then begin
+if (not keyword_set(no_update)) and (not keyword_set(debug)) then begin
 	print, 'Loading TLE catalog and searching for satellites...'
 	tle_download_latest, tle, satid=satid[0], path=path_name, /output, verbose=verbose
 	if n_elements(tle) lt 3 then begin

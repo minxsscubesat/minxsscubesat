@@ -32,6 +32,9 @@
 ;
 function tle_satid_find_in_file, satid, catalog, debug=debug
 
+;	temporary debug
+; debug = 1
+
 result = ''
 cnt = 0L
 linecnt = 0L

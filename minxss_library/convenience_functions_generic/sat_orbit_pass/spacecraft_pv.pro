@@ -171,7 +171,7 @@ pro spacecraft_pv,satid,jd,$ ;input positional parameters
                   debug = debug
 
    ;  TEMPORARY DEBUG
-   ;debug = 1
+   ; debug = 1
 
   ;  slash for Mac = '/', PC = '\'
   if !version.os_family eq 'Windows' then slash = '\' else slash = '/'
@@ -181,6 +181,7 @@ pro spacecraft_pv,satid,jd,$ ;input positional parameters
     if n_elements(tle_path) eq 0 then tle_path='.'
 
     tle_fn=tle_path+slash+string(format="(I08)",long(satid))+".tle"
+    if keyword_set(debug) then print, 'spacecraft_pv: reading TLE file ', tle_fn
     tle=load_tle(tle_fn,no_filter=keyword_set(epoch),sort=keyword_set(epoch))
     if n_elements(tle) lt 2 then tle = [ tle, tle ]
     if keyword_set(epoch) then begin
@@ -217,7 +218,11 @@ pro spacecraft_pv,satid,jd,$ ;input positional parameters
 
         deltar=abs(r1-r0)
         deltav=abs(v1-v0)
-        f[w]=(jd[w]-tle[i].jdepoch)/(tle[i+1].jdepoch-tle[i].jdepoch)
+        if (tle[i+1].jdepoch eq tle[i].jdepoch) then begin
+          f[w] = 0.
+        endif else begin
+          f[w]=(jd[w]-tle[i].jdepoch)/(tle[i+1].jdepoch-tle[i].jdepoch)
+        endelse
         ff=rebin(f[w],n_elements(w),3)
         g=(ff-0.5d)
         r=(1d -ff)*r0+ff*r1

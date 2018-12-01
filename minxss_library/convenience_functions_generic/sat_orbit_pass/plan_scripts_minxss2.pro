@@ -20,18 +20,19 @@
 ;
 ;	OUTPUT
 ;		old scripts are deleted and new scripts are created
-;		pass plan CSV file that can be imported into MinXSS-1 log worksheet
+;		pass plan CSV file that can be imported into MinXSS-2 log worksheet
 ;
 ;	PROCEDURE
 ;	1.  Read passes info created by plan_satellite_pass.pro
 ;	2.  Delete old scripts
 ;	3.	Create new scripts
 ;			New Scripts can include loading stored commands at the remote station
-;	4.	Create CSV file of pass plans for use in MinXSS-1 Log Worksheet
+;	4.	Create CSV file of pass plans for use in MinXSS-2 Log Worksheet
 ;	5.  Generate set_ephemeris_latest.prc HYDRA script
 ;
 ;	HISTORY
 ;		2017-Apr-02  T. Woods	Original Code based on minxss_satellite_pass.pro
+;		2018-Nov-29  T. Woods   Updated for new file paths for Stations
 ;
 
 pro plan_scripts_minxss2, station, station_remote, date, debug=debug, verbose=verbose
@@ -41,12 +42,29 @@ pro plan_scripts_minxss2, station, station_remote, date, debug=debug, verbose=ve
 ;
 if (n_params() lt 1) then station = 'Boulder'
 station_caps = strupcase(station)
-if (strlen(station_caps) lt 1) then begin
+if (n_params() lt 2) then station_remote = ''
+station_remote_caps = strupcase(station_remote)
+
+stations_valid = [ 'Boulder', 'Fairbanks', 'Parker' ]
+valid_1 = 0
+valid_2 = 0
+for k=0,n_elements(stations_valid)-1 do begin
+	stations_valid_caps = strupcase(stations_valid[k])
+	if (strpos(stations_valid_caps,station_caps) eq 0) then begin
+		valid_1 = 1
+		station = stations_valid[k]
+		station_caps = stations_valid_caps
+	endif
+	if (strpos(stations_valid_caps,station_remote_caps) eq 0) then begin
+		valid_2 = 1
+		station_remote = stations_valid[k]
+		station_remote_caps = stations_valid_caps
+	endif
+endfor
+if (valid_1 eq 0) then begin
 	print, 'ERROR: valid station name is needed to run plan_scripts_minxss2.pro !'
 	return
 endif
-if (n_params() lt 2) then station_remote = ''
-station_remote_caps = strupcase(station_remote)
 
 if keyword_set(debug) then verbose = 1
 if keyword_set(verbose) then $
@@ -68,31 +86,25 @@ endif else begin
     file_delete = 'rm -f '
 endelse
 
+;
+;	Get path for TLE / pass time data (as created by plan_satellite_pass.pro)
+;
 path_name = getenv('TLE_dir')
 if strlen(path_name) gt 0 then path_name += slash
 ; else path_name is empty string
 if keyword_set(verbose) then print, '*** TLE path = ', path_name
 
 ;
-; option to also copy latest pass plan files to dropbox folders too
+; Get paths for Hydra Scripts - must be in Dropbox/Hydra/MinXSS/HYDRA_FM-2_xxxxxx/Scripts/
 ;
-dropbox_tle_dir = getenv('Dropbox_dir')
-if strlen(dropbox_tle_dir) ne 0 then dropbox_tle_dir += slash + 'tle' + slash
-
-script_env_name = 'MINXSS2_' + station_caps + '_scripts_dir'
-script_dir = getenv(script_env_name)
-if strlen(script_dir) gt 1 then script_dir = script_dir + slash else begin
-	print, 'ERROR: environment variable '+script_env_name+' is not defined !'
-	return
-endelse
-
-if (strlen(station_remote) gt 1) then begin
-	script_env_name2 = 'MINXSS2_' + station_remote_caps + '_scripts_dir'
-	script_remote_dir = getenv(script_env_name2)
-	if strlen(script_remote_dir) gt 1 then script_remote_dir = script_remote_dir + slash else begin
-		print, 'ERROR: environment variable '+script_env_name2+' is not defined !'
-		return
-	endelse
+dropbox_dir = getenv('Dropbox_dir')
+if strlen(dropbox_dir) ne 0 then dropbox_dir += slash
+if keyword_set(verbose) then print, '*** Dropbox path = ', dropbox_dir
+station_dir = dropbox_dir + slash + "Hydra" + slash + "MinXSS" + slash + "HYDRA_FM-2_"+station+slash
+script_dir = station_dir + slash + "Scripts" + slash
+if (valid_2) then begin
+  station_remote_dir = dropbox_dir + slash + "Hydra" + slash + "MinXSS" + slash + "HYDRA_FM-2_"+station_remote+slash
+  script_remote_dir = station_remote_dir + slash + "Scripts" + slash
 endif
 
 ;
@@ -137,7 +149,7 @@ endfor
 if (strlen(station_remote) gt 1) then begin
 	bad_date = 1
 	if n_params() ge 3 then begin
-		if (date gt 20170101L) then begin
+		if (date gt 20180101L) then begin
 			date_str = strtrim(long(date),2)
 			year = long(strmid(date_str,0,4))
 			month = long(strmid(date_str,4,2))
@@ -145,7 +157,7 @@ if (strlen(station_remote) gt 1) then begin
 			date_jd = ymd2jd(year, month, day)
 			date_yd = jd2yd(date_jd)
 			bad_date = 0
-		endif else if (date lt 2030001L) and (date gt 2017001L) then begin
+		endif else if (date lt 2030001L) and (date gt 2018001L) then begin
 			date_yd = date
 			date_jd = yd2jd(date_yd)
 			bad_date = 0
@@ -190,8 +202,8 @@ endif
 ;	3.	Create new scripts
 ;
 elev_ranges = [ [0.,15], [15, 30], [30, 90] ]
-script_names = [ 'pass_do_nothing.prc', 'adcs_route_realtime.prc', 'playback2_last_48_hours.prc' ]
-script_plan_names = [ 'EL<15: Do Nothing', '15<EL<30: ADCS Data', 'Playback Last 48 Hours' ]
+script_names = [ 'pass_do_nothing.prc', 'adcs_route_realtime.prc', 'playback2_last_24_hours.prc' ]
+script_plan_names = [ 'EL<15: Do Nothing', '15<EL<30: ADCS Data', 'Playback Last 24 Hours' ]
 num_ranges = n_elements(script_names)
 
 ;
@@ -317,12 +329,6 @@ if (num_create gt 1) then begin
 	close, lun
 	free_lun, lun
 
-	if strlen(dropbox_tle_dir) ne 0 then begin
-	  csv_path2 = dropbox_tle_dir + station_caps + slash
-	  if keyword_set(verbose) then print, 'Copying "pass plans" CSV file to ', csv_path2+csv_name3
-	  copy_cmd = file_copy + '"' + csv_path+csv_name3 + '" "' +csv_path2+csv_name3 + '"'
-	  spawn, copy_cmd, exit_status=status
-	endif
 endif
 
 ;
