@@ -671,11 +671,11 @@ while (index lt (inputSize-1)) do begin
         hk_struct1.eps_sa2_temp = (long(data[pindex+162]) + ishft(long(data[pindex+163]),8)) * 0.1744 - 216. ; = deg C
         hk_struct1.eps_sa3_temp = (long(data[pindex+164]) + ishft(long(data[pindex+165]),8)) * 0.1744 - 216. ; = deg C
 
-        hk_struct1.eps_batt_volt2 = (long(data[pindex+166]) + ishft(long(data[pindex+167]),8)) * 14.1 / 4096. ; Volts
-        hk_struct1.eps_batt_charge = (long(data[pindex+168]) + ishft(long(data[pindex+169]),8)) * 3.5568 - 61.6 ; milliAmp
-        hk_struct1.eps_batt_temp1 = (long(data[pindex+170]) + ishft(long(data[pindex+171]),8)) * 0.18766 - 250.2 ; deg C
+        hk_struct1.eps_batt_volt2 = (long(data[pindex+166]) + ishft(long(data[pindex+167]),8)) * 14.1 / 4096.      ; Volts
+        hk_struct1.eps_batt_charge = (long(data[pindex+168]) + ishft(long(data[pindex+169]),8)) * 3.5568 - 61.6    ; milliAmp
+        hk_struct1.eps_batt_temp1 = (long(data[pindex+170]) + ishft(long(data[pindex+171]),8)) * 0.307 - 373.0     ; deg C
         hk_struct1.eps_batt_discharge = (long(data[pindex+172]) + ishft(long(data[pindex+173]),8)) * 3.5568 - 61.6 ; milliAmp
-        hk_struct1.eps_batt_temp2 = (long(data[pindex+174]) + ishft(long(data[pindex+175]),8)) * 0.18766 - 250.2 ; deg C
+        hk_struct1.eps_batt_temp2 = (long(data[pindex+174]) + ishft(long(data[pindex+175]),8)) * 0.307 - 373.0     ; deg C
 
         hk_struct1.sps_xps_pwr_3v = (long(data[pindex+176]) + ishft(long(data[pindex+177]),8)) * 7.0 / 1024. ; Volts
         ;; is the two's compliment formulation correct for this variable ??
