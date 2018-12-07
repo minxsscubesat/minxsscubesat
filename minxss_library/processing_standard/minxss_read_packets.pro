@@ -136,7 +136,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
 
   IF keyword_set(kiss) THEN BEGIN
     IF keyword_set(verbose) THEN message, /info, "Converting KISS escape sequences..."
-    data = minxss_unkiss(temporary(data), verbose=verbose)
+    data = minxss_unkiss(temporary(data), fm=fm, verbose=verbose)
   ENDIF
   
   ; If "ham" shows up in the input filepath/name, then set the HAM_HEADER keyword

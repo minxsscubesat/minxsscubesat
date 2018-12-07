@@ -54,7 +54,7 @@ IF telemetryFileNamesArray EQ !NULL AND yyyydoy EQ !NULL AND yyyymmdd EQ !NULL T
   return
 ENDIF
 IF fm EQ !NULL THEN BEGIN
-  fm = 1
+  fm = 2
 ENDIF
 IF isa(fm, /STRING) THEN BEGIN
   fm = fix(fm)
@@ -83,7 +83,7 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
     minxss_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, /EXPORT_RAW_ADCS_TLM, $
   		                   adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
   endif else begin
-    minxss2_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, $/EXPORT_RAW_ADCS_TLM, $
+    minxss2_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, diag=diagTmp, xactImage=imageTmp, /EXPORT_RAW_ADCS_TLM, $
                           adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, verbose=verbose, _extra=_extra
    
   endelse
@@ -95,7 +95,7 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
   ; fm is the user specified input, fmTmp is what minxss(2)_read_packets found in the telemetry
   IF fm NE fmTmp AND hkTmp NE !NULL THEN BEGIN
     IF keyword_set(VERBOSE) THEN BEGIN
-      message, /INFO, JPMsystime() + ' Flight model in telemetry does not match user specification. This is likely due to erroneous flight software firmware burns. Overwriting with user specification.'
+      message, /INFO, JPMsystime() + ' Flight model in telemetry (' + strtrim(fmTmp,2) + ') does not match user specification (' + strtrim(fm,2) + '). This is likely due to erroneous flight software firmware burns. Overwriting with user specification.'
     ENDIF
     fmTmp = fm
     hkTmp.flight_model = fm
@@ -153,10 +153,13 @@ IF adcs3 NE !NULL THEN minxss_sort_telemetry, adcs3, fm=fm, verbose=verbose, _ex
 IF adcs4 NE !NULL THEN minxss_sort_telemetry, adcs4, fm=fm, verbose=verbose, _extra=_extra
 
 ; If no YYYYDOY, grab one from the HK packet
-filenameParsed = ParsePathAndFilename(filename)
-yyyy = strmid(filenameParsed.filename, 12, 4)
-doy = strmid(filenameParsed.filename, 17, 3)
-yyyydoy = yyyy + doy
+; TODO: Make this more robust if someone uses a random filename
+IF yyyydoy EQ !NULL THEN BEGIN
+  filenameParsed = ParsePathAndFilename(filename)
+  yyyy = strmid(filenameParsed.filename, 12, 4)
+  doy = strmid(filenameParsed.filename, 17, 3)
+  yyyydoy = yyyy + doy
+ENDIF ELSE yyyydoy = strtrim(yyyydoy,2)
 
 ;
 ; 3. Write MinXSS data structures to disk as IDL save file

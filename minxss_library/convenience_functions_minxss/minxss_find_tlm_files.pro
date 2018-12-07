@@ -159,6 +159,15 @@ IF getenv('ham_data') NE '' THEN BEGIN
   ENDIF
 ENDIF
 
+; Add raw SDR output
+IF getenv('sdr_data') NE '' THEN BEGIN
+  sdrFiles = file_search(getenv('sdr_data'), '*' + JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.bin', count = countSDR)
+  IF countSDR NE 0 THEN BEGIN
+    file_list = [file_list, sdrFiles]
+    count = count + countSDR
+  ENDIF
+ENDIF
+
 IF count EQ 0 THEN file_list = -1L
 
 ;

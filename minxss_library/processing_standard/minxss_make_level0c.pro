@@ -88,7 +88,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
       stop_yd = long(JPMjd2yyyydoy(systime(/JULIAN)+1.5))
     END
     2: BEGIN
-      start_yd = 2018069 ; FIXME: Replace these numbers once FM-2 launches
+      start_yd = 2018337
       stop_yd = long(jd2yd(systime(/julian))+0.5)
     END
     3: BEGIN ; FlatSat
@@ -407,7 +407,9 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   
   
   ; Export to netCDF
-  minxss_make_netcdf, '0c', fm = fm
+  IF adcs1 NE !NULL AND adcs2 NE !NULL AND adcs3 NE !NULL AND adcs4 NE !NULL AND sci NE !NULL and hk NE !NULL THEN BEGIN
+    minxss_make_netcdf, '0c', fm = fm
+  ENDIF
 ENDIF ; MAKE_MISSION_LENGTH
 
 END

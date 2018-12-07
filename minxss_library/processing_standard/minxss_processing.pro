@@ -39,8 +39,8 @@ TIC
 
 ; Defaults
 IF start_date EQ !NULL THEN start_date = jd2yd(systime(/JULIAN) - 5.)
-IF end_date EQ !NULL THEN end_date = jd2yd(systime(/JULIAN))
-IF fm EQ !NULL THEN fm = 1
+IF end_date EQ !NULL THEN end_date = jd2yd(systime(/JULIAN) + 1.)
+IF fm EQ !NULL THEN fm = 2
 IF fm GT 3 THEN BEGIN
   message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS. You have some wishful thinking.' 
   return

@@ -88,7 +88,7 @@ IF size(input, /TYPE) EQ 7 THEN BEGIN
     free_lun, lun
     fileOpened = 0
     on_ioerror, NULL
-    IF ((strpos(input, '.kss', /reverse_search) NE -1) OR (strpos(input, '.kiss', /reverse_search) NE -1)) THEN BEGIN
+    IF ((strpos(input, '.kss', /reverse_search) NE -1) OR (strpos(input, '.kiss', /reverse_search) NE -1) OR (strpos(input, '.dat', /reverse_search) NE -1)) THEN BEGIN
       kiss = 1
       message, /info, "WARNING: .k[i]ss extension detected -- forcing KISS compatibility!"
     ENDIF
@@ -100,8 +100,11 @@ ENDELSE
 
 IF keyword_set(kiss) THEN BEGIN
   IF keyword_set(verbose) THEN message, /info, "Converting KISS escape sequences..."
-  data = minxss_unkiss(temporary(data), verbose=verbose)
+  IF NOT (strmatch(input, '*JPM*')) THEN data = minxss_unkiss(temporary(data), fm=fm, verbose=verbose) ELSE data = !NULL
 ENDIF
+
+; If we don't have data for whatever reason, then bail to avoid a crash
+IF data EQ !NULL THEN return
 
 ; If "ham" shows up in the input filepath/name, then set the HAM_HEADER keyword
 IF isA(input, 'string') THEN BEGIN
@@ -438,6 +441,7 @@ while (index lt (inputSize-1)) do begin
                 ; 2014/10/17: ISIS now strips all CDI headers, so reduce offset by 10 bytes.
                 ; 2016/05/25: Sync word moved to end of frame a long time ago... so remove another 2 bytes (=12 total)
     IF keyword_set(KISS) OR keyword_set(HAM_HEADER) THEN indexLast += 18 ; Additional header length from KISS+AX25
+    indexLast += 18 ; 2018-12-05: JPM and AC: WTF is this here for? But it makes it work with text -> binary SDR log files
     if (indexLast gt (index2-8)) then indexLast = index2-8
     while (index3 lt indexLast) do begin
       if ((data[index3] eq CCSDS_BYTE1) and (data[index3+4] eq CCSDS_BYTE5)) then begin
@@ -1613,7 +1617,11 @@ IF keyword_set(EXPORT_RAW_ADCS_TLM) THEN BEGIN
   IF typename(input) EQ 'STRING' THEN BEGIN
     IF adcs1Raw NE !NULL OR adcs2Raw NE !NULL OR adcs3Raw NE !NULL OR adcs4Raw NE !NULL THEN BEGIN
       inputStringParsed = ParsePathAndFilename(input)
-      file_copy, input, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/xact_tlm_exported/' + inputStringParsed.Filename, /overwrite
+      
+      ; Handle incorrectly burned fm=3 in fm=2 flight
+      IF fm EQ 3 THEN fmTmp = 2 ELSE fmTmp = fm
+      
+      file_copy, input, getenv('minxss_data') + '/fm' + strtrim(fmTmp, 2) + '/xact_tlm_exported/' + inputStringParsed.Filename, /overwrite
     ENDIF
   ENDIF
 ENDIF
