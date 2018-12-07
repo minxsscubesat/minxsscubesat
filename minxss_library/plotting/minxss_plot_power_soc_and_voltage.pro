@@ -38,7 +38,7 @@ ENDIF
 fontSize = 16
 
 ; Restore the level 0c data
-restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + '/fm2/level0c/minxss2_l0c_all_mission_length.sav'
 
 ; Create plot
 labelDate = label_date(DATE_FORMAT = ['%M', '%Y'])

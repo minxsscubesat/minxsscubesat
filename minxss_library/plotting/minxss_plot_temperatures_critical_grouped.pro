@@ -39,7 +39,7 @@ fontSize = 16
 margin = [0.25, 0.21, 0.1, 0.1]
 
 ; Restore the level 0c data
-restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + '/fm2/level0c/minxss2_l0c_all_mission_length.sav'
 
 ; Create plot
 w = window(DIMENSIONS = [1000, 1600])
