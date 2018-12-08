@@ -1081,8 +1081,12 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs1_struct1.julian_date_tai = ishft(ulong(data[pindex+76]),24) + ishft(ulong(data[pindex+77]),16) $
                                        +  ishft(ulong(data[pindex+78]),8)  +       ulong(data[pindex+79])                  ; [day]
           adcs1_struct1.time_valid = data[pindex+80]                                                                       ; 1=YES, 0=NO
+
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes, the other 5 are at the end)
-          pindex1 = pindex + 1
+;          pindex1 = pindex + 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
+          
           adcs1_struct1.orbit_time = (ishft(ulong(data[pindex1+81]),24) + ishft(ulong(data[pindex1+82]),16) $
                                    +  ishft(ulong(data[pindex1+83]),8)  +       ulong(data[pindex1+84])) * 0.2               ; [s]
           adcs1_struct1.q_ecef_wrt_eci1 = (ishft(long(data[pindex1+85]),24) + ishft(long(data[pindex1+86]),16) $
@@ -1215,7 +1219,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.attitude_filter_algorithm = data[pindex+42] ; 1=raw, 2=fixed_gain_no_bias, 3=fixed_gain, 4=kalman
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes)
-          pindex1 = pindex + 1
+;          pindex1 = pindex + 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs2_struct1.good_attitude_rate_timer = ishft(ulong(data[pindex1+43]),24) + ishft(ulong(data[pindex1+44]),16) $
                                                  + ishft(ulong(data[pindex1+45]),8 )  +       ulong(data[pindex1+46]) ; [cycles]
@@ -1230,8 +1236,10 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.measured_rate_valid = data[pindex1+61] ; 1=yes, 0=no
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6 bytes, the other 4 are at the end)
-          pindex1 += 1
-          
+;          pindex1 += 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
+         
           adcs2_struct1.commanded_attitude_quat1 = (ishft(long(data[pindex1+62]),24) + ishft(long(data[pindex1+63]),16) $
                                                  +  ishft(long(data[pindex1+64]),8 ) +       long(data[pindex1+65])) * 5.0E-10 ; [none]
           adcs2_struct1.commanded_attitude_quat2 = (ishft(long(data[pindex1+66]),24) + ishft(long(data[pindex1+67]),16) $
@@ -1368,7 +1376,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.tracker_detector_temp = data[pindex+44] * 0.80000001
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes)
-          pindex1 = pindex + 1
+;          pindex1 = pindex + 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs3_struct1.tracker_covariance_amp = (ishft(fix(data[pindex1+45]), 8) + fix(data[pindex1+46])) * 3.2E-10
           adcs3_struct1.tracker_covariance_matrix1 = (ishft(fix(data[pindex1+47]), 8) + fix(data[pindex1+48])) * 3.2E-5
@@ -1436,7 +1446,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.num_bright_stars = data[pindex1+127]
           
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6 bytes, remaining 4 are at the end)
-          pindex1 += 1
+;          pindex1 += 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
           
           adcs3_struct1.attitude_error1 = (ishft(long(data[pindex1+128]),24) + ishft(long(data[pindex1+129]),16) $
                                        +  ishft(long(data[pindex1+130]),8 ) +       long(data[pindex1+131])) * 2.0E-9
@@ -1533,7 +1545,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.tr3_dir = data[pindex+36]
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6)
-          pindex1 = pindex + 1
+;          pindex1 = pindex + 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs4_struct1.sunbody_X = ( ishft(fix(data[pindex1+37]),8) + fix(data[pindex1+38]) ) * 1.0E-4
           adcs4_struct1.sunbody_Y = ( ishft(fix(data[pindex1+39]),8) + fix(data[pindex1+40]) ) * 1.0E-4
@@ -1547,7 +1561,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.sunvector_enabled = data[pindex1+53]
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6)
-          pindex1 += 1
+;          pindex1 += 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs4_struct1.mag_bodyX = ( ishft(fix(data[pindex1+54]),8) + fix(data[pindex1+55]) ) * 5.0E-9
           adcs4_struct1.mag_bodyY = ( ishft(fix(data[pindex1+56]),8) + fix(data[pindex1+57]) ) * 5.0E-9
@@ -1574,7 +1590,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.imu_rate_valid = data[pindex1+94]
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (3/6)
-          pindex1 += 1
+;          pindex1 += 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs4_struct1.counts_per_sec = ishft(ulong(data[pindex1+95]),24) + ishft(ulong(data[pindex1+96]),16) $
                                         + ishft(ulong(data[pindex1+97]),8) + ulong(data[pindex1+98])
@@ -1593,7 +1611,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.high_5msec = data[pindex1+119]
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (4/6)
-          pindex1 += 1
+;          pindex1 += 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs4_struct1.pay_sun_bodyX = ( ishft(fix(data[pindex1+120]),8) + fix(data[pindex1+121]) ) * 1.0E-4
           adcs4_struct1.pay_sun_bodyY = ( ishft(fix(data[pindex1+122]),8) + fix(data[pindex1+123]) ) * 1.0E-4
@@ -1609,7 +1629,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.volt_1p0 = ( uint(data[pindex1+136]) ) * 0.015
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (5/6)
-          pindex1 += 1
+;          pindex1 += 1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           adcs4_struct1.rw1_temp = ( ishft(fix(data[pindex1+137]),8) + fix(data[pindex1+138]) ) * 0.005
           adcs4_struct1.rw2_temp = ( ishft(fix(data[pindex1+139]),8) + fix(data[pindex1+140]) ) * 0.005
@@ -1629,7 +1651,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.st_exceed_min_moon = data[pindex1+159]
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (6/6)
-          pindex1 += 1 ; But there rest of the bytes are spare and not used for FM1
+;          pindex1 += 1 ; But there rest of the bytes are spare and not used for FM1
+; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
+          pindex1 = pindex
 
           if (adcs4_count eq 0) then adcs4 = replicate(adcs4_struct1, N_CHUNKS) else $
             if adcs4_count ge n_elements(adcs4) then adcs4 = [adcs4, replicate(adcs4_struct1, N_CHUNKS)]
