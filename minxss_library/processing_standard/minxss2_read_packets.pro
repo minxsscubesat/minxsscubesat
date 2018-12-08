@@ -79,19 +79,26 @@ IF size(input, /TYPE) EQ 7 THEN BEGIN
   on_ioerror, exit_read
   finfo = file_info( input )
   if (finfo.exists ne 0) and (finfo.read ne 0) and (finfo.size gt 6) then begin
-    if keyword_set(verbose) then print, 'READING ', strtrim(finfo.size,2), ' bytes from ', input
-    openr, lun, input, /get_lun
-    fileOpened = 1
-    adata = assoc(lun, bytarr(finfo.size))
-    data = adata[0]
-    close, lun
-    free_lun, lun
-    fileOpened = 0
-    on_ioerror, NULL
-    IF ((strpos(input, '.kss', /reverse_search) NE -1) OR (strpos(input, '.kiss', /reverse_search) NE -1) OR (strpos(input, '.dat', /reverse_search) NE -1)) THEN BEGIN
-      kiss = 1
-      message, /info, "WARNING: .k[i]ss extension detected -- forcing KISS compatibility!"
-    ENDIF
+    ; If the file is an SDR log, process it with special code
+    IF ((strpos(input, '.log', /reverse_search) NE -1)) THEN BEGIN
+      message, /info, "SDR log file detected; converting to bytes and isolating MinXSS packets..."
+      data = minxss_read_sdr_log(input, verbose=verbose)
+    ENDIF ELSE BEGIN
+      ; We've got some other type of file
+      if keyword_set(verbose) then print, 'READING ', strtrim(finfo.size,2), ' bytes from ', input
+      openr, lun, input, /get_lun
+      fileOpened = 1
+      adata = assoc(lun, bytarr(finfo.size))
+      data = adata[0]
+      close, lun
+      free_lun, lun
+      fileOpened = 0
+      on_ioerror, NULL
+      IF ((strpos(input, '.kss', /reverse_search) NE -1) OR (strpos(input, '.kiss', /reverse_search) NE -1) OR (strpos(input, '.dat', /reverse_search) NE -1)) THEN BEGIN
+        kiss = 1
+        message, /info, "WARNING: .k[i]ss extension detected -- forcing KISS compatibility!"
+      ENDIF
+    ENDELSE
   endif else goto, exit_read
 ENDIF ELSE BEGIN
   inputType = 'bytarr'
@@ -378,7 +385,7 @@ adcs3_struct1 =  {  apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, time: 0
 adcs4_count = 0L
 adcs4_struct1 =  {  apid: 0U, seq_flag: 0U, seq_count: 0U, data_length: 0L, time: 0.0D0, $
  cdh_info: 0B, adcs_info: 0B, adcs_group: 0U, checkbytes: 0U, SyncWord: 0U, $
-tr2_duty_cycle: 8B, tr3_duty_cycle: 8B, tr_torqueX: 0.0, tr_torqueY: 0.0, tr_torqueZ: 0.0, $
+tr2_duty_cycle: 0B, tr3_duty_cycle: 0B, tr_torqueX: 0.0, tr_torqueY: 0.0, tr_torqueZ: 0.0, $
 tr1_ctrlmode: 0B, tr2_ctrlmode: 0B, tr3_ctrlmode: 0B, $
 mag_sourcesetting: 0B, mag_source: 0B, mom_vectorvalid: 0B, mom_vectorenabled: 0B, $
 tr1_enable: 0B, tr2_enable: 0B, tr3_enable: 0B, tr1_dir: 0B, tr2_dir: 0B, tr3_dir: 0B, $
