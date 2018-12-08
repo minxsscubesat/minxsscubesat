@@ -152,7 +152,7 @@ ENDIF
 
 ; Add telemetry from HAM operators
 IF getenv('ham_data') NE '' THEN BEGIN
-  hamFiles = file_search(getenv('ham_data'), JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.dat', count = countHam)
+  hamFiles = file_search(getenv('ham_data'), JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.{dat,kss,kiss}', count = countHam)
   IF countHam NE 0 THEN BEGIN
     file_list = [file_list, hamFiles]
     count = count + countHam
@@ -161,7 +161,7 @@ ENDIF
 
 ; Add raw SDR output
 IF getenv('sdr_data') NE '' THEN BEGIN
-  sdrFiles = file_search(getenv('sdr_data'), '*' + JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.bin', count = countSDR)
+  sdrFiles = file_search(getenv('sdr_data'), '*' + JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.{bin,log}', count = countSDR)
   IF countSDR NE 0 THEN BEGIN
     file_list = [file_list, sdrFiles]
     count = count + countSDR
