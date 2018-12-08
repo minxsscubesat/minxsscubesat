@@ -74,6 +74,11 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
           timeSetAt = 1147678120.0d0 ; GPS seconds just prior to ground time set (19 May 2016 07:28:23 UTC)
           timeOffset = 7677156.0d0 - 9. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
         END
+      2: BEGIN
+          timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
+          timeSetAt = 1228116215.0d0 ; GPS seconds just prior to ground time set (06 Dec 2018 07:23:18 UTC)
+          timeOffset = 3535.492d0 - 3. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
+        END
       ELSE: BEGIN
           message, /info, "FM = "+strtrim(fm,2) + " not yet supported.  Times unchanged."
           timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
