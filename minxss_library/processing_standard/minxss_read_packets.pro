@@ -75,6 +75,7 @@
 ;   2016-08-21: Tom Woods:        Fix the MOSFET switch enable flags
 ;   2017-05-05: James Paul Mason: Added HAM_HEADER keyword to allow for KISS header extension but no KISS decode
 ;   2018-08-10: James Paul Mason: Updated this modification history for consistent formatting. 
+;   2018-12-08: Amir Caspi:       Fixed ADCS packet definitions to accommodate extra 6 bytes at the end (FSW bug workaround)
 ;   
 ;+
 pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xactimage, $
@@ -1041,8 +1042,11 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs1_struct1.data_length = packet_length
           adcs1_struct1.time = packet_time   ; millisec (0.1 msec resolution)
           adcs1_struct1.SpareByte = (long(data[pindex+209])) ;None
-          adcs1_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
-          adcs1_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ;none
+;          adcs1_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
+;          adcs1_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ;none
+; 8 Dec 2018: Amir Caspi: FM1 ADCS packet is 220 bytes! 6 bytes of zeros before CRC/Sync... moving indices to accommodate
+          adcs1_struct1.checkbytes = long(data[pindex+216]) + ishft(long(data[pindex+217]),8)
+          adcs1_struct1.SyncWord = (long(data[pindex+218]) + ishft(long(data[pindex+219]),8))  ;none
           adcs1_struct1.cdh_info = (long(data[pindex+12])) ;None
           adcs1_struct1.adcs_info = (long(data[pindex+13])) ;None
           adcs1_struct1.adcs_group = long(data[pindex+14]) + ishft(long(data[pindex+15]),8) ;Increments for each packet group (0, 1, 2, 3)
@@ -1077,72 +1081,74 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs1_struct1.julian_date_tai = ishft(ulong(data[pindex+76]),24) + ishft(ulong(data[pindex+77]),16) $
                                        +  ishft(ulong(data[pindex+78]),8)  +       ulong(data[pindex+79])                  ; [day]
           adcs1_struct1.time_valid = data[pindex+80]                                                                       ; 1=YES, 0=NO
-          adcs1_struct1.orbit_time = (ishft(ulong(data[pindex+81]),24) + ishft(ulong(data[pindex+82]),16) $
-                                   +  ishft(ulong(data[pindex+83]),8)  +       ulong(data[pindex+84])) * 0.2               ; [s]
-          adcs1_struct1.q_ecef_wrt_eci1 = (ishft(long(data[pindex+85]),24) + ishft(long(data[pindex+86]),16) $
-                                        +  ishft(long(data[pindex+87]),8)  +       long(data[pindex+88])) * 1.0E-9         ; [none]
-          adcs1_struct1.q_ecef_wrt_eci2 = (ishft(long(data[pindex+89]),24) + ishft(long(data[pindex+90]),16) $
-                                        +  ishft(long(data[pindex+91]),8)  +       long(data[pindex+92])) * 1.0E-9         ; [none]
-          adcs1_struct1.q_ecef_wrt_eci3 = (ishft(long(data[pindex+93]),24) + ishft(long(data[pindex+94]),16) $
-                                        +  ishft(long(data[pindex+95]),8)  +       long(data[pindex+96])) * 1.0E-9         ; [none]
-          adcs1_struct1.q_ecef_wrt_eci4 = (ishft(long(data[pindex+97]),24) + ishft(long(data[pindex+98]),16) $
-                                        +  ishft(long(data[pindex+99]),8)  +       long(data[pindex+100])) * 1.0E-9         ; [none]
-          adcs1_struct1.orbit_position_eci1 = (ishft(long(data[pindex+101]),24) + ishft(long(data[pindex+102]),16) $
-                                            +  ishft(long(data[pindex+103]),8)  +       long(data[pindex+104])) * 2.0E-5     ; [km]
-          adcs1_struct1.orbit_position_eci2 = (ishft(long(data[pindex+105]),24) + ishft(long(data[pindex+106]),16) $
-                                            +  ishft(long(data[pindex+107]),8)  +       long(data[pindex+108])) * 2.0E-5     ; [km]
-          adcs1_struct1.orbit_position_eci3 = (ishft(long(data[pindex+109]),24) + ishft(long(data[pindex+110]),16) $
-                                            +  ishft(long(data[pindex+111]),8)  +       long(data[pindex+112])) * 2.0E-5     ; [km]
-          adcs1_struct1.orbit_position_ecef1 = (ishft(long(data[pindex+113]),24) + ishft(long(data[pindex+114]),16) $
-                                             +  ishft(long(data[pindex+115]),8)  +       long(data[pindex+116])) * 2.0E-5    ; [km]
-          adcs1_struct1.orbit_position_ecef2 = (ishft(long(data[pindex+117]),24) + ishft(long(data[pindex+118]),16) $
-                                             +  ishft(long(data[pindex+119]),8)  +       long(data[pindex+120])) * 2.0E-5    ; [km]
-          adcs1_struct1.orbit_position_ecef3 = (ishft(long(data[pindex+121]),24) + ishft(long(data[pindex+122]),16) $
-                                             +  ishft(long(data[pindex+123]),8)  +       long(data[pindex+124])) * 2.0E-5    ; [km]
-          adcs1_struct1.orbit_velocity_eci1 = (ishft(long(data[pindex+125]),24) + ishft(long(data[pindex+126]),16) $
-                                            +  ishft(long(data[pindex+127]),8)  +       long(data[pindex+128])) * 5.0E-9     ; [km/s]
-          adcs1_struct1.orbit_velocity_eci2 = (ishft(long(data[pindex+129]),24) + ishft(long(data[pindex+130]),16) $
-                                            +  ishft(long(data[pindex+131]),8)  +       long(data[pindex+132])) * 5.0E-9   ; [km/s]
-          adcs1_struct1.orbit_velocity_eci3 = (ishft(long(data[pindex+133]),24) + ishft(long(data[pindex+134]),16) $
-                                            +  ishft(long(data[pindex+135]),8)  +       long(data[pindex+136])) * 5.0E-9   ; [km/s]
-          adcs1_struct1.orbit_velocity_ecef1 = (ishft(long(data[pindex+137]),24) + ishft(long(data[pindex+138]),16) $
-                                             +  ishft(long(data[pindex+139]),8)  +       long(data[pindex+140])) * 5.0E-9  ; [km/s]
-          adcs1_struct1.orbit_velocity_ecef2 = (ishft(long(data[pindex+141]),24) + ishft(long(data[pindex+142]),16) $
-                                             +  ishft(long(data[pindex+143]),8)  +       long(data[pindex+144])) * 5.0E-9  ; [km/s]
-          adcs1_struct1.orbit_velocity_ecef3 = (ishft(long(data[pindex+145]),24) + ishft(long(data[pindex+146]),16) $
-                                             +  ishft(long(data[pindex+147]),8)  +       long(data[pindex+148])) * 5.0E-9  ; [km/s]
-          adcs1_struct1.mag_model_vector_eci1 = (ishft(fix(data[pindex+149]),8) + fix(data[pindex+150])) * 5.0E-9          ; [T]
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes, the other 5 are at the end)
+          pindex1 = pindex + 1
+          adcs1_struct1.orbit_time = (ishft(ulong(data[pindex1+81]),24) + ishft(ulong(data[pindex1+82]),16) $
+                                   +  ishft(ulong(data[pindex1+83]),8)  +       ulong(data[pindex1+84])) * 0.2               ; [s]
+          adcs1_struct1.q_ecef_wrt_eci1 = (ishft(long(data[pindex1+85]),24) + ishft(long(data[pindex1+86]),16) $
+                                        +  ishft(long(data[pindex1+87]),8)  +       long(data[pindex1+88])) * 1.0E-9         ; [none]
+          adcs1_struct1.q_ecef_wrt_eci2 = (ishft(long(data[pindex1+89]),24) + ishft(long(data[pindex1+90]),16) $
+                                        +  ishft(long(data[pindex1+91]),8)  +       long(data[pindex1+92])) * 1.0E-9         ; [none]
+          adcs1_struct1.q_ecef_wrt_eci3 = (ishft(long(data[pindex1+93]),24) + ishft(long(data[pindex1+94]),16) $
+                                        +  ishft(long(data[pindex1+95]),8)  +       long(data[pindex1+96])) * 1.0E-9         ; [none]
+          adcs1_struct1.q_ecef_wrt_eci4 = (ishft(long(data[pindex1+97]),24) + ishft(long(data[pindex1+98]),16) $
+                                        +  ishft(long(data[pindex1+99]),8)  +       long(data[pindex1+100])) * 1.0E-9         ; [none]
+          adcs1_struct1.orbit_position_eci1 = (ishft(long(data[pindex1+101]),24) + ishft(long(data[pindex1+102]),16) $
+                                            +  ishft(long(data[pindex1+103]),8)  +       long(data[pindex1+104])) * 2.0E-5     ; [km]
+          adcs1_struct1.orbit_position_eci2 = (ishft(long(data[pindex1+105]),24) + ishft(long(data[pindex1+106]),16) $
+                                            +  ishft(long(data[pindex1+107]),8)  +       long(data[pindex1+108])) * 2.0E-5     ; [km]
+          adcs1_struct1.orbit_position_eci3 = (ishft(long(data[pindex1+109]),24) + ishft(long(data[pindex1+110]),16) $
+                                            +  ishft(long(data[pindex1+111]),8)  +       long(data[pindex1+112])) * 2.0E-5     ; [km]
+          adcs1_struct1.orbit_position_ecef1 = (ishft(long(data[pindex1+113]),24) + ishft(long(data[pindex1+114]),16) $
+                                             +  ishft(long(data[pindex1+115]),8)  +       long(data[pindex1+116])) * 2.0E-5    ; [km]
+          adcs1_struct1.orbit_position_ecef2 = (ishft(long(data[pindex1+117]),24) + ishft(long(data[pindex1+118]),16) $
+                                             +  ishft(long(data[pindex1+119]),8)  +       long(data[pindex1+120])) * 2.0E-5    ; [km]
+          adcs1_struct1.orbit_position_ecef3 = (ishft(long(data[pindex1+121]),24) + ishft(long(data[pindex1+122]),16) $
+                                             +  ishft(long(data[pindex1+123]),8)  +       long(data[pindex1+124])) * 2.0E-5    ; [km]
+          adcs1_struct1.orbit_velocity_eci1 = (ishft(long(data[pindex1+125]),24) + ishft(long(data[pindex1+126]),16) $
+                                            +  ishft(long(data[pindex1+127]),8)  +       long(data[pindex1+128])) * 5.0E-9     ; [km/s]
+          adcs1_struct1.orbit_velocity_eci2 = (ishft(long(data[pindex1+129]),24) + ishft(long(data[pindex1+130]),16) $
+                                            +  ishft(long(data[pindex1+131]),8)  +       long(data[pindex1+132])) * 5.0E-9   ; [km/s]
+          adcs1_struct1.orbit_velocity_eci3 = (ishft(long(data[pindex1+133]),24) + ishft(long(data[pindex1+134]),16) $
+                                            +  ishft(long(data[pindex1+135]),8)  +       long(data[pindex1+136])) * 5.0E-9   ; [km/s]
+          adcs1_struct1.orbit_velocity_ecef1 = (ishft(long(data[pindex1+137]),24) + ishft(long(data[pindex1+138]),16) $
+                                             +  ishft(long(data[pindex1+139]),8)  +       long(data[pindex1+140])) * 5.0E-9  ; [km/s]
+          adcs1_struct1.orbit_velocity_ecef2 = (ishft(long(data[pindex1+141]),24) + ishft(long(data[pindex1+142]),16) $
+                                             +  ishft(long(data[pindex1+143]),8)  +       long(data[pindex1+144])) * 5.0E-9  ; [km/s]
+          adcs1_struct1.orbit_velocity_ecef3 = (ishft(long(data[pindex1+145]),24) + ishft(long(data[pindex1+146]),16) $
+                                             +  ishft(long(data[pindex1+147]),8)  +       long(data[pindex1+148])) * 5.0E-9  ; [km/s]
+          adcs1_struct1.mag_model_vector_eci1 = (ishft(fix(data[pindex1+149]),8) + fix(data[pindex1+150])) * 5.0E-9          ; [T]
           ;  ERROR in offset is only 2 instead of 4 bytes for int16 variables (TW 8/26/15); adjust all offsets below
-          adcs1_struct1.mag_model_vector_eci2 = (ishft(fix(data[pindex+151]),8) + fix(data[pindex+152]))* 5.0E-9           ; [T]
-          adcs1_struct1.mag_model_vector_eci3 = (ishft(fix(data[pindex+153]),8) + fix(data[pindex+154])) * 5.0E-9          ; [T]
-          adcs1_struct1.mag_model_vector_body1 = (ishft(fix(data[pindex+155]),8) + fix(data[pindex+156])) * 5.0E-9         ; [T]
-          adcs1_struct1.mag_model_vector_body2 = (ishft(fix(data[pindex+157]),8) + fix(data[pindex+158])) * 5.0E-9         ; [T]
-          adcs1_struct1.mag_model_vector_body3 = (ishft(fix(data[pindex+159]),8) + fix(data[pindex+160])) * 5.0E-9         ; [T]
-          adcs1_struct1.sun_model_vector_eci1 = (ishft(fix(data[pindex+161]),8) + fix(data[pindex+162])) * 4.0E-5          ; [none]
-          adcs1_struct1.sun_model_vector_eci2 = (ishft(fix(data[pindex+163]),8) + fix(data[pindex+164])) * 4.0E-5          ; [none]
-          adcs1_struct1.sun_model_vector_eci3 = (ishft(fix(data[pindex+165]),8) + fix(data[pindex+166]))* 4.0E-5           ; [none]
-          adcs1_struct1.sun_model_vector_body1 = (ishft(fix(data[pindex+167]),8) + fix(data[pindex+168])) * 4.0E-5         ; [none]
-          adcs1_struct1.sun_model_vector_body2 = (ishft(fix(data[pindex+169]),8) + fix(data[pindex+170])) * 4.0E-5         ; [none]
-          adcs1_struct1.sun_model_vector_body3 = (ishft(fix(data[pindex+171]),8) + fix(data[pindex+172])) * 4.0E-5         ; [none]
-          adcs1_struct1.moon_model_vector_eci1 = (ishft(fix(data[pindex+173]),8) + fix(data[pindex+174])) * 4.0E-5         ; [none]
-          adcs1_struct1.moon_model_vector_eci2 = (ishft(fix(data[pindex+175]),8) + fix(data[pindex+176])) * 4.0E-5         ; [none]
-          adcs1_struct1.moon_model_vector_eci3 = (ishft(fix(data[pindex+177]),8) + fix(data[pindex+178])) * 4.0E-5         ; [none]
-          adcs1_struct1.moon_model_vector_body1 = (ishft(fix(data[pindex+179]),8) + fix(data[pindex+180])) * 4.0E-5        ; [none]
-          adcs1_struct1.moon_model_vector_body2 = (ishft(fix(data[pindex+181]),8) + fix(data[pindex+182])) * 4.0E-5        ; [none]
-          adcs1_struct1.moon_model_vector_body3 = (ishft(fix(data[pindex+183]),8) + fix(data[pindex+184])) * 4.0E-5        ; [none]
-          adcs1_struct1.atmospheric_density = ishft(fix(data[pindex+185]),8) + fix(data[pindex+186])                       ; [kg/m^3]
-          adcs1_struct1.refs_valid = data[pindex+187]                                                                      ; [none]
-          adcs1_struct1.run_low_rate_task = data[pindex+188]                                                               ; [none]
-          adcs1_struct1.attitude_quaternion1 = (ishft(long(data[pindex+189]),24) + ishft(long(data[pindex+190]),16) $
-                                             +  ishft(long(data[pindex+191]),8)  +       long(data[pindex+192])) * 5.0E-10 ; [none]
-          adcs1_struct1.attitude_quaternion2 = (ishft(long(data[pindex+193]),24) + ishft(long(data[pindex+194]),16) $
-                                             +  ishft(long(data[pindex+195]),8)  +       long(data[pindex+196])) * 5.0E-10 ; [none]
-          adcs1_struct1.attitude_quaternion3 = (ishft(long(data[pindex+197]),24) + ishft(long(data[pindex+198]),16) $
-                                             +  ishft(long(data[pindex+199]),8)  +       long(data[pindex+200])) * 5.0E-10 ; [none]
-          adcs1_struct1.attitude_quaternion4 = (ishft(long(data[pindex+201]),24) + ishft(long(data[pindex+202]),16) $
-                                             +  ishft(long(data[pindex+203]),8)  +       long(data[pindex+204])) * 5.0E-10 ; [none]
-          adcs1_struct1.attitude_filter_residual1 = (ishft(long(data[pindex+205]),24) + ishft(long(data[pindex+206]),16) $
-                                                  +  ishft(long(data[pindex+207]),8)  +       long(data[pindex+208])) * 5.0E-10 ; [rad]
+          adcs1_struct1.mag_model_vector_eci2 = (ishft(fix(data[pindex1+151]),8) + fix(data[pindex1+152]))* 5.0E-9           ; [T]
+          adcs1_struct1.mag_model_vector_eci3 = (ishft(fix(data[pindex1+153]),8) + fix(data[pindex1+154])) * 5.0E-9          ; [T]
+          adcs1_struct1.mag_model_vector_body1 = (ishft(fix(data[pindex1+155]),8) + fix(data[pindex1+156])) * 5.0E-9         ; [T]
+          adcs1_struct1.mag_model_vector_body2 = (ishft(fix(data[pindex1+157]),8) + fix(data[pindex1+158])) * 5.0E-9         ; [T]
+          adcs1_struct1.mag_model_vector_body3 = (ishft(fix(data[pindex1+159]),8) + fix(data[pindex1+160])) * 5.0E-9         ; [T]
+          adcs1_struct1.sun_model_vector_eci1 = (ishft(fix(data[pindex1+161]),8) + fix(data[pindex1+162])) * 4.0E-5          ; [none]
+          adcs1_struct1.sun_model_vector_eci2 = (ishft(fix(data[pindex1+163]),8) + fix(data[pindex1+164])) * 4.0E-5          ; [none]
+          adcs1_struct1.sun_model_vector_eci3 = (ishft(fix(data[pindex1+165]),8) + fix(data[pindex1+166]))* 4.0E-5           ; [none]
+          adcs1_struct1.sun_model_vector_body1 = (ishft(fix(data[pindex1+167]),8) + fix(data[pindex1+168])) * 4.0E-5         ; [none]
+          adcs1_struct1.sun_model_vector_body2 = (ishft(fix(data[pindex1+169]),8) + fix(data[pindex1+170])) * 4.0E-5         ; [none]
+          adcs1_struct1.sun_model_vector_body3 = (ishft(fix(data[pindex1+171]),8) + fix(data[pindex1+172])) * 4.0E-5         ; [none]
+          adcs1_struct1.moon_model_vector_eci1 = (ishft(fix(data[pindex1+173]),8) + fix(data[pindex1+174])) * 4.0E-5         ; [none]
+          adcs1_struct1.moon_model_vector_eci2 = (ishft(fix(data[pindex1+175]),8) + fix(data[pindex1+176])) * 4.0E-5         ; [none]
+          adcs1_struct1.moon_model_vector_eci3 = (ishft(fix(data[pindex1+177]),8) + fix(data[pindex1+178])) * 4.0E-5         ; [none]
+          adcs1_struct1.moon_model_vector_body1 = (ishft(fix(data[pindex1+179]),8) + fix(data[pindex1+180])) * 4.0E-5        ; [none]
+          adcs1_struct1.moon_model_vector_body2 = (ishft(fix(data[pindex1+181]),8) + fix(data[pindex1+182])) * 4.0E-5        ; [none]
+          adcs1_struct1.moon_model_vector_body3 = (ishft(fix(data[pindex1+183]),8) + fix(data[pindex1+184])) * 4.0E-5        ; [none]
+          adcs1_struct1.atmospheric_density = ishft(fix(data[pindex1+185]),8) + fix(data[pindex1+186])                       ; [kg/m^3]
+          adcs1_struct1.refs_valid = data[pindex1+187]                                                                      ; [none]
+          adcs1_struct1.run_low_rate_task = data[pindex1+188]                                                               ; [none]
+          adcs1_struct1.attitude_quaternion1 = (ishft(long(data[pindex1+189]),24) + ishft(long(data[pindex1+190]),16) $
+                                             +  ishft(long(data[pindex1+191]),8)  +       long(data[pindex1+192])) * 5.0E-10 ; [none]
+          adcs1_struct1.attitude_quaternion2 = (ishft(long(data[pindex1+193]),24) + ishft(long(data[pindex1+194]),16) $
+                                             +  ishft(long(data[pindex1+195]),8)  +       long(data[pindex1+196])) * 5.0E-10 ; [none]
+          adcs1_struct1.attitude_quaternion3 = (ishft(long(data[pindex1+197]),24) + ishft(long(data[pindex1+198]),16) $
+                                             +  ishft(long(data[pindex1+199]),8)  +       long(data[pindex1+200])) * 5.0E-10 ; [none]
+          adcs1_struct1.attitude_quaternion4 = (ishft(long(data[pindex1+201]),24) + ishft(long(data[pindex1+202]),16) $
+                                             +  ishft(long(data[pindex1+203]),8)  +       long(data[pindex1+204])) * 5.0E-10 ; [none]
+          adcs1_struct1.attitude_filter_residual1 = (ishft(long(data[pindex1+205]),24) + ishft(long(data[pindex1+206]),16) $
+                                                  +  ishft(long(data[pindex1+207]),8)  +       long(data[pindex1+208])) * 5.0E-10 ; [rad]
 
           ;loop to store the XACT Image (used before defining all of the ADCS-1 variables)
           ; FOR i = 0, adcs1_DATA_LEN - 1 DO BEGIN
@@ -1155,6 +1161,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           ;- see XACT ICD revJ ADDENDUM 6
           ;- each pkt = 193 bytes from XACT
           ;- each pkt = 1 byte spare from MinXSS FSW
+          ;- 8 Dec 2018: Amir Caspi: plus another 6 bytes interspersed throughout due to a bug in FSW
           ;First/Last XACT TM Point refs:
           ;Group 0 - APID 38:
           ;- first: LEVEL_00
@@ -1181,8 +1188,11 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.data_length = packet_length
           adcs2_struct1.time = packet_time   ; millisec (0.1 msec resolution)
           adcs2_struct1.SpareByte = (long(data[pindex+209])) ;None
-          adcs2_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
-          adcs2_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ;none
+;          adcs2_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
+;          adcs2_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ;none
+; 8 Dec 2018: Amir Caspi: FM1 ADCS packet is 220 bytes! 6 bytes of zeros before CRC/Sync... moving indices to accommodate
+          adcs2_struct1.checkbytes = long(data[pindex+216]) + ishft(long(data[pindex+217]),8)
+          adcs2_struct1.SyncWord = (long(data[pindex+218]) + ishft(long(data[pindex+219]),8))  ;none
           adcs2_struct1.cdh_info = (long(data[pindex+12])) ;None
           adcs2_struct1.adcs_info = (long(data[pindex+13])) ;None
           adcs2_struct1.adcs_group = long(data[pindex+14]) + ishft(long(data[pindex+15]),8)
@@ -1203,103 +1213,111 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.estimated_gyro_bias2 = (ishft(fix(data[pindex+38]),8) + fix(data[pindex+39])) * 5.0E-7 ; [rad/s]
           adcs2_struct1.estimated_gyro_bias3 = (ishft(fix(data[pindex+40]),8) + fix(data[pindex+41])) * 5.0E-7 ; [rad/s]
           adcs2_struct1.attitude_filter_algorithm = data[pindex+42] ; 1=raw, 2=fixed_gain_no_bias, 3=fixed_gain, 4=kalman
-          adcs2_struct1.good_attitude_rate_timer = ishft(ulong(data[pindex+43]),24) + ishft(ulong(data[pindex+44]),16) $
-                                                 + ishft(ulong(data[pindex+45]),8 )  +       ulong(data[pindex+46]) ; [cycles]
-          adcs2_struct1.bad_attitude_timer = ishft(ulong(data[pindex+47]),24) + ishft(ulong(data[pindex+48]),16) $
-                                           + ishft(ulong(data[pindex+49]),8 )  +       ulong(data[pindex+50]) ; [cycles]
-          adcs2_struct1.bad_rate_timer = ishft(ulong(data[pindex+51]),24) + ishft(ulong(data[pindex+52]),16) $
-                                       + ishft(ulong(data[pindex+53]),8 )  +       ulong(data[pindex+54]) ; [cycles]
-          adcs2_struct1.attitude_filter_reint_count = ishft(ulong(data[pindex+55]),24) + ishft(ulong(data[pindex+56]),16) $
-                                                    + ishft(ulong(data[pindex+57]),8 )  +       ulong(data[pindex+58]) ; [none]
-          adcs2_struct1.attitude_valid = data[pindex+59] ; 1=yes, 0=no
-          adcs2_struct1.measured_attitude_valid = data[pindex+60] ; 1=yes, 0=no
-          adcs2_struct1.measured_rate_valid = data[pindex+61] ; 1=yes, 0=no
-          adcs2_struct1.commanded_attitude_quat1 = (ishft(long(data[pindex+62]),24) + ishft(long(data[pindex+63]),16) $
-                                                 +  ishft(long(data[pindex+64]),8 ) +       long(data[pindex+65])) * 5.0E-10 ; [none]
-          adcs2_struct1.commanded_attitude_quat2 = (ishft(long(data[pindex+66]),24) + ishft(long(data[pindex+67]),16) $
-                                                 +  ishft(long(data[pindex+68]),8 ) +       long(data[pindex+69])) * 5.0E-10 ; [none]
-          adcs2_struct1.commanded_attitude_quat3 = (ishft(long(data[pindex+70]),24) + ishft(long(data[pindex+71]),16) $
-                                                 +  ishft(long(data[pindex+72]),8 ) +       long(data[pindex+73])) * 5.0E-10 ; [none]
-          adcs2_struct1.commanded_attitude_quat4 = (ishft(long(data[pindex+74]),24) + ishft(long(data[pindex+75]),16) $
-                                                 +  ishft(long(data[pindex+76]),8 ) +       long(data[pindex+77])) * 5.0E-10 ; [none]
-          adcs2_struct1.commanded_rate1 = (ishft(long(data[pindex+78]),24) + ishft(long(data[pindex+79]),16) $
-                                        +  ishft(long(data[pindex+80]),8 ) +       long(data[pindex+81])) * 5.0E-9 ; [rad/s]
-          adcs2_struct1.commanded_rate2 = (ishft(long(data[pindex+82]),24) + ishft(long(data[pindex+83]),16) $
-                                        +  ishft(long(data[pindex+84]),8 ) +       long(data[pindex+85])) * 5.0E-9 ; [rad/s]
-          adcs2_struct1.commanded_rate3 = (ishft(long(data[pindex+86]),24) + ishft(long(data[pindex+87]),16) $
-                                        +  ishft(long(data[pindex+88]),8 ) +       long(data[pindex+89])) * 5.0E-9 ; [rad/s]
-          adcs2_struct1.commanded_accel1 = (ishft(long(data[pindex+90]),24) + ishft(long(data[pindex+91]),16) $
-                                         +  ishft(long(data[pindex+92]),8 ) +       long(data[pindex+93])) * 5.0E-9 ; [rad/s/s]
-          adcs2_struct1.commanded_accel2 = (ishft(long(data[pindex+94]),24) + ishft(long(data[pindex+95]),16) $
-                                         +  ishft(long(data[pindex+96]),8 ) +       long(data[pindex+97])) * 5.0E-9 ; [rad/s/s]
-          adcs2_struct1.commanded_accel3 = (ishft(long(data[pindex+ 98]),24) + ishft(long(data[pindex+ 99]),16) $
-                                         +  ishft(long(data[pindex+100]),8 ) +       long(data[pindex+101])) * 5.0E-9 ; [rad/s/s]
-          adcs2_struct1.desired_sun_vector1 = (ishft(fix(data[pindex+102]),8) + fix(data[pindex+103])) * 4.0E-5 ; [none]
-          adcs2_struct1.desired_sun_vector2 = (ishft(fix(data[pindex+104]),8) + fix(data[pindex+105])) * 4.0E-5 ; [none]
-          adcs2_struct1.desired_sun_vector3 = (ishft(fix(data[pindex+106]),8) + fix(data[pindex+107])) * 4.0E-5 ; [none]
-          adcs2_struct1.desired_sun_rot_rate = (ishft(fix(data[pindex+108]),8) + fix(data[pindex+109])) * 4.0E-5 ; [rad/s]
-          adcs2_struct1.adcs_mode = data[pindex+110] ; 0=sun_point, 1 = fine_point
-          adcs2_struct1.recommended_sun_point = data[pindex+111] ; 1=yes, 0=no
-          adcs2_struct1.wheel_est_drag1 = (ishft(fix(data[pindex+112]),8) + fix(data[pindex+113])) * 0.01 ; [rad/s/s]
-          adcs2_struct1.wheel_est_drag2 = (ishft(fix(data[pindex+114]),8) + fix(data[pindex+115])) * 0.01 ; [rad/s/s]
-          adcs2_struct1.wheel_est_drag3 = (ishft(fix(data[pindex+116]),8) + fix(data[pindex+117])) * 0.01 ; [rad/s/s]
-          adcs2_struct1.wheel_angle_residual1 = (ishft(fix(data[pindex+118]),8) + fix(data[pindex+119])) * 0.00025 ; [rad]
-          adcs2_struct1.wheel_angle_residual2 = (ishft(fix(data[pindex+120]),8) + fix(data[pindex+121])) * 0.00025 ; [rad]
-          adcs2_struct1.wheel_angle_residual3 = (ishft(fix(data[pindex+122]),8) + fix(data[pindex+123])) * 0.00025 ; [rad]
-          adcs2_struct1.wheel_meas_speed1 = (ishft(fix(data[pindex+124]),8) + fix(data[pindex+125])) * 0.025 ; [rad/s]
-          adcs2_struct1.wheel_meas_speed2 = (ishft(fix(data[pindex+126]),8) + fix(data[pindex+127])) * 0.025 ; [rad/s]
-          adcs2_struct1.wheel_meas_speed3 = (ishft(fix(data[pindex+128]),8) + fix(data[pindex+129])) * 0.025 ; [rad/s]
-          adcs2_struct1.wheel_commanded_speed1 = (ishft(fix(data[pindex+130]),8) + fix(data[pindex+131])) * 0.025 ; [rad/s]
-          adcs2_struct1.wheel_commanded_speed2 = (ishft(fix(data[pindex+132]),8) + fix(data[pindex+133])) * 0.025 ; [rad/s]
-          adcs2_struct1.wheel_commanded_speed3 = (ishft(fix(data[pindex+134]),8) + fix(data[pindex+135])) * 0.025 ; [rad/s]
-          adcs2_struct1.wheel_commanded_torque1 = (ishft(fix(data[pindex+136]),8) + fix(data[pindex+137])) * 1.0E-7 ; [Nm]
-          adcs2_struct1.wheel_commanded_torque2 = (ishft(fix(data[pindex+138]),8) + fix(data[pindex+139])) * 1.0E-7 ; [Nm]
-          adcs2_struct1.wheel_commanded_torque3 = (ishft(fix(data[pindex+140]),8) + fix(data[pindex+141])) * 1.0E-7 ; [Nm]
-          adcs2_struct1.coarse_wheel_current1 = (ishft(fix(data[pindex+142]),8) + fix(data[pindex+143])) * 0.001 ; [A]
-          adcs2_struct1.coarse_wheel_current2 = (ishft(fix(data[pindex+144]),8) + fix(data[pindex+145])) * 0.001 ; [A]
-          adcs2_struct1.coarse_wheel_current3 = (ishft(fix(data[pindex+146]),8) + fix(data[pindex+147])) * 0.001 ; [A]
-          adcs2_struct1.wheel_time_tag = ishft(ulong(data[pindex+148]),24) + ishft(ulong(data[pindex+149]),16) $
-                                       + ishft(ulong(data[pindex+150]),8 ) +       ulong(data[pindex+151]) ; [µs]
-          adcs2_struct1.wheel_pwm_counts1 = ishft(ulong(data[pindex+152]),24) + ishft(ulong(data[pindex+153]),16) $
-                                          + ishft(ulong(data[pindex+154]),8 ) +       ulong(data[pindex+155]) ; [none]
-          adcs2_struct1.wheel_pwm_counts2 = ishft(ulong(data[pindex+156]),24) + ishft(ulong(data[pindex+157]),16) $
-                                          + ishft(ulong(data[pindex+158]),8 ) +       ulong(data[pindex+159]) ; [none]
-          adcs2_struct1.wheel_pwm_counts3 = ishft(ulong(data[pindex+160]),24) + ishft(ulong(data[pindex+161]),16) $
-                                          + ishft(ulong(data[pindex+162]),8 ) +       ulong(data[pindex+163]) ; [none]
-          adcs2_struct1.wheel_pwm_commanded_counts1 = ishft(ulong(data[pindex+164]),24) + ishft(ulong(data[pindex+165]),16) $
-                                                    + ishft(ulong(data[pindex+166]),8 ) +       ulong(data[pindex+167]) ; [none]
-          adcs2_struct1.wheel_pwm_commanded_counts2 = ishft(ulong(data[pindex+168]),24) + ishft(ulong(data[pindex+169]),16) $
-                                                    + ishft(ulong(data[pindex+170]),8 ) +       ulong(data[pindex+171]) ; [none]
-          adcs2_struct1.wheel_pwm_commanded_counts3 = ishft(ulong(data[pindex+172]),24) + ishft(ulong(data[pindex+173]),16) $
-                                                    + ishft(ulong(data[pindex+174]),8 ) +       ulong(data[pindex+175]) ; [none]
-          adcs2_struct1.wheel_tach_counts1 = ishft(uint(data[pindex+176]),8) + uint(data[pindex+177]) ; [none]
-          adcs2_struct1.wheel_tach_counts2 = ishft(uint(data[pindex+178]),8) + uint(data[pindex+179]) ; [none]
-          adcs2_struct1.wheel_tach_counts3 = ishft(uint(data[pindex+180]),8) + uint(data[pindex+181]) ; [none]
-          adcs2_struct1.cal_cycle_timer1 = ishft(uint(data[pindex+182]),8) + uint(data[pindex+183]) ; [RWcycles]
-          adcs2_struct1.cal_cycle_timer2 = ishft(uint(data[pindex+184]),8) + uint(data[pindex+185]) ; [RWcycles]
-          adcs2_struct1.cal_cycle_timer3 = ishft(uint(data[pindex+186]),8) + uint(data[pindex+187]) ; [RWcycles]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes)
+          pindex1 = pindex + 1
+
+          adcs2_struct1.good_attitude_rate_timer = ishft(ulong(data[pindex1+43]),24) + ishft(ulong(data[pindex1+44]),16) $
+                                                 + ishft(ulong(data[pindex1+45]),8 )  +       ulong(data[pindex1+46]) ; [cycles]
+          adcs2_struct1.bad_attitude_timer = ishft(ulong(data[pindex1+47]),24) + ishft(ulong(data[pindex1+48]),16) $
+                                           + ishft(ulong(data[pindex1+49]),8 )  +       ulong(data[pindex1+50]) ; [cycles]
+          adcs2_struct1.bad_rate_timer = ishft(ulong(data[pindex1+51]),24) + ishft(ulong(data[pindex1+52]),16) $
+                                       + ishft(ulong(data[pindex1+53]),8 )  +       ulong(data[pindex1+54]) ; [cycles]
+          adcs2_struct1.attitude_filter_reint_count = ishft(ulong(data[pindex1+55]),24) + ishft(ulong(data[pindex1+56]),16) $
+                                                    + ishft(ulong(data[pindex1+57]),8 )  +       ulong(data[pindex1+58]) ; [none]
+          adcs2_struct1.attitude_valid = data[pindex1+59] ; 1=yes, 0=no
+          adcs2_struct1.measured_attitude_valid = data[pindex1+60] ; 1=yes, 0=no
+          adcs2_struct1.measured_rate_valid = data[pindex1+61] ; 1=yes, 0=no
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6 bytes, the other 4 are at the end)
+          pindex1 += 1
+          
+          adcs2_struct1.commanded_attitude_quat1 = (ishft(long(data[pindex1+62]),24) + ishft(long(data[pindex1+63]),16) $
+                                                 +  ishft(long(data[pindex1+64]),8 ) +       long(data[pindex1+65])) * 5.0E-10 ; [none]
+          adcs2_struct1.commanded_attitude_quat2 = (ishft(long(data[pindex1+66]),24) + ishft(long(data[pindex1+67]),16) $
+                                                 +  ishft(long(data[pindex1+68]),8 ) +       long(data[pindex1+69])) * 5.0E-10 ; [none]
+          adcs2_struct1.commanded_attitude_quat3 = (ishft(long(data[pindex1+70]),24) + ishft(long(data[pindex1+71]),16) $
+                                                 +  ishft(long(data[pindex1+72]),8 ) +       long(data[pindex1+73])) * 5.0E-10 ; [none]
+          adcs2_struct1.commanded_attitude_quat4 = (ishft(long(data[pindex1+74]),24) + ishft(long(data[pindex1+75]),16) $
+                                                 +  ishft(long(data[pindex1+76]),8 ) +       long(data[pindex1+77])) * 5.0E-10 ; [none]
+          adcs2_struct1.commanded_rate1 = (ishft(long(data[pindex1+78]),24) + ishft(long(data[pindex1+79]),16) $
+                                        +  ishft(long(data[pindex1+80]),8 ) +       long(data[pindex1+81])) * 5.0E-9 ; [rad/s]
+          adcs2_struct1.commanded_rate2 = (ishft(long(data[pindex1+82]),24) + ishft(long(data[pindex1+83]),16) $
+                                        +  ishft(long(data[pindex1+84]),8 ) +       long(data[pindex1+85])) * 5.0E-9 ; [rad/s]
+          adcs2_struct1.commanded_rate3 = (ishft(long(data[pindex1+86]),24) + ishft(long(data[pindex1+87]),16) $
+                                        +  ishft(long(data[pindex1+88]),8 ) +       long(data[pindex1+89])) * 5.0E-9 ; [rad/s]
+          adcs2_struct1.commanded_accel1 = (ishft(long(data[pindex1+90]),24) + ishft(long(data[pindex1+91]),16) $
+                                         +  ishft(long(data[pindex1+92]),8 ) +       long(data[pindex1+93])) * 5.0E-9 ; [rad/s/s]
+          adcs2_struct1.commanded_accel2 = (ishft(long(data[pindex1+94]),24) + ishft(long(data[pindex1+95]),16) $
+                                         +  ishft(long(data[pindex1+96]),8 ) +       long(data[pindex1+97])) * 5.0E-9 ; [rad/s/s]
+          adcs2_struct1.commanded_accel3 = (ishft(long(data[pindex1+ 98]),24) + ishft(long(data[pindex1+ 99]),16) $
+                                         +  ishft(long(data[pindex1+100]),8 ) +       long(data[pindex1+101])) * 5.0E-9 ; [rad/s/s]
+          adcs2_struct1.desired_sun_vector1 = (ishft(fix(data[pindex1+102]),8) + fix(data[pindex1+103])) * 4.0E-5 ; [none]
+          adcs2_struct1.desired_sun_vector2 = (ishft(fix(data[pindex1+104]),8) + fix(data[pindex1+105])) * 4.0E-5 ; [none]
+          adcs2_struct1.desired_sun_vector3 = (ishft(fix(data[pindex1+106]),8) + fix(data[pindex1+107])) * 4.0E-5 ; [none]
+          adcs2_struct1.desired_sun_rot_rate = (ishft(fix(data[pindex1+108]),8) + fix(data[pindex1+109])) * 4.0E-5 ; [rad/s]
+          adcs2_struct1.adcs_mode = data[pindex1+110] ; 0=sun_point, 1 = fine_point
+          adcs2_struct1.recommended_sun_point = data[pindex1+111] ; 1=yes, 0=no
+          adcs2_struct1.wheel_est_drag1 = (ishft(fix(data[pindex1+112]),8) + fix(data[pindex1+113])) * 0.01 ; [rad/s/s]
+          adcs2_struct1.wheel_est_drag2 = (ishft(fix(data[pindex1+114]),8) + fix(data[pindex1+115])) * 0.01 ; [rad/s/s]
+          adcs2_struct1.wheel_est_drag3 = (ishft(fix(data[pindex1+116]),8) + fix(data[pindex1+117])) * 0.01 ; [rad/s/s]
+          adcs2_struct1.wheel_angle_residual1 = (ishft(fix(data[pindex1+118]),8) + fix(data[pindex1+119])) * 0.00025 ; [rad]
+          adcs2_struct1.wheel_angle_residual2 = (ishft(fix(data[pindex1+120]),8) + fix(data[pindex1+121])) * 0.00025 ; [rad]
+          adcs2_struct1.wheel_angle_residual3 = (ishft(fix(data[pindex1+122]),8) + fix(data[pindex1+123])) * 0.00025 ; [rad]
+          adcs2_struct1.wheel_meas_speed1 = (ishft(fix(data[pindex1+124]),8) + fix(data[pindex1+125])) * 0.025 ; [rad/s]
+          adcs2_struct1.wheel_meas_speed2 = (ishft(fix(data[pindex1+126]),8) + fix(data[pindex1+127])) * 0.025 ; [rad/s]
+          adcs2_struct1.wheel_meas_speed3 = (ishft(fix(data[pindex1+128]),8) + fix(data[pindex1+129])) * 0.025 ; [rad/s]
+          adcs2_struct1.wheel_commanded_speed1 = (ishft(fix(data[pindex1+130]),8) + fix(data[pindex1+131])) * 0.025 ; [rad/s]
+          adcs2_struct1.wheel_commanded_speed2 = (ishft(fix(data[pindex1+132]),8) + fix(data[pindex1+133])) * 0.025 ; [rad/s]
+          adcs2_struct1.wheel_commanded_speed3 = (ishft(fix(data[pindex1+134]),8) + fix(data[pindex1+135])) * 0.025 ; [rad/s]
+          adcs2_struct1.wheel_commanded_torque1 = (ishft(fix(data[pindex1+136]),8) + fix(data[pindex1+137])) * 1.0E-7 ; [Nm]
+          adcs2_struct1.wheel_commanded_torque2 = (ishft(fix(data[pindex1+138]),8) + fix(data[pindex1+139])) * 1.0E-7 ; [Nm]
+          adcs2_struct1.wheel_commanded_torque3 = (ishft(fix(data[pindex1+140]),8) + fix(data[pindex1+141])) * 1.0E-7 ; [Nm]
+          adcs2_struct1.coarse_wheel_current1 = (ishft(fix(data[pindex1+142]),8) + fix(data[pindex1+143])) * 0.001 ; [A]
+          adcs2_struct1.coarse_wheel_current2 = (ishft(fix(data[pindex1+144]),8) + fix(data[pindex1+145])) * 0.001 ; [A]
+          adcs2_struct1.coarse_wheel_current3 = (ishft(fix(data[pindex1+146]),8) + fix(data[pindex1+147])) * 0.001 ; [A]
+          adcs2_struct1.wheel_time_tag = ishft(ulong(data[pindex1+148]),24) + ishft(ulong(data[pindex1+149]),16) $
+                                       + ishft(ulong(data[pindex1+150]),8 ) +       ulong(data[pindex1+151]) ; [µs]
+          adcs2_struct1.wheel_pwm_counts1 = ishft(ulong(data[pindex1+152]),24) + ishft(ulong(data[pindex1+153]),16) $
+                                          + ishft(ulong(data[pindex1+154]),8 ) +       ulong(data[pindex1+155]) ; [none]
+          adcs2_struct1.wheel_pwm_counts2 = ishft(ulong(data[pindex1+156]),24) + ishft(ulong(data[pindex1+157]),16) $
+                                          + ishft(ulong(data[pindex1+158]),8 ) +       ulong(data[pindex1+159]) ; [none]
+          adcs2_struct1.wheel_pwm_counts3 = ishft(ulong(data[pindex1+160]),24) + ishft(ulong(data[pindex1+161]),16) $
+                                          + ishft(ulong(data[pindex1+162]),8 ) +       ulong(data[pindex1+163]) ; [none]
+          adcs2_struct1.wheel_pwm_commanded_counts1 = ishft(ulong(data[pindex1+164]),24) + ishft(ulong(data[pindex1+165]),16) $
+                                                    + ishft(ulong(data[pindex1+166]),8 ) +       ulong(data[pindex1+167]) ; [none]
+          adcs2_struct1.wheel_pwm_commanded_counts2 = ishft(ulong(data[pindex1+168]),24) + ishft(ulong(data[pindex1+169]),16) $
+                                                    + ishft(ulong(data[pindex1+170]),8 ) +       ulong(data[pindex1+171]) ; [none]
+          adcs2_struct1.wheel_pwm_commanded_counts3 = ishft(ulong(data[pindex1+172]),24) + ishft(ulong(data[pindex1+173]),16) $
+                                                    + ishft(ulong(data[pindex1+174]),8 ) +       ulong(data[pindex1+175]) ; [none]
+          adcs2_struct1.wheel_tach_counts1 = ishft(uint(data[pindex1+176]),8) + uint(data[pindex1+177]) ; [none]
+          adcs2_struct1.wheel_tach_counts2 = ishft(uint(data[pindex1+178]),8) + uint(data[pindex1+179]) ; [none]
+          adcs2_struct1.wheel_tach_counts3 = ishft(uint(data[pindex1+180]),8) + uint(data[pindex1+181]) ; [none]
+          adcs2_struct1.cal_cycle_timer1 = ishft(uint(data[pindex1+182]),8) + uint(data[pindex1+183]) ; [RWcycles]
+          adcs2_struct1.cal_cycle_timer2 = ishft(uint(data[pindex1+184]),8) + uint(data[pindex1+185]) ; [RWcycles]
+          adcs2_struct1.cal_cycle_timer3 = ishft(uint(data[pindex1+186]),8) + uint(data[pindex1+187]) ; [RWcycles]
           ;  ERROR for Operation Mode 1 offset (TW 8/26/2015): offset all below by -3
-          adcs2_struct1.wheel_operating_mode1 = data[pindex+188] ; 0=idle, 1=internal, 2=external
-          adcs2_struct1.wheel_operating_mode2 = data[pindex+189] ; 0=idle, 1=internal, 2=external
-          adcs2_struct1.wheel_operating_mode3 = data[pindex+190] ; 0=idle, 1=internal, 2=external
-          adcs2_struct1.wheel_control_mode1 = data[pindex+191]   ; 0=torque, 1=spd, 2=pwm
-          adcs2_struct1.wheel_control_mode2 = data[pindex+192]   ; 0=torque, 1=spd, 2=pwm
-          adcs2_struct1.wheel_control_mode3 = data[pindex+193]   ; 0=torque, 1=spd, 2=pwm
-          adcs2_struct1.wheel_motor_fault1 = data[pindex+194]    ; 0=fault, 1=ok
-          adcs2_struct1.wheel_motor_fault2 = data[pindex+195]    ; 0=fault, 1=ok
-          adcs2_struct1.wheel_motor_fault3 = data[pindex+196]    ; 0=fault, 1=ok
-          adcs2_struct1.motor_hall_state1 =  data[pindex+197]     ; [none]
-          adcs2_struct1.motor_hall_state2 =  data[pindex+198]     ; [none]
-          adcs2_struct1.motor_hall_state3 =  data[pindex+199]     ; [none]
-          adcs2_struct1.wheel_pwm_enable1 =  data[pindex+200]     ; 1=yes, 0=no
-          adcs2_struct1.wheel_pwm_enable2 =  data[pindex+201]     ; 1=yes, 0=no
-          adcs2_struct1.wheel_pwm_enable3 =  data[pindex+202]     ; 1=yes, 0=no
-          adcs2_struct1.wheel_pwm_direction1 = data[pindex+203]  ; 0=pos, 1=neg
-          adcs2_struct1.wheel_pwm_direction2 = data[pindex+204]  ; 0=pos, 1=neg
-          adcs2_struct1.wheel_pwm_direction3 = data[pindex+205]  ; 0=pos, 1=neg
-          adcs2_struct1.wheel_pwm_commanded_direction1 = data[pindex+206] ; 0=pos, 1=neg
-          adcs2_struct1.wheel_pwm_commanded_direction2 = data[pindex+207] ; 0=pos, 1=neg
-          adcs2_struct1.wheel_pwm_commanded_direction3 = data[pindex+208] ; 0=pos, 1=neg
+          adcs2_struct1.wheel_operating_mode1 = data[pindex1+188] ; 0=idle, 1=internal, 2=external
+          adcs2_struct1.wheel_operating_mode2 = data[pindex1+189] ; 0=idle, 1=internal, 2=external
+          adcs2_struct1.wheel_operating_mode3 = data[pindex1+190] ; 0=idle, 1=internal, 2=external
+          adcs2_struct1.wheel_control_mode1 = data[pindex1+191]   ; 0=torque, 1=spd, 2=pwm
+          adcs2_struct1.wheel_control_mode2 = data[pindex1+192]   ; 0=torque, 1=spd, 2=pwm
+          adcs2_struct1.wheel_control_mode3 = data[pindex1+193]   ; 0=torque, 1=spd, 2=pwm
+          adcs2_struct1.wheel_motor_fault1 = data[pindex1+194]    ; 0=fault, 1=ok
+          adcs2_struct1.wheel_motor_fault2 = data[pindex1+195]    ; 0=fault, 1=ok
+          adcs2_struct1.wheel_motor_fault3 = data[pindex1+196]    ; 0=fault, 1=ok
+          adcs2_struct1.motor_hall_state1 =  data[pindex1+197]     ; [none]
+          adcs2_struct1.motor_hall_state2 =  data[pindex1+198]     ; [none]
+          adcs2_struct1.motor_hall_state3 =  data[pindex1+199]     ; [none]
+          adcs2_struct1.wheel_pwm_enable1 =  data[pindex1+200]     ; 1=yes, 0=no
+          adcs2_struct1.wheel_pwm_enable2 =  data[pindex1+201]     ; 1=yes, 0=no
+          adcs2_struct1.wheel_pwm_enable3 =  data[pindex1+202]     ; 1=yes, 0=no
+          adcs2_struct1.wheel_pwm_direction1 = data[pindex1+203]  ; 0=pos, 1=neg
+          adcs2_struct1.wheel_pwm_direction2 = data[pindex1+204]  ; 0=pos, 1=neg
+          adcs2_struct1.wheel_pwm_direction3 = data[pindex1+205]  ; 0=pos, 1=neg
+          adcs2_struct1.wheel_pwm_commanded_direction1 = data[pindex1+206] ; 0=pos, 1=neg
+          adcs2_struct1.wheel_pwm_commanded_direction2 = data[pindex1+207] ; 0=pos, 1=neg
+          adcs2_struct1.wheel_pwm_commanded_direction3 = data[pindex1+208] ; 0=pos, 1=neg
 
           if (adcs2_count eq 0) then adcs2 = replicate(adcs2_struct1, N_CHUNKS) else $
             if adcs2_count ge n_elements(adcs2) then adcs2 = [adcs2, replicate(adcs2_struct1, N_CHUNKS)]
@@ -1322,8 +1340,11 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.data_length = packet_length
           adcs3_struct1.time = packet_time   ; millisec (0.1 msec resolution)
           adcs3_struct1.SpareByte = (long(data[pindex+209])) ;None
-          adcs3_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
-          adcs3_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ; None
+;          adcs3_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
+;          adcs3_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ; None
+; 8 Dec 2018: Amir Caspi: FM1 ADCS packet is 220 bytes! 6 bytes of zeros before CRC/Sync... moving indices to accommodate
+          adcs3_struct1.checkbytes = long(data[pindex+216]) + ishft(long(data[pindex+217]),8)
+          adcs3_struct1.SyncWord = (long(data[pindex+218]) + ishft(long(data[pindex+219]),8))  ;none
           adcs3_struct1.cdh_info = (long(data[pindex+12]))
           adcs3_struct1.adcs_info = (long(data[pindex+13]))
           adcs3_struct1.adcs_group = long(data[pindex+14]) + ishft(long(data[pindex+15]),8)
@@ -1345,112 +1366,120 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.tracker_declination = (ishft(uint(data[pindex+40]),8) + uint(data[pindex+41])) * 0.0055
           adcs3_struct1.tracker_roll = (ishft(uint(data[pindex+42]),8) + uint(data[pindex+43])) * 0.0055
           adcs3_struct1.tracker_detector_temp = data[pindex+44] * 0.80000001
-          adcs3_struct1.tracker_covariance_amp = (ishft(fix(data[pindex+45]), 8) + fix(data[pindex+46])) * 3.2E-10
-          adcs3_struct1.tracker_covariance_matrix1 = (ishft(fix(data[pindex+47]), 8) + fix(data[pindex+48])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix2 = (ishft(fix(data[pindex+49]), 8) + fix(data[pindex+50])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix3 = (ishft(fix(data[pindex+51]), 8) + fix(data[pindex+52])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix4 = (ishft(fix(data[pindex+53]), 8) + fix(data[pindex+54])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix5 = (ishft(fix(data[pindex+55]), 8) + fix(data[pindex+56])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix6 = (ishft(fix(data[pindex+57]), 8) + fix(data[pindex+58])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix7 = (ishft(fix(data[pindex+59]), 8) + fix(data[pindex+60])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix8 = (ishft(fix(data[pindex+61]), 8) + fix(data[pindex+62])) * 3.2E-5
-          adcs3_struct1.tracker_covariance_matrix9 = (ishft(fix(data[pindex+63]), 8) + fix(data[pindex+64])) * 3.2E-5
-          adcs3_struct1.tracker_max_residual = data[pindex+65]
-          adcs3_struct1.tracker_max_residual_first_pass = data[pindex+66]
-          adcs3_struct1.tracker_analog_gain = data[pindex+67] * 0.5
-          adcs3_struct1.tracker_magnitude_correction = data[pindex+68] * 0.01
-          adcs3_struct1.detector_temp_command = data[pindex+69] * 0.80000001
-          adcs3_struct1.tracker_bright_magnitude_limit = data[pindex+70] * 0.039999999
-          adcs3_struct1.tracker_dim_magnitude_limit = data[pindex+71] * 0.039999999
-          adcs3_struct1.tracker_tec_duty_cycle = data[pindex+72] * 0.004
-          adcs3_struct1.tracker_peak_3sigma_noise = data[pindex+73] * 4
-          adcs3_struct1.tracker_peak_mean_background = data[pindex+74] * 4
-          adcs3_struct1.tracker_median_3sigma_noise = data[pindex+75] * 4
-          adcs3_struct1.tracker_median_mean_background = data[pindex+76] * 4
-          adcs3_struct1.tracker_operating_mode = data[pindex+77]
-          adcs3_struct1.tracker_star_id_step = data[pindex+78]
-          adcs3_struct1.tracker_star_id_status = data[pindex+79]
-          adcs3_struct1.tracker_star_id_status_saved = data[pindex+80]
-          adcs3_struct1.tracker_attitude_status = data[pindex+81]
-          adcs3_struct1.tracker_rate_estimated_status = data[pindex+82]
-          adcs3_struct1.tracker_rate_aid_status = data[pindex+83]
-          adcs3_struct1.tracker_velocity_aid_status = data[pindex+84]
-          adcs3_struct1.tracker_attitude_aid_status = data[pindex+85]
-          adcs3_struct1.tracker_vector_aid_status = data[pindex+86]
-          adcs3_struct1.tracker_time_tag = ishft(ulong(data[pindex+87]),24) + ishft(ulong(data[pindex+88]),16) $
-                                        +  ishft(ulong(data[pindex+89]),8 ) +       ulong(data[pindex+90])
-          adcs3_struct1.tracker_num_id_patterns_tried = ishft(ulong(data[pindex+91]),24) + ishft(ulong(data[pindex+92]),16) $
-                                                     +  ishft(ulong(data[pindex+93]),8 ) +       ulong(data[pindex+94])
-          adcs3_struct1.tracker_pixel_amplitude_threshold = data[pindex+95] * 4
-          adcs3_struct1.tracker_amplitude_offset = data[pindex+96]
-          adcs3_struct1.tracker_current_tint = ishft(ulong(data[pindex+97]),24) + ishft(ulong(data[pindex+98]),16) $
-                                            + ishft(ulong(data[pindex+99]),8 ) +       ulong(data[pindex+100])
-          adcs3_struct1.tracker_maximum_residual_id = ishft(uint(data[pindex+101]),8) + uint(data[pindex+102])
-          adcs3_struct1.tracker_max_residual_id_first_pass = ishft(uint(data[pindex+103]),8) + uint(data[pindex+104])
-          adcs3_struct1.tracker_max_background_level = ishft(uint(data[pindex+105]),8) + uint(data[pindex+106])
-          adcs3_struct1.tracker_num_pixel_groups = data[pindex+107]
-          adcs3_struct1.tracker_star_id_tolerance = data[pindex+108]
-          adcs3_struct1.tracker_num_attitude_loops = data[pindex+109]
-          adcs3_struct1.num_stars_used_in_attitude = data[pindex+110]
-          adcs3_struct1.num_stars_high_residual = data[pindex+111]
-          adcs3_struct1.tracker_auto_black_enable = data[pindex+112]
-          adcs3_struct1.tracker_black_level = data[pindex+113]
-          adcs3_struct1.num_stars_on_fov = data[pindex+114]
-          adcs3_struct1.tracker_num_track_blocks_issued = data[pindex+115]
-          adcs3_struct1.num_tracked_stars = data[pindex+116]
-          adcs3_struct1.num_id_stars = data[pindex+117]
-          adcs3_struct1.tracker_fsw_counter = data[pindex+118]
-          adcs3_struct1.auto_track_from_star_id = data[pindex+119]
-          adcs3_struct1.tracker_auto_integration_adjust = data[pindex+120]
-          adcs3_struct1.tracker_auto_gain_adjust = data[pindex+121]
-          adcs3_struct1.tracker_test_mode = data[pindex+122]
-          adcs3_struct1.tracker_fpga_detector_timeout = data[pindex+123]
-          adcs3_struct1.tracker_tec_enabled = data[pindex+124]
-          adcs3_struct1.tracker_store_sequential_images = data[pindex+125]
-          adcs3_struct1.tracker_track_ref_available = data[pindex+126]
-          adcs3_struct1.num_bright_stars = data[pindex+127]
-          adcs3_struct1.attitude_error1 = (ishft(long(data[pindex+128]),24) + ishft(long(data[pindex+129]),16) $
-                                       +  ishft(long(data[pindex+130]),8 ) +       long(data[pindex+131])) * 2.0E-9
-          adcs3_struct1.attitude_error2 = (ishft(long(data[pindex+132]),24) + ishft(long(data[pindex+133]),16) $
-                                       +  ishft(long(data[pindex+134]),8 ) +       long(data[pindex+135])) * 2.0E-9
-          adcs3_struct1.attitude_error3 = (ishft(long(data[pindex+136]),24) + ishft(long(data[pindex+137]),16) $
-                                       +  ishft(long(data[pindex+138]),8 ) +       long(data[pindex+139])) * 2.0E-9
-          adcs3_struct1.rate_error1 = (ishft(long(data[pindex+140]),24) + ishft(long(data[pindex+141]),16) $
-                                   +  ishft(long(data[pindex+142]),8 ) +       long(data[pindex+143])) * 5.0E-9
-          adcs3_struct1.rate_error2 = (ishft(long(data[pindex+144]),24) + ishft(long(data[pindex+145]),16) $
-                                   +  ishft(long(data[pindex+146]),8 ) +       long(data[pindex+147])) * 5.0E-9
-          adcs3_struct1.rate_error3 = (ishft(long(data[pindex+148]),24) + ishft(long(data[pindex+149]),16) $
-                                   +  ishft(long(data[pindex+150]),8 ) +       long(data[pindex+151])) * 5.0E-9
-          adcs3_struct1.integral_error1 = (ishft(fix(data[pindex+152]),8) + fix(data[pindex+153])) * 1.0E-5
-          adcs3_struct1.integral_error2 = (ishft(fix(data[pindex+154]),8) + fix(data[pindex+155])) * 1.0E-5
-          adcs3_struct1.integral_error3 = (ishft(fix(data[pindex+156]),8) + fix(data[pindex+157])) * 1.0E-5
-          adcs3_struct1.commanded_rate_lim1 = (ishft(uint(data[pindex+158]),8) + uint(data[pindex+159])) * 0.0002
-          adcs3_struct1.commanded_rate_lim2 = (ishft(uint(data[pindex+160]),8) + uint(data[pindex+161])) * 0.0002
-          adcs3_struct1.commanded_rate_lim3 = (ishft(uint(data[pindex+162]),8) + uint(data[pindex+163])) * 0.0002
-          adcs3_struct1.commanded_accel_lim1 = (ishft(uint(data[pindex+164]),8) + uint(data[pindex+165])) * 0.0002
-          adcs3_struct1.commanded_accel_lim2 = (ishft(uint(data[pindex+166]),8) + uint(data[pindex+167])) * 0.0002
-          adcs3_struct1.commanded_accel_lim3 = (ishft(uint(data[pindex+168]),8) + uint(data[pindex+169])) * 0.0002
-          adcs3_struct1.feedback_control_torque1 = (ishft(fix(data[pindex+170]),8) + fix(data[pindex+171])) * 2.0E-7
-          adcs3_struct1.feedback_control_torque2 = (ishft(fix(data[pindex+172]),8) + fix(data[pindex+173])) * 2.0E-7
-          adcs3_struct1.feedback_control_torque3 = (ishft(fix(data[pindex+174]),8) + fix(data[pindex+175])) * 2.0E-7
-          adcs3_struct1.total_torque_command1 = (ishft(fix(data[pindex+176]),8) + fix(data[pindex+177])) * 2.0E-7
-          adcs3_struct1.total_torque_command2 = (ishft(fix(data[pindex+178]),8) + fix(data[pindex+179])) * 2.0E-7
-          adcs3_struct1.total_torque_command3 = (ishft(fix(data[pindex+180]),8) + fix(data[pindex+181])) * 2.0E-7
-          adcs3_struct1.time_into_sun_search = ishft(uint(data[pindex+182]),8) + uint(data[pindex+183])
-          adcs3_struct1.sun_search_wait_timer = ishft(uint(data[pindex+184]),8) + uint(data[pindex+185])
-          adcs3_struct1.sun_point_angle_error = (ishft(uint(data[pindex+186]),8) + uint(data[pindex+187])) * 0.003
-          adcs3_struct1.sun_point_state = data[pindex+188]
-          adcs3_struct1.attitude_control_gain_index = data[pindex+189]
-          adcs3_struct1.system_momentum1 = (ishft(fix(data[pindex+190]),8) + fix(data[pindex+191])) * 0.0002
-          adcs3_struct1.system_momentum2 = (ishft(fix(data[pindex+192]),8) + fix(data[pindex+193])) * 0.0002
-          adcs3_struct1.system_momentum3 = (ishft(fix(data[pindex+194]),8) + fix(data[pindex+195])) * 0.0002
-          adcs3_struct1.wheel1_momentum_in_body = (ishft(fix(data[pindex+196]),8) + fix(data[pindex+197])) * 0.0002
-          adcs3_struct1.wheel2_momentum_in_body = (ishft(fix(data[pindex+198]),8) + fix(data[pindex+199])) * 0.0002
-          adcs3_struct1.wheel3_momentum_in_body = (ishft(fix(data[pindex+200]),8) + fix(data[pindex+201])) * 0.0002
-          adcs3_struct1.body_only_momentum_in_body1 = (ishft(fix(data[pindex+202]),8) + fix(data[pindex+202])) * 0.0002
-          adcs3_struct1.body_only_momentum_in_body2 = (ishft(fix(data[pindex+204]),8) + fix(data[pindex+205])) * 0.0002
-          adcs3_struct1.body_only_momentum_in_body3 = (ishft(fix(data[pindex+206]),8) + fix(data[pindex+207])) * 0.0002
-          adcs3_struct1.tr1_duty_cycle = data[pindex+208]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes)
+          pindex1 = pindex + 1
+
+          adcs3_struct1.tracker_covariance_amp = (ishft(fix(data[pindex1+45]), 8) + fix(data[pindex1+46])) * 3.2E-10
+          adcs3_struct1.tracker_covariance_matrix1 = (ishft(fix(data[pindex1+47]), 8) + fix(data[pindex1+48])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix2 = (ishft(fix(data[pindex1+49]), 8) + fix(data[pindex1+50])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix3 = (ishft(fix(data[pindex1+51]), 8) + fix(data[pindex1+52])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix4 = (ishft(fix(data[pindex1+53]), 8) + fix(data[pindex1+54])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix5 = (ishft(fix(data[pindex1+55]), 8) + fix(data[pindex1+56])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix6 = (ishft(fix(data[pindex1+57]), 8) + fix(data[pindex1+58])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix7 = (ishft(fix(data[pindex1+59]), 8) + fix(data[pindex1+60])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix8 = (ishft(fix(data[pindex1+61]), 8) + fix(data[pindex1+62])) * 3.2E-5
+          adcs3_struct1.tracker_covariance_matrix9 = (ishft(fix(data[pindex1+63]), 8) + fix(data[pindex1+64])) * 3.2E-5
+          adcs3_struct1.tracker_max_residual = data[pindex1+65]
+          adcs3_struct1.tracker_max_residual_first_pass = data[pindex1+66]
+          adcs3_struct1.tracker_analog_gain = data[pindex1+67] * 0.5
+          adcs3_struct1.tracker_magnitude_correction = data[pindex1+68] * 0.01
+          adcs3_struct1.detector_temp_command = data[pindex1+69] * 0.80000001
+          adcs3_struct1.tracker_bright_magnitude_limit = data[pindex1+70] * 0.039999999
+          adcs3_struct1.tracker_dim_magnitude_limit = data[pindex1+71] * 0.039999999
+          adcs3_struct1.tracker_tec_duty_cycle = data[pindex1+72] * 0.004
+          adcs3_struct1.tracker_peak_3sigma_noise = data[pindex1+73] * 4
+          adcs3_struct1.tracker_peak_mean_background = data[pindex1+74] * 4
+          adcs3_struct1.tracker_median_3sigma_noise = data[pindex1+75] * 4
+          adcs3_struct1.tracker_median_mean_background = data[pindex1+76] * 4
+          adcs3_struct1.tracker_operating_mode = data[pindex1+77]
+          adcs3_struct1.tracker_star_id_step = data[pindex1+78]
+          adcs3_struct1.tracker_star_id_status = data[pindex1+79]
+          adcs3_struct1.tracker_star_id_status_saved = data[pindex1+80]
+          adcs3_struct1.tracker_attitude_status = data[pindex1+81]
+          adcs3_struct1.tracker_rate_estimated_status = data[pindex1+82]
+          adcs3_struct1.tracker_rate_aid_status = data[pindex1+83]
+          adcs3_struct1.tracker_velocity_aid_status = data[pindex1+84]
+          adcs3_struct1.tracker_attitude_aid_status = data[pindex1+85]
+          adcs3_struct1.tracker_vector_aid_status = data[pindex1+86]
+          adcs3_struct1.tracker_time_tag = ishft(ulong(data[pindex1+87]),24) + ishft(ulong(data[pindex1+88]),16) $
+                                        +  ishft(ulong(data[pindex1+89]),8 ) +       ulong(data[pindex1+90])
+          adcs3_struct1.tracker_num_id_patterns_tried = ishft(ulong(data[pindex1+91]),24) + ishft(ulong(data[pindex1+92]),16) $
+                                                     +  ishft(ulong(data[pindex1+93]),8 ) +       ulong(data[pindex1+94])
+          adcs3_struct1.tracker_pixel_amplitude_threshold = data[pindex1+95] * 4
+          adcs3_struct1.tracker_amplitude_offset = data[pindex1+96]
+          adcs3_struct1.tracker_current_tint = ishft(ulong(data[pindex1+97]),24) + ishft(ulong(data[pindex1+98]),16) $
+                                            + ishft(ulong(data[pindex1+99]),8 ) +       ulong(data[pindex1+100])
+          adcs3_struct1.tracker_maximum_residual_id = ishft(uint(data[pindex1+101]),8) + uint(data[pindex1+102])
+          adcs3_struct1.tracker_max_residual_id_first_pass = ishft(uint(data[pindex1+103]),8) + uint(data[pindex1+104])
+          adcs3_struct1.tracker_max_background_level = ishft(uint(data[pindex1+105]),8) + uint(data[pindex1+106])
+          adcs3_struct1.tracker_num_pixel_groups = data[pindex1+107]
+          adcs3_struct1.tracker_star_id_tolerance = data[pindex1+108]
+          adcs3_struct1.tracker_num_attitude_loops = data[pindex1+109]
+          adcs3_struct1.num_stars_used_in_attitude = data[pindex1+110]
+          adcs3_struct1.num_stars_high_residual = data[pindex1+111]
+          adcs3_struct1.tracker_auto_black_enable = data[pindex1+112]
+          adcs3_struct1.tracker_black_level = data[pindex1+113]
+          adcs3_struct1.num_stars_on_fov = data[pindex1+114]
+          adcs3_struct1.tracker_num_track_blocks_issued = data[pindex1+115]
+          adcs3_struct1.num_tracked_stars = data[pindex1+116]
+          adcs3_struct1.num_id_stars = data[pindex1+117]
+          adcs3_struct1.tracker_fsw_counter = data[pindex1+118]
+          adcs3_struct1.auto_track_from_star_id = data[pindex1+119]
+          adcs3_struct1.tracker_auto_integration_adjust = data[pindex1+120]
+          adcs3_struct1.tracker_auto_gain_adjust = data[pindex1+121]
+          adcs3_struct1.tracker_test_mode = data[pindex1+122]
+          adcs3_struct1.tracker_fpga_detector_timeout = data[pindex1+123]
+          adcs3_struct1.tracker_tec_enabled = data[pindex1+124]
+          adcs3_struct1.tracker_store_sequential_images = data[pindex1+125]
+          adcs3_struct1.tracker_track_ref_available = data[pindex1+126]
+          adcs3_struct1.num_bright_stars = data[pindex1+127]
+          
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6 bytes, remaining 4 are at the end)
+          pindex1 += 1
+          
+          adcs3_struct1.attitude_error1 = (ishft(long(data[pindex1+128]),24) + ishft(long(data[pindex1+129]),16) $
+                                       +  ishft(long(data[pindex1+130]),8 ) +       long(data[pindex1+131])) * 2.0E-9
+          adcs3_struct1.attitude_error2 = (ishft(long(data[pindex1+132]),24) + ishft(long(data[pindex1+133]),16) $
+                                       +  ishft(long(data[pindex1+134]),8 ) +       long(data[pindex1+135])) * 2.0E-9
+          adcs3_struct1.attitude_error3 = (ishft(long(data[pindex1+136]),24) + ishft(long(data[pindex1+137]),16) $
+                                       +  ishft(long(data[pindex1+138]),8 ) +       long(data[pindex1+139])) * 2.0E-9
+          adcs3_struct1.rate_error1 = (ishft(long(data[pindex1+140]),24) + ishft(long(data[pindex1+141]),16) $
+                                   +  ishft(long(data[pindex1+142]),8 ) +       long(data[pindex1+143])) * 5.0E-9
+          adcs3_struct1.rate_error2 = (ishft(long(data[pindex1+144]),24) + ishft(long(data[pindex1+145]),16) $
+                                   +  ishft(long(data[pindex1+146]),8 ) +       long(data[pindex1+147])) * 5.0E-9
+          adcs3_struct1.rate_error3 = (ishft(long(data[pindex1+148]),24) + ishft(long(data[pindex1+149]),16) $
+                                   +  ishft(long(data[pindex1+150]),8 ) +       long(data[pindex1+151])) * 5.0E-9
+          adcs3_struct1.integral_error1 = (ishft(fix(data[pindex1+152]),8) + fix(data[pindex1+153])) * 1.0E-5
+          adcs3_struct1.integral_error2 = (ishft(fix(data[pindex1+154]),8) + fix(data[pindex1+155])) * 1.0E-5
+          adcs3_struct1.integral_error3 = (ishft(fix(data[pindex1+156]),8) + fix(data[pindex1+157])) * 1.0E-5
+          adcs3_struct1.commanded_rate_lim1 = (ishft(uint(data[pindex1+158]),8) + uint(data[pindex1+159])) * 0.0002
+          adcs3_struct1.commanded_rate_lim2 = (ishft(uint(data[pindex1+160]),8) + uint(data[pindex1+161])) * 0.0002
+          adcs3_struct1.commanded_rate_lim3 = (ishft(uint(data[pindex1+162]),8) + uint(data[pindex1+163])) * 0.0002
+          adcs3_struct1.commanded_accel_lim1 = (ishft(uint(data[pindex1+164]),8) + uint(data[pindex1+165])) * 0.0002
+          adcs3_struct1.commanded_accel_lim2 = (ishft(uint(data[pindex1+166]),8) + uint(data[pindex1+167])) * 0.0002
+          adcs3_struct1.commanded_accel_lim3 = (ishft(uint(data[pindex1+168]),8) + uint(data[pindex1+169])) * 0.0002
+          adcs3_struct1.feedback_control_torque1 = (ishft(fix(data[pindex1+170]),8) + fix(data[pindex1+171])) * 2.0E-7
+          adcs3_struct1.feedback_control_torque2 = (ishft(fix(data[pindex1+172]),8) + fix(data[pindex1+173])) * 2.0E-7
+          adcs3_struct1.feedback_control_torque3 = (ishft(fix(data[pindex1+174]),8) + fix(data[pindex1+175])) * 2.0E-7
+          adcs3_struct1.total_torque_command1 = (ishft(fix(data[pindex1+176]),8) + fix(data[pindex1+177])) * 2.0E-7
+          adcs3_struct1.total_torque_command2 = (ishft(fix(data[pindex1+178]),8) + fix(data[pindex1+179])) * 2.0E-7
+          adcs3_struct1.total_torque_command3 = (ishft(fix(data[pindex1+180]),8) + fix(data[pindex1+181])) * 2.0E-7
+          adcs3_struct1.time_into_sun_search = ishft(uint(data[pindex1+182]),8) + uint(data[pindex1+183])
+          adcs3_struct1.sun_search_wait_timer = ishft(uint(data[pindex1+184]),8) + uint(data[pindex1+185])
+          adcs3_struct1.sun_point_angle_error = (ishft(uint(data[pindex1+186]),8) + uint(data[pindex1+187])) * 0.003
+          adcs3_struct1.sun_point_state = data[pindex1+188]
+          adcs3_struct1.attitude_control_gain_index = data[pindex1+189]
+          adcs3_struct1.system_momentum1 = (ishft(fix(data[pindex1+190]),8) + fix(data[pindex1+191])) * 0.0002
+          adcs3_struct1.system_momentum2 = (ishft(fix(data[pindex1+192]),8) + fix(data[pindex1+193])) * 0.0002
+          adcs3_struct1.system_momentum3 = (ishft(fix(data[pindex1+194]),8) + fix(data[pindex1+195])) * 0.0002
+          adcs3_struct1.wheel1_momentum_in_body = (ishft(fix(data[pindex1+196]),8) + fix(data[pindex1+197])) * 0.0002
+          adcs3_struct1.wheel2_momentum_in_body = (ishft(fix(data[pindex1+198]),8) + fix(data[pindex1+199])) * 0.0002
+          adcs3_struct1.wheel3_momentum_in_body = (ishft(fix(data[pindex1+200]),8) + fix(data[pindex1+201])) * 0.0002
+          adcs3_struct1.body_only_momentum_in_body1 = (ishft(fix(data[pindex1+202]),8) + fix(data[pindex1+202])) * 0.0002
+          adcs3_struct1.body_only_momentum_in_body2 = (ishft(fix(data[pindex1+204]),8) + fix(data[pindex1+205])) * 0.0002
+          adcs3_struct1.body_only_momentum_in_body3 = (ishft(fix(data[pindex1+206]),8) + fix(data[pindex1+207])) * 0.0002
+          adcs3_struct1.tr1_duty_cycle = data[pindex1+208]
 
 
           if (adcs3_count eq 0) then adcs3 = replicate(adcs3_struct1, N_CHUNKS) else $
@@ -1473,8 +1502,11 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.seq_count = packet_seq_count
           adcs4_struct1.data_length = packet_length
           adcs4_struct1.time = packet_time   ; millisec (0.1 msec resolution)
-          adcs4_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
-          adcs4_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))
+;          adcs4_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
+;          adcs4_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))
+; 8 Dec 2018: Amir Caspi: FM1 ADCS packet is 220 bytes! 6 bytes of zeros before CRC/Sync... moving indices to accommodate
+          adcs4_struct1.checkbytes = long(data[pindex+216]) + ishft(long(data[pindex+217]),8)
+          adcs4_struct1.SyncWord = (long(data[pindex+218]) + ishft(long(data[pindex+219]),8))  ;none
           adcs4_struct1.cdh_info = data[pindex+12]
           adcs4_struct1.adcs_info = data[pindex+13]
           adcs4_struct1.adcs_group = (uint(data[pindex+14]) + ishft(uint(data[pindex+15]),8))
@@ -1499,82 +1531,105 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.tr1_dir = data[pindex+34]
           adcs4_struct1.tr2_dir = data[pindex+35]
           adcs4_struct1.tr3_dir = data[pindex+36]
-          adcs4_struct1.sunbody_X = ( ishft(fix(data[pindex+37]),8) + fix(data[pindex+38]) ) * 1.0E-4
-          adcs4_struct1.sunbody_Y = ( ishft(fix(data[pindex+39]),8) + fix(data[pindex+40]) ) * 1.0E-4
-          adcs4_struct1.sunbody_Z = ( ishft(fix(data[pindex+41]),8) + fix(data[pindex+42]) ) * 1.0E-4
-          adcs4_struct1.sunbody_status = data[pindex+43]
-          adcs4_struct1.sunsensor_used = data[pindex+44]
-          adcs4_struct1.sunsensor_data1 = ( ishft(uint(data[pindex+45]),8) + uint(data[pindex+46]) )
-          adcs4_struct1.sunsensor_data2 = ( ishft(uint(data[pindex+47]),8) + uint(data[pindex+48]) )
-          adcs4_struct1.sunsensor_data3 = ( ishft(uint(data[pindex+49]),8) + uint(data[pindex+50]) )
-          adcs4_struct1.sunsensor_data4 = ( ishft(uint(data[pindex+51]),8) + uint(data[pindex+52]) )
-          adcs4_struct1.sunvector_enabled = data[pindex+53]
-          adcs4_struct1.mag_bodyX = ( ishft(fix(data[pindex+54]),8) + fix(data[pindex+55]) ) * 5.0E-9
-          adcs4_struct1.mag_bodyY = ( ishft(fix(data[pindex+56]),8) + fix(data[pindex+57]) ) * 5.0E-9
-          adcs4_struct1.mag_bodyZ = ( ishft(fix(data[pindex+58]),8) + fix(data[pindex+59]) ) * 5.0E-9
-          adcs4_struct1.mag_compTemp = ( ishft(fix(data[pindex+60]),8) + fix(data[pindex+61]) ) * 0.005
-          adcs4_struct1.mag_data1 = ( ishft(uint(data[pindex+62]),8) + uint(data[pindex+63]) )
-          adcs4_struct1.mag_data2 = ( ishft(uint(data[pindex+64]),8) + uint(data[pindex+65]) )
-          adcs4_struct1.mag_data3 = ( ishft(uint(data[pindex+66]),8) + uint(data[pindex+67]) )
-          adcs4_struct1.mag_valid = data[pindex+68]
-          adcs4_struct1.temp_used = data[pindex+69]
-          adcs4_struct1.imu_rate1 = ( ishft(fix(data[pindex+70]),8) + fix(data[pindex+71]) ) * 1.0E-5
-          adcs4_struct1.imu_rate2 = ( ishft(fix(data[pindex+72]),8) + fix(data[pindex+73]) ) * 1.0E-5
-          adcs4_struct1.imu_rate3 = ( ishft(fix(data[pindex+74]),8) + fix(data[pindex+75]) ) * 1.0E-5
-          adcs4_struct1.imu_body_rate1 = ( ishft(fix(data[pindex+76]),8) + fix(data[pindex+77]) ) * 1.0E-5
-          adcs4_struct1.imu_body_rate2 = ( ishft(fix(data[pindex+78]),8) + fix(data[pindex+79]) ) * 1.0E-5
-          adcs4_struct1.imu_body_rate3 = ( ishft(fix(data[pindex+80]),8) + fix(data[pindex+81]) ) * 1.0E-5
-          adcs4_struct1.imu_body_time = ishft(ulong(data[pindex+82]),24) + ishft(ulong(data[pindex+83]),16) $
-                                      + ishft(ulong(data[pindex+84]),8) + ulong(data[pindex+85])
-          adcs4_struct1.imu_first_rate1 = ishft(fix(data[pindex+86]),8) + fix(data[pindex+87])
-          adcs4_struct1.imu_first_rate2 = ishft(fix(data[pindex+88]),8) + fix(data[pindex+89])
-          adcs4_struct1.imu_first_rate3 = ishft(fix(data[pindex+90]),8) + fix(data[pindex+91])
-          adcs4_struct1.imu_pkt_count = data[pindex+92]
-          adcs4_struct1.imu_first_id = data[pindex+93]
-          adcs4_struct1.imu_rate_valid = data[pindex+94]
-          adcs4_struct1.counts_per_sec = ishft(ulong(data[pindex+95]),24) + ishft(ulong(data[pindex+96]),16) $
-                                        + ishft(ulong(data[pindex+97]),8) + ulong(data[pindex+98])
-          adcs4_struct1.high_run_cnt = ishft(ulong(data[pindex+99]),24) + ishft(ulong(data[pindex+100]),16) $
-                                     + ishft(ulong(data[pindex+101]),8) + ulong(data[pindex+102])
-          adcs4_struct1.high_time = ishft(ulong(data[pindex+103]),24) + ishft(ulong(data[pindex+104]),16) $
-                                  + ishft(ulong(data[pindex+105]),8) + ulong(data[pindex+106])
-          adcs4_struct1.high_cycle_num = ishft(ulong(data[pindex+107]),24) + ishft(ulong(data[pindex+108]),16) $
-                                       + ishft(ulong(data[pindex+109]),8) + ulong(data[pindex+110])
-          adcs4_struct1.vhigh_cycle_num = ishft(ulong(data[pindex+111]),24) + ishft(ulong(data[pindex+112]),16) $
-                                        + ishft(ulong(data[pindex+113]),8) + ulong(data[pindex+114])
-          adcs4_struct1.high_1msec = data[pindex+115]
-          adcs4_struct1.high_2msec = data[pindex+116]
-          adcs4_struct1.high_3msec = data[pindex+117]
-          adcs4_struct1.high_4msec = data[pindex+118]
-          adcs4_struct1.high_5msec = data[pindex+119]
-          adcs4_struct1.pay_sun_bodyX = ( ishft(fix(data[pindex+120]),8) + fix(data[pindex+121]) ) * 1.0E-4
-          adcs4_struct1.pay_sun_bodyY = ( ishft(fix(data[pindex+122]),8) + fix(data[pindex+123]) ) * 1.0E-4
-          adcs4_struct1.pay_sun_bodyZ = ( ishft(fix(data[pindex+124]),8) + fix(data[pindex+125]) ) * 1.0E-4
-          adcs4_struct1.pay_cmd_data1 = ( ishft(fix(data[pindex+126]),8) + fix(data[pindex+127]) )
-          adcs4_struct1.pay_cmd_data2 = ( ishft(fix(data[pindex+128]),8) + fix(data[pindex+129]) )
-          adcs4_struct1.pay_sun_valid = data[pindex+130]
-          adcs4_struct1.tlm_map_id = data[pindex+131]
-          adcs4_struct1.volt_5p0 = ( uint(data[pindex+132]) ) * 0.025
-          adcs4_struct1.volt_3p3 = ( uint(data[pindex+133]) ) * 0.015
-          adcs4_struct1.volt_2p5 = ( uint(data[pindex+134]) ) * 0.015
-          adcs4_struct1.volt_1p8 = ( uint(data[pindex+135]) ) * 0.015
-          adcs4_struct1.volt_1p0 = ( uint(data[pindex+136]) ) * 0.015
-          adcs4_struct1.rw1_temp = ( ishft(fix(data[pindex+137]),8) + fix(data[pindex+138]) ) * 0.005
-          adcs4_struct1.rw2_temp = ( ishft(fix(data[pindex+139]),8) + fix(data[pindex+140]) ) * 0.005
-          adcs4_struct1.rw3_temp = ( ishft(fix(data[pindex+141]),8) + fix(data[pindex+142]) ) * 0.005
-          adcs4_struct1.volt_12v_bus = ( ishft(uint(data[pindex+143]),8) + uint(data[pindex+144]) ) * 0.001
-          adcs4_struct1.data_checksum = ishft(uint(data[pindex+145]),8) + uint(data[pindex+146])
-          adcs4_struct1.table_length = ishft(uint(data[pindex+147]),8) + uint(data[pindex+148])
-          adcs4_struct1.table_offset = ishft(uint(data[pindex+149]),8) + uint(data[pindex+150])
-          adcs4_struct1.table_upload_status = data[pindex+151]
-          adcs4_struct1.which_table = data[pindex+152]
-          adcs4_struct1.st_valid = data[pindex+153]
-          adcs4_struct1.st_use_enable = data[pindex+154]
-          adcs4_struct1.st_exceed_max_background = data[pindex+155]
-          adcs4_struct1.st_exceed_max_rotation = data[pindex+156]
-          adcs4_struct1.st_exceed_min_sun = data[pindex+157]
-          adcs4_struct1.st_exceed_min_earth = data[pindex+158]
-          adcs4_struct1.st_exceed_min_moon = data[pindex+159]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6)
+          pindex1 = pindex + 1
+
+          adcs4_struct1.sunbody_X = ( ishft(fix(data[pindex1+37]),8) + fix(data[pindex1+38]) ) * 1.0E-4
+          adcs4_struct1.sunbody_Y = ( ishft(fix(data[pindex1+39]),8) + fix(data[pindex1+40]) ) * 1.0E-4
+          adcs4_struct1.sunbody_Z = ( ishft(fix(data[pindex1+41]),8) + fix(data[pindex1+42]) ) * 1.0E-4
+          adcs4_struct1.sunbody_status = data[pindex1+43]
+          adcs4_struct1.sunsensor_used = data[pindex1+44]
+          adcs4_struct1.sunsensor_data1 = ( ishft(uint(data[pindex1+45]),8) + uint(data[pindex1+46]) )
+          adcs4_struct1.sunsensor_data2 = ( ishft(uint(data[pindex1+47]),8) + uint(data[pindex1+48]) )
+          adcs4_struct1.sunsensor_data3 = ( ishft(uint(data[pindex1+49]),8) + uint(data[pindex1+50]) )
+          adcs4_struct1.sunsensor_data4 = ( ishft(uint(data[pindex1+51]),8) + uint(data[pindex1+52]) )
+          adcs4_struct1.sunvector_enabled = data[pindex1+53]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6)
+          pindex1 += 1
+
+          adcs4_struct1.mag_bodyX = ( ishft(fix(data[pindex1+54]),8) + fix(data[pindex1+55]) ) * 5.0E-9
+          adcs4_struct1.mag_bodyY = ( ishft(fix(data[pindex1+56]),8) + fix(data[pindex1+57]) ) * 5.0E-9
+          adcs4_struct1.mag_bodyZ = ( ishft(fix(data[pindex1+58]),8) + fix(data[pindex1+59]) ) * 5.0E-9
+          adcs4_struct1.mag_compTemp = ( ishft(fix(data[pindex1+60]),8) + fix(data[pindex1+61]) ) * 0.005
+          adcs4_struct1.mag_data1 = ( ishft(uint(data[pindex1+62]),8) + uint(data[pindex1+63]) )
+          adcs4_struct1.mag_data2 = ( ishft(uint(data[pindex1+64]),8) + uint(data[pindex1+65]) )
+          adcs4_struct1.mag_data3 = ( ishft(uint(data[pindex1+66]),8) + uint(data[pindex1+67]) )
+          adcs4_struct1.mag_valid = data[pindex1+68]
+          adcs4_struct1.temp_used = data[pindex1+69]
+          adcs4_struct1.imu_rate1 = ( ishft(fix(data[pindex1+70]),8) + fix(data[pindex1+71]) ) * 1.0E-5
+          adcs4_struct1.imu_rate2 = ( ishft(fix(data[pindex1+72]),8) + fix(data[pindex1+73]) ) * 1.0E-5
+          adcs4_struct1.imu_rate3 = ( ishft(fix(data[pindex1+74]),8) + fix(data[pindex1+75]) ) * 1.0E-5
+          adcs4_struct1.imu_body_rate1 = ( ishft(fix(data[pindex1+76]),8) + fix(data[pindex1+77]) ) * 1.0E-5
+          adcs4_struct1.imu_body_rate2 = ( ishft(fix(data[pindex1+78]),8) + fix(data[pindex1+79]) ) * 1.0E-5
+          adcs4_struct1.imu_body_rate3 = ( ishft(fix(data[pindex1+80]),8) + fix(data[pindex1+81]) ) * 1.0E-5
+          adcs4_struct1.imu_body_time = ishft(ulong(data[pindex1+82]),24) + ishft(ulong(data[pindex1+83]),16) $
+                                      + ishft(ulong(data[pindex1+84]),8) + ulong(data[pindex1+85])
+          adcs4_struct1.imu_first_rate1 = ishft(fix(data[pindex1+86]),8) + fix(data[pindex1+87])
+          adcs4_struct1.imu_first_rate2 = ishft(fix(data[pindex1+88]),8) + fix(data[pindex1+89])
+          adcs4_struct1.imu_first_rate3 = ishft(fix(data[pindex1+90]),8) + fix(data[pindex1+91])
+          adcs4_struct1.imu_pkt_count = data[pindex1+92]
+          adcs4_struct1.imu_first_id = data[pindex1+93]
+          adcs4_struct1.imu_rate_valid = data[pindex1+94]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (3/6)
+          pindex1 += 1
+
+          adcs4_struct1.counts_per_sec = ishft(ulong(data[pindex1+95]),24) + ishft(ulong(data[pindex1+96]),16) $
+                                        + ishft(ulong(data[pindex1+97]),8) + ulong(data[pindex1+98])
+          adcs4_struct1.high_run_cnt = ishft(ulong(data[pindex1+99]),24) + ishft(ulong(data[pindex1+100]),16) $
+                                     + ishft(ulong(data[pindex1+101]),8) + ulong(data[pindex1+102])
+          adcs4_struct1.high_time = ishft(ulong(data[pindex1+103]),24) + ishft(ulong(data[pindex1+104]),16) $
+                                  + ishft(ulong(data[pindex1+105]),8) + ulong(data[pindex1+106])
+          adcs4_struct1.high_cycle_num = ishft(ulong(data[pindex1+107]),24) + ishft(ulong(data[pindex1+108]),16) $
+                                       + ishft(ulong(data[pindex1+109]),8) + ulong(data[pindex1+110])
+          adcs4_struct1.vhigh_cycle_num = ishft(ulong(data[pindex1+111]),24) + ishft(ulong(data[pindex1+112]),16) $
+                                        + ishft(ulong(data[pindex1+113]),8) + ulong(data[pindex1+114])
+          adcs4_struct1.high_1msec = data[pindex1+115]
+          adcs4_struct1.high_2msec = data[pindex1+116]
+          adcs4_struct1.high_3msec = data[pindex1+117]
+          adcs4_struct1.high_4msec = data[pindex1+118]
+          adcs4_struct1.high_5msec = data[pindex1+119]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (4/6)
+          pindex1 += 1
+
+          adcs4_struct1.pay_sun_bodyX = ( ishft(fix(data[pindex1+120]),8) + fix(data[pindex1+121]) ) * 1.0E-4
+          adcs4_struct1.pay_sun_bodyY = ( ishft(fix(data[pindex1+122]),8) + fix(data[pindex1+123]) ) * 1.0E-4
+          adcs4_struct1.pay_sun_bodyZ = ( ishft(fix(data[pindex1+124]),8) + fix(data[pindex1+125]) ) * 1.0E-4
+          adcs4_struct1.pay_cmd_data1 = ( ishft(fix(data[pindex1+126]),8) + fix(data[pindex1+127]) )
+          adcs4_struct1.pay_cmd_data2 = ( ishft(fix(data[pindex1+128]),8) + fix(data[pindex1+129]) )
+          adcs4_struct1.pay_sun_valid = data[pindex1+130]
+          adcs4_struct1.tlm_map_id = data[pindex1+131]
+          adcs4_struct1.volt_5p0 = ( uint(data[pindex1+132]) ) * 0.025
+          adcs4_struct1.volt_3p3 = ( uint(data[pindex1+133]) ) * 0.015
+          adcs4_struct1.volt_2p5 = ( uint(data[pindex1+134]) ) * 0.015
+          adcs4_struct1.volt_1p8 = ( uint(data[pindex1+135]) ) * 0.015
+          adcs4_struct1.volt_1p0 = ( uint(data[pindex1+136]) ) * 0.015
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (5/6)
+          pindex1 += 1
+
+          adcs4_struct1.rw1_temp = ( ishft(fix(data[pindex1+137]),8) + fix(data[pindex1+138]) ) * 0.005
+          adcs4_struct1.rw2_temp = ( ishft(fix(data[pindex1+139]),8) + fix(data[pindex1+140]) ) * 0.005
+          adcs4_struct1.rw3_temp = ( ishft(fix(data[pindex1+141]),8) + fix(data[pindex1+142]) ) * 0.005
+          adcs4_struct1.volt_12v_bus = ( ishft(uint(data[pindex1+143]),8) + uint(data[pindex1+144]) ) * 0.001
+          adcs4_struct1.data_checksum = ishft(uint(data[pindex1+145]),8) + uint(data[pindex1+146])
+          adcs4_struct1.table_length = ishft(uint(data[pindex1+147]),8) + uint(data[pindex1+148])
+          adcs4_struct1.table_offset = ishft(uint(data[pindex1+149]),8) + uint(data[pindex1+150])
+          adcs4_struct1.table_upload_status = data[pindex1+151]
+          adcs4_struct1.which_table = data[pindex1+152]
+          adcs4_struct1.st_valid = data[pindex1+153]
+          adcs4_struct1.st_use_enable = data[pindex1+154]
+          adcs4_struct1.st_exceed_max_background = data[pindex1+155]
+          adcs4_struct1.st_exceed_max_rotation = data[pindex1+156]
+          adcs4_struct1.st_exceed_min_sun = data[pindex1+157]
+          adcs4_struct1.st_exceed_min_earth = data[pindex1+158]
+          adcs4_struct1.st_exceed_min_moon = data[pindex1+159]
+
+; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (6/6)
+          pindex1 += 1 ; But there rest of the bytes are spare and not used for FM1
 
           if (adcs4_count eq 0) then adcs4 = replicate(adcs4_struct1, N_CHUNKS) else $
             if adcs4_count ge n_elements(adcs4) then adcs4 = [adcs4, replicate(adcs4_struct1, N_CHUNKS)]
