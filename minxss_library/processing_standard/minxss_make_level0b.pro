@@ -47,6 +47,8 @@
 PRO minxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, fm = fm, _extra = _extra, $
                          VERBOSE = VERBOSE
 
+; TODO: implement date limit checking to prevent accidental ingestion of lab data outside of mission operation times
+ 
 ; Input checks
 IF telemetryFileNamesArray EQ !NULL AND yyyydoy EQ !NULL AND yyyymmdd EQ !NULL THEN BEGIN
   message, /INFO, 'You specified no inputs. Need to provide one of them.'
