@@ -93,7 +93,7 @@ IF keyword_set(verbose) THEN BEGIN
   message, /info, "Found " + strtrim(packetCounter,2) + " packets with " + strtrim(n_elements(binaryData),2) + " total bytes..."
 ENDIF
 
-; Now binaryData is a bytarr containing all MinXSS bytes from the SDR log.  Return it!
+; Now binaryData is a bytarr containing all MinXSS bytes from the SDR log. Return it!
 return, binaryData
 
 END
