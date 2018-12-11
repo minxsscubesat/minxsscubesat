@@ -11,10 +11,15 @@
 ; OUTPUT
 ;   File is generated in ISIS Scripts directory called set_ephemeris_yrmoday_hrmn.prc
 ;
+; Ephemeris can be validated with conversion of ECEF values to LLH at  (link in Firefox browser)
+;     http://www.oc.nps.edu/oc2902w/coord/llhxyz.htm
+;     Those values should be near Boulder (40 Lat, -105 Long) (-105 is same as 255 Long value)
+;     
 ; History
 ;   6/17/16 Amir Caspi    Original Code
 ;   6/25/16 Tom Woods   Updated with comments
 ;   11/2/16 Tom Woods   Updated with /latest option so filename is set_ephemeris_latest.prc
+;   12/6/18 Tom Woods   Updated for MinXSS-2 file saveset
 ;
 PRO make_set_ephemeris_script, yr, mo, day, hr, mn, sec, script_path = script_path, verbose = verbose, latest=latest
 
@@ -22,7 +27,17 @@ PRO make_set_ephemeris_script, yr, mo, day, hr, mn, sec, script_path = script_pa
   ; Set script path
   ;
   ;  slash for Mac = '/', PC = '\'
-  IF !version.os_family EQ 'Windows' THEN slash = '\' ELSE slash = '/'
+  ;  File Copy for Mac = 'cp', PC = 'copy'
+  if !version.os_family eq 'Windows' then begin
+    slash = '\'
+    file_copy = 'copy '
+    file_delete = 'del /F '
+  endif else begin
+    slash = '/'
+    file_copy = 'cp '
+    file_delete = 'rm -f '
+  endelse
+
   IF keyword_set(script_path) THEN BEGIN
     path_name = script_path
   ENDIF ELSE BEGIN
@@ -40,9 +55,12 @@ PRO make_set_ephemeris_script, yr, mo, day, hr, mn, sec, script_path = script_pa
 
 if keyword_set(latest) then begin
   ; Load latest Pass times and find next good pass to setup the input variables for "latest" ephemeris
-  path_dropbox = getenv('Dropbox_dir')
-  if strlen(path_dropbox) ne 0 then path_dropbox += slash + 'tle' + slash + 'pass_saveset' + slash
-  file_passes = 'minxss_passes_latest.sav'
+  path2_name = getenv('TLE_dir')
+  if strlen(path2_name) gt 0 then begin
+    if ((strpos(path2_name,slash,/reverse_search)+1) lt strlen(path2_name)) then path2_name += slash
+  endif
+  path_dropbox = path2_name + 'Boulder' + slash
+  file_passes = 'passes_latest_BOULDER.sav'
   ;  restore "passes" data structure
   restore, path_dropbox + file_passes
   jd_now = systime( /julian ) + 6./24.D0  ; also convert MST to UT
@@ -51,12 +69,14 @@ if keyword_set(latest) then begin
   wgood = where( (passes.start_jd gt jd_now) and (passes.max_elevation gt ELEVATION_MIN), num_good )
   if (num_good lt 1) then begin
     print, 'ERROR finding a future good pass for set_ephemeris_latest.  Exiting...'
+    ; stop, 'DEBUG...'
     return
   endif
   best_jd = passes[wgood[0]].start_jd
   best_jd = best_jd + 5./(24.D0*60.)  ; add 5 minutes so ephemeris is in middle of pass
   ;  configure the input variables with this best_jd
   caldat, best_jd, mo, day, yr, hr, mn, sec
+  if keyword_set(verbose) then print, 'Ephemeris Latest is for ', yr, mo, day, hr, mn, sec
 endif else begin
   ; Calculate fractional day if needed
   if (n_params() lt 6) then sec = 0.
@@ -67,6 +87,7 @@ endif else begin
      print, 'ERROR:  invalid parameters (need at least 3), so no Script file created.'
      return
   endif
+  if keyword_set(verbose) then print, 'Ephemeris User Date is for ', yr, mo, day, hr, mn, sec
 endelse
 
 fracday = hr/24. + mn/60./24. + sec/60./60./24.
@@ -98,7 +119,8 @@ verbose = 1
   free_lun, lun
 
   jd_start = ymd2jd(yr, mo, day + fracday)
-  spacecraft_location, jd_start, location, sunlight, eci_pv = pv, /J2000, verbose=verbose
+  MINXSS2_SAT_ID = 43758L  ; 12/7/18 solution (will change !)
+  spacecraft_location, id_satellite=MINXSS2_SAT_ID, jd_start, location, sunlight, eci_pv = pv, /J2000, verbose=verbose
 ;  pv = [123.456, 456.789, -789.000, 321.123, -654.456, 987.789] ; TESTING PURPOSES
   filledscript = string(scriptbytes)
   filledscript = strreplace(filledscript, ['<TephYear>', '<TephMonth>', '<TephDay>', '<TephHour>', '<TephMinute>', '<TephSecond>'], strtrim(fix([yr - 2000, mo, day, hr, mn, sec]),2))
@@ -111,11 +133,24 @@ verbose = 1
     new_file = 'set_ephemeris_latest.prc'
     if keyword_set(verbose) then print, '  Latest Ephemeris is for ', date_str
   endif
-  if keyword_set(verbose) then print, 'Saving New Ephemeris script in ', new_file
   filename = path_name+slash+new_file
+  print, 'Saving New Ephemeris script in ', filename
   openw, lun, filename, /get_lun
   printf, lun, filledscript
   close, lun
   free_lun, lun
 
+  scripts_dir = getenv('Dropbox_root_dir')+slash+'Hydra'+slash+'MinXSS'+slash
+  scripts_Boulder = scripts_dir + 'HYDRA_FM-2_Boulder' + slash + 'Scripts' + slash
+  print, '*** Also saving this into ', scripts_Boulder
+  copy_cmd = file_copy + '"' + filename + '" "' + $
+    scripts_Boulder+new_file + '"'
+  spawn, copy_cmd, exit_status=status
+  
+  scripts_Fairbanks = scripts_dir + 'HYDRA_FM-2_Fairbanks' + slash + 'Scripts' + slash
+  print, '*** Also saving this into ', scripts_Fairbanks
+  copy_cmd = file_copy + '"' + filename + '" "' + $
+    scripts_Fairbanks+new_file + '"'
+  spawn, copy_cmd, exit_status=status
+  
 END

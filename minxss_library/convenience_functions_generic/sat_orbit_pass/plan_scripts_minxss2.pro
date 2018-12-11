@@ -50,12 +50,12 @@ valid_1 = 0
 valid_2 = 0
 for k=0,n_elements(stations_valid)-1 do begin
 	stations_valid_caps = strupcase(stations_valid[k])
-	if (strpos(stations_valid_caps,station_caps) eq 0) then begin
+	if (strlen(station_caps) gt 1) and (strpos(stations_valid_caps,station_caps) eq 0) then begin
 		valid_1 = 1
 		station = stations_valid[k]
 		station_caps = stations_valid_caps
 	endif
-	if (strpos(stations_valid_caps,station_remote_caps) eq 0) then begin
+	if (strlen(station_remote_caps) gt 1) and (strpos(stations_valid_caps,station_remote_caps) eq 0) then begin
 		valid_2 = 1
 		station_remote = stations_valid[k]
 		station_remote_caps = stations_valid_caps
@@ -67,9 +67,11 @@ if (valid_1 eq 0) then begin
 endif
 
 if keyword_set(debug) then verbose = 1
-if keyword_set(verbose) then $
+if keyword_set(verbose) then begin
 	print, 'MinXSS-2 scripts are being generated for ',station_caps,' station...'
-
+	if (valid_2 eq 1) then print, '   and for ',station_remote_caps,' remote station.'
+endif
+	
 ;
 ;	Get TLE path
 ;  		default is to use directory $TLE_dir
@@ -90,21 +92,25 @@ endelse
 ;	Get path for TLE / pass time data (as created by plan_satellite_pass.pro)
 ;
 path_name = getenv('TLE_dir')
-if strlen(path_name) gt 0 then path_name += slash
+if strlen(path_name) gt 0 then begin
+  if ((strpos(path_name,slash,/reverse_search)+1) lt strlen(path_name)) then path_name += slash
+endif
 ; else path_name is empty string
 if keyword_set(verbose) then print, '*** TLE path = ', path_name
 
 ;
 ; Get paths for Hydra Scripts - must be in Dropbox/Hydra/MinXSS/HYDRA_FM-2_xxxxxx/Scripts/
 ;
-dropbox_dir = getenv('Dropbox_dir')
+dropbox_dir = getenv('Dropbox_root_dir')
 if strlen(dropbox_dir) ne 0 then dropbox_dir += slash
 if keyword_set(verbose) then print, '*** Dropbox path = ', dropbox_dir
-station_dir = dropbox_dir + slash + "Hydra" + slash + "MinXSS" + slash + "HYDRA_FM-2_"+station+slash
-script_dir = station_dir + slash + "Scripts" + slash
+station_dir = dropbox_dir + "Hydra" + slash + "MinXSS" + slash + "HYDRA_FM-2_"+station+slash
+script_dir = station_dir + "Scripts" + slash
+if keyword_set(verbose) then print, '*** Script path = ', script_dir
 if (valid_2) then begin
-  station_remote_dir = dropbox_dir + slash + "Hydra" + slash + "MinXSS" + slash + "HYDRA_FM-2_"+station_remote+slash
-  script_remote_dir = station_remote_dir + slash + "Scripts" + slash
+  station_remote_dir = dropbox_dir + "Hydra" + slash + "MinXSS" + slash + "HYDRA_FM-2_"+station_remote+slash
+  script_remote_dir = station_remote_dir + "Scripts" + slash
+  if keyword_set(verbose) then print, '*** Remote Script path = ', script_remote_dir
 endif
 
 ;
@@ -201,9 +207,9 @@ endif
 ;	2.  Delete old scripts
 ;	3.	Create new scripts
 ;
-elev_ranges = [ [0.,15], [15, 30], [30, 90] ]
-script_names = [ 'pass_do_nothing.prc', 'adcs_route_realtime.prc', 'playback2_last_24_hours.prc' ]
-script_plan_names = [ 'EL<15: Do Nothing', '15<EL<30: ADCS Data', 'Playback Last 24 Hours' ]
+elev_ranges = [ [0.,5], [5, 15], [15, 90] ]
+script_names = [ 'pass_do_nothing.prc', 'route_realtime.prc', 'playback2_last_24_hours.prc' ]
+script_plan_names = [ 'EL<5: Do Nothing', '5<EL<15: Route Data', 'Playback Last 24 Hours' ]
 num_ranges = n_elements(script_names)
 
 ;
@@ -227,10 +233,11 @@ if (count gt 0) then begin
 	upcasefile = strupcase(file_list[k])
 	pflare = strpos( upcasefile, 'FLARE' )
 	pdoy = strpos( upcasefile, 'DOY' )
+	pcustom = strpos( upcasefile, 'CUSTOM' )
 	if (pflare ge 0) then flare_count += 1
 	if (pdoy ge 0) then doy_count += 1
 	if (file_date ge first_file) and (file_date le last_file) and (pflare lt 0) $
-			and (pdoy lt 0) then begin
+			and (pdoy lt 0) and (pcustom lt 0) then begin
 		del_count += 1
 		del_cmd = file_delete + '"' + file_list[k] + '"'
 		spawn, del_cmd, exit_status=status
@@ -262,7 +269,7 @@ match_name = 'MINXSS2'
 
 for k=0L, number_passes-1 do begin
   ; only create pass scripts for the future
-  if (passes[k].start_jd gt jd_now) and (passes[k].satellite_name eq match_name) then begin
+  if (passes[k].start_jd gt jd_now) and (strpos(passes[k].satellite_name,match_name) eq 0) then begin
 	ii = 0L
 	for jj=1,num_ranges-1 do begin
 		if (passes[k].max_elevation gt elev_ranges[0,jj]) and $
@@ -299,7 +306,7 @@ if (num_create gt 1) then begin
 	printf, lun, csv_header
 	for k=0L, number_passes-1 do begin
 	  ; only create pass scripts for the future
-  	  if (passes[k].start_jd gt jd_now) and (passes[k].satellite_name eq match_name) then begin
+  	  if (passes[k].start_jd gt jd_now) and (strpos(passes[k].satellite_name,match_name) eq 0) then begin
   	  	  ; +++++ TO DO (fix)
 		  ; pass_num_str = string( pass_orbit_number[k], format='(I6)')
 		  pass_num_str = ' TBD '
@@ -335,7 +342,7 @@ endif
 ; 5. generate set_ephemeris_latest.prc HYDRA script
 ;
 ; +++++ TO DO (fix)
-; make_set_ephemeris_script, /latest
+make_set_ephemeris_script, /latest
 
 if keyword_set(debug) then stop, 'DEBUG plan_scripts_minxss2 results ...'
 

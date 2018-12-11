@@ -123,9 +123,10 @@ ydual = wymin
 fdual = 0.5
 if (doDual ne 0) then wymin *= 2
 wtitle = station_caps + ' Pass Information'
-window, 0, XSIZE=wxmin, YSIZE=wymin, xpos = 0, ypos = 40, TITLE=wtitle
+; device,get_window_pos=wpos
+window, 0, XSIZE=wxmin, YSIZE=wymin, XPOS=0, YPOS=40, TITLE=wtitle
 device, SET_FONT='Helvetica', /TT_FONT
-cc = rainbow(7)
+; cc = rainbow(255,/image)
 
 ;
 ;	1.  Read IDL save set of passes in minxss_passes_latest.sav
@@ -196,10 +197,18 @@ dyy2 = 0.18
 csize = [ 3, 3, 1.8, 1.8, 1.8, 1.8, 1.8 ]
 if keyword_set(smaller) then csize=csize/1.5
 cthick = [ 1, 2, 1, 1, 1, 1, 1 ]
-ccolor = [ rgb2long(!color.white), cc[4], rgb2long(!color.white), $
+if !version.os_family eq 'Windows' then begin
+  ccolor = [ rgb2long(reverse(!color.white)), rgb2long(reverse(!color.yellow)), rgb2long(reverse(!color.white)), $
+    rgb2long(reverse(!color.white)),  rgb2long(reverse(!color.white)), rgb2long(reverse(!color.white)),  rgb2long(reverse(!color.white)) ]
+  color_wait = rgb2long(reverse(!color.lime_green))
+  color_pass = rgb2long(reverse(!color.tomato))
+endif else begin
+  ; Mac or Linux
+  ccolor = [ rgb2long(!color.white), rgb2long(!color.yellow), rgb2long(!color.white), $
 		rgb2long(!color.white),  rgb2long(!color.white), rgb2long(!color.white),  rgb2long(!color.white) ]
-color_wait = cc[3]
-color_pass = cc[0]
+  color_wait = rgb2long(!color.lime_green)
+  color_pass = rgb2long(!color.tomato)
+endelse
 pextra = 5
 xerase = [ xtime, 1, 1, xtime, xtime]
 yerase = [0.5, 0.5, 0.995, 0.995, 0.5]
@@ -260,7 +269,9 @@ if (k eq ipass) or (ipassLast lt 0) then begin
 		if (!d.x_size lt wxmin) then wxsize = wxmin
 		if (!d.y_size lt wymin) then wysize = wymin
 		;  force window to be same Min. size
-		window, 0, XSIZE=wxsize, YSIZE=wysize, title=wtitle
+		device,get_window_pos=wpos
+		wpos[1] -= wysize  ; move bottom point to top of window
+		window, 0, XSIZE=wxsize, YSIZE=wysize, XPOS=wpos[0], YPOS=wpos[1], title=wtitle
 		erase
 		plot, [0,1], [0,1], /nodata, yr=[0,1], ys=1+4, xr=[0,1], xs=1+4, xmargin=[0,0], ymargin=[0,0], $
 			font=1, background=rgb2long(!color.black), color=rgb2long(!color.white)

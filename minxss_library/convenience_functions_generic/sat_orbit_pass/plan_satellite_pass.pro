@@ -198,7 +198,7 @@ gs_location = [ longitude, latitude ]
 ;			... for more satellites
 ;
 sat_list_file = station_caps + slash + 'satellites_track_' + station_caps + '.txt'
-MAX_SATELLITES = 20L
+MAX_SATELLITES = 100L
 num_satellites = 0
 satid = lonarr(MAX_SATELLITES)
 mission_in = strarr(MAX_SATELLITES)
@@ -391,7 +391,7 @@ html_name1_st = 'passes_latest_' + zone_name + '_' + station_caps + '.html'
 html_name2 = 'passes_' + date_str + '_' + station_caps + '.html'
 ; elev_range = [ [0., 12.], [12., 24.], [24., 36.], [36., 90] ]
 ;  updated 7/29/2016 T. Woods
-elev_range = [ [0., 15.], [15., 30.], [30., 45.], [45., 90] ]
+elev_range = [ [0., 5.], [5., 15.], [15., 30.], [30., 90] ]
 ; old HTML code
 elev_color = [ ' bgcolor="#C0C0C0"', ' bgcolor="#80C080"', ' bgcolor="#80F080"' ]
 elev_color = [ ' bgcolor="#808080"', ' bgcolor="#C0C0C0"', ' bgcolor="#80F080"' ]
