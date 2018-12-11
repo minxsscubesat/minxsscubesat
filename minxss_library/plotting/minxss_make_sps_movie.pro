@@ -41,7 +41,7 @@ IF timeRange NE !NULL THEN BEGIN
     timeRange[1] = JPMyyyymmddhhmmss2jd(timeRange[1])
   ENDIF
 ENDIF
-IF fm EQ !NULL THEN fm = 1
+IF fm EQ !NULL THEN fm = 2
 IF dimensions EQ !NULL THEN dimensions = [700, 700]
 IF keyword_set(DARK_BACKGROUND) THEN BEGIN
   foregroundBlackOrWhite = 'white'
@@ -52,7 +52,7 @@ ENDIF ELSE BEGIN
 ENDELSE
 
 ; Restore level 0C
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/minxss1_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/minxss2_l0c_all_mission_length.sav'
 
 ; Convert time range to index range and truncate array accordingly
 IF timeRange EQ !NULL THEN selectedRangeIndices = [0:n_elements(hk)] $
