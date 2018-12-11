@@ -26,7 +26,7 @@ if n_elements(hk) lt 2 then begin
   ; file0c = 'minxss1_l0c_hk_mission_length.sav'
   ;  "all" file has all packet types for the MinXSS-1 mission (as of 6/10/2016)
   file0c = 'minxss1_l0c_all_mission_length.sav'
-  dir0c = getenv('minxss_data')+'/fm1/level0c/'
+  dir0c = getenv('minxss_data')+'/fm2/level0c/'
   restore, dir0c + file0c		; hk
 endif
 
