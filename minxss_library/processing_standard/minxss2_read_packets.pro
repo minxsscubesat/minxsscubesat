@@ -5,13 +5,13 @@
 ; PURPOSE:
 ;   Read, interpret, and store in IDL structures the packets from binary file from MinXSS CubeSat.
 ;   These can come from either ISIS or DataView.
-; 
+;
 ;   Same as minxss_read_packets but this version is used for MinXSS-2 which has slightly different packet definitions.
 ;   Changes for FM-2 packets (Aug 2016)
 ;   hk.adcs_high_rate_run_count --> hk.sd_ephemeris_block_addr
 ;   hk.cdh_enables has new bit flag = enable_eclipse_use_css (0x0400 bit location)
-;   sci Rd and Wr errors and radio_active changed to include 24-bit SD_sci_write_offset  
-;   adcs4 has 5 new variables:  sd_adcs_write_offset (long), cruciform_scan_index (int), cruciform_scan_x_steps (int), 
+;   sci Rd and Wr errors and radio_active changed to include 24-bit SD_sci_write_offset
+;   adcs4 has 5 new variables:  sd_adcs_write_offset (long), cruciform_scan_index (int), cruciform_scan_x_steps (int),
 ;                               cruciform_scan_y_steps (int), cruciform_scan_dwell_period (int)
 ;
 ; INPUTS:
@@ -36,7 +36,7 @@
 ;   diag [structure]:      Return array of Diagnostic (single monitor at 1000 Hz) packets
 ;   xactimage [structure]: Return array of XACT Star Tracker image packets
 ;   adcs1-4 [structure]:   Return array of ADCS (BCT XACT data) packets in four separate variables (adcs1, adcs2, adcs3, adcs4)
-;   fm [int]:              
+;   fm [int]:
 ;
 ; RESTRICTIONS:
 ;   Requires MinXSS processing suite.
@@ -228,7 +228,7 @@ log_struct1 = { apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, time: 0.0D0
 
 ;
 ; Sci message (SCI) Packet Structure definition
-;   ADDED for FM2:  sd_sci_write_offset: 0L, 
+;   ADDED for FM2:  sd_sci_write_offset: 0L,
 ;
 X123_SPECTRUM_BINS = 1024L
 X123_SPECTRUM_LENGTH = X123_SPECTRUM_BINS*3L
@@ -344,7 +344,7 @@ adcs3_struct1 =  {  apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, time: 0
   cdh_info: 0B, adcs_info: 0B, adcs_group: 0U, SpareByte: 0, checkbytes: 0U, SyncWord: 0U, $
   tracker_attitude1: 0L, tracker_attitude2: 0L, tracker_attitude3: 0L, tracker_attitude4: 0.0, $
   tracker_rate1: 0.0, tracker_rate2: 0.0, tracker_rate3: 0.0, $
-  tracker_RA: 0.0, tracker_declination: 0.0, tracker_roll: 0.0, tracker_detector_temp: 8B, $
+  tracker_RA: 0.0, tracker_declination: 0.0, tracker_roll: 0.0, tracker_detector_temp: 0.0, $
   tracker_covariance_amp: 0L, $
   tracker_covariance_matrix1: 0L, tracker_covariance_matrix2: 0L, tracker_covariance_matrix3: 0L, $
   tracker_covariance_matrix4: 0L, tracker_covariance_matrix5: 0L, tracker_covariance_matrix6: 0L, $
@@ -522,7 +522,7 @@ while (index lt (inputSize-1)) do begin
             pindex = pindex - ((pindex + 253) - (n_elements(data) - 1))
           ENDIF
         ENDIF
-        
+
         pkt_expectedCheckbytes = fletcher_checkbytes(data[pindex:pindex+249])
         pkt_expectedCheckbytes = long(pkt_expectedCheckbytes[0]) + ishft(long(pkt_expectedCheckbytes[1]),8)
         pkt_actualCheckbytes = long(data[pindex+250]) + ishft(long(data[pindex+251]),8)
@@ -546,7 +546,7 @@ while (index lt (inputSize-1)) do begin
         hk_struct1.adcs_time_valid = ISHFT(hk_struct1.adcs_info AND '04'X, -2) ; extract 1-bit flag
         hk_struct1.adcs_recommend_sun = ISHFT(hk_struct1.adcs_info AND '02'X, -1) ; extract 1-bit flag
         hk_struct1.adcs_mode = ISHFT(hk_struct1.adcs_info AND '01'X, 0) ; extract 1-bit flag
-          
+
         hk_struct1.checkbytes = pkt_actualCheckbytes
         hk_struct1.checkbytes_calculated = pkt_expectedCheckbytes
         hk_struct1.checkbytes_valid = pkt_actualCheckbytes EQ pkt_expectedCheckbytes
@@ -604,7 +604,7 @@ while (index lt (inputSize-1)) do begin
         ; REMOVE for FM2 hk_struct1.adcs_HighRateRunCounter = (long(data[pindex+67]))  ; none
         ; ADD for FM2
         hk_struct1.sd_EphemerisBlockAddr = (long(data[pindex+67]))  ; 128-255 valid range
-        
+
         hk_struct1.lockout_timeoutcounter = (long(data[pindex+68]) + ishft(long(data[pindex+69]),8)) ; seconds
         hk_struct1.contactTx_timeoutcounter = (long(data[pindex+70]) + ishft(long(data[pindex+71]),8)) ; Seconds
         hk_struct1.time_offset = (long(data[pindex+72]) + ishft(long(data[pindex+73]),8) $
@@ -631,8 +631,8 @@ while (index lt (inputSize-1)) do begin
         ; REMOVE for FM2: hk_struct1.enable_spare = ISHFT(hk_struct1.cdh_enables AND '0100'X, -8) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
         ; ADD for FM2
         hk_struct1.enable_eclipse_use_css = ISHFT(hk_struct1.cdh_enables AND '0400'X, -10) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-       
-        
+
+
         hk_struct1.cdh_i2c_err = (long(data[pindex+90]) + ishft(long(data[pindex+91]),8))  ; [no unit]
         hk_struct1.cdh_rtc_err = (long(data[pindex+92]) + ishft(long(data[pindex+93]),8))  ; [no unit]
         hk_struct1.cdh_spi_sd_err = (long(data[pindex+94]) + ishft(long(data[pindex+95]),8))   ; [no unit]
@@ -723,7 +723,8 @@ while (index lt (inputSize-1)) do begin
         ;Add XACT monitors to HK for the TLM Rev D.25 changes
         hk_struct1.XACT_P5VTrackerVoltage = (uint(data[pindex+214])) * 0.025  ; DN * 0.025 = V
         hk_struct1.XACT_P12VBusVoltage = (uint(data[pindex+215])) * 0.256 ; DN * 0.256 = V
-        hk_struct1.XACT_TrackerDetectorTemp = (FIX(data[pindex+216])) * 0.8 ; DN * 0.8 = C deg.
+        snum = fix(data[pindex+216])  ; Signed Byte logic added, T. Woods, 2018-Dec-09
+        hk_struct1.XACT_TrackerDetectorTemp = (snum ge 128?snum-256.:snum) * 0.8 ; DN * 0.8 = C deg.
         hk_struct1.XACT_Wheel2Temp = (convert_signedbyte2signedint(data[pindex+217])) * 1.28 ;  DN * 1.28 = C deg.
         hk_struct1.XACT_MeasSunBodyVectorX = (data[pindex+218] ge 128 ? fix(data[pindex+218]) - 256 : fix(data[pindex+218]) ) * 0.0256
         hk_struct1.XACT_MeasSunBodyVectorY = (data[pindex+219] ge 128 ? fix(data[pindex+219]) - 256 : fix(data[pindex+219]) ) * 0.0256
@@ -854,7 +855,7 @@ while (index lt (inputSize-1)) do begin
           sci_struct1.time = packet_time
           sci_struct1.seq_count = packet_seq_count
           sci_lastSeqCount = packet_seq_count
-          
+
           sci_struct1.checkbytes = pkt_actualCheckbytes
           sci_struct1.checkbytes_calculated = pkt_expectedCheckbytes
           sci_struct1.SyncWord = (long(data[pindex+252]) + ishft(long(data[pindex+253]),8))  ;none
@@ -916,7 +917,7 @@ while (index lt (inputSize-1)) do begin
           sci_struct1.x123_radio_flag = tempErr AND '003F'X
           sci_struct1.x123_write_errors = ishft( tempErr AND '0040'X, -6 )
           sci_struct1.sd_sci_write_offset = long(data[pindex+72]) + ishft(long(data[pindex+73]),8) + ishft(long(data[pindex+74]),16)
-          
+
           sci_struct1.x123_cmp_info = (long(data[pindex+76]) + ishft(long(data[pindex+77]),8))  ; bytes
           sci_struct1.x123_spect_len = (long(data[pindex+78]) + ishft(long(data[pindex+79]),8))   ;bytes
           sci_struct1.x123_group_count = (long(data[pindex+80]) + ishft(long(data[pindex+81]),8))  ;none
@@ -1300,7 +1301,8 @@ while (index lt (inputSize-1)) do begin
         adcs3_struct1.tracker_RA = (ishft(uint(data[pindex+38]),8) + uint(data[pindex+39])) * 0.0055
         adcs3_struct1.tracker_declination = (ishft(uint(data[pindex+40]),8) + uint(data[pindex+41])) * 0.0055
         adcs3_struct1.tracker_roll = (ishft(uint(data[pindex+42]),8) + uint(data[pindex+43])) * 0.0055
-        adcs3_struct1.tracker_detector_temp = data[pindex+44] * 0.80000001
+        snum = fix(data[pindex+44])  ; 9-Dec-2018: T. Woods, fixed signed byte
+        adcs3_struct1.tracker_detector_temp = (snum ge 128?snum-256:snum) * 0.80000001
         adcs3_struct1.tracker_covariance_amp = (ishft(fix(data[pindex+45]), 8) + fix(data[pindex+46])) * 3.2E-10
         adcs3_struct1.tracker_covariance_matrix1 = (ishft(fix(data[pindex+47]), 8) + fix(data[pindex+48])) * 3.2E-5
         adcs3_struct1.tracker_covariance_matrix2 = (ishft(fix(data[pindex+49]), 8) + fix(data[pindex+50])) * 3.2E-5
@@ -1624,11 +1626,14 @@ IF keyword_set(EXPORT_RAW_ADCS_TLM) THEN BEGIN
   IF typename(input) EQ 'STRING' THEN BEGIN
     IF adcs1Raw NE !NULL OR adcs2Raw NE !NULL OR adcs3Raw NE !NULL OR adcs4Raw NE !NULL THEN BEGIN
       inputStringParsed = ParsePathAndFilename(input)
-      
+
       ; Handle incorrectly burned fm=3 in fm=2 flight
       IF fm EQ 3 THEN fmTmp = 2 ELSE fmTmp = fm
       
-      file_copy, input, getenv('minxss_data') + '/fm' + strtrim(fmTmp, 2) + '/xact_tlm_exported/' + inputStringParsed.Filename, /overwrite
+      ; Handle broken fm
+      IF fmTmp NE -1 THEN BEGIN
+        file_copy, input, getenv('minxss_data') + '/fm' + strtrim(fmTmp, 2) + '/xact_tlm_exported/' + inputStringParsed.Filename, /overwrite
+      ENDIF
     ENDIF
   ENDIF
 ENDIF
