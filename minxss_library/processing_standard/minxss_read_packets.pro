@@ -22,7 +22,7 @@
 ;   EXPORT_RAW_ADCS_TLM: Option to export the ISIS telemetry file to a dedicated folder for BCT (minxss_data/fm*/xact_exported_data)
 ;   KISS:                Option to deal with KISS-formatted input
 ;   HAM_HEADER:          Set ths to allow for KISS headers but don't perform KISS decoding -- intended for use with the python beacon decoder software.
-;                        Will automatically set this if the telemetry file path or name contains the string "ham". 
+;                        Will automatically set this if the telemetry file path or name contains the string "ham".
 ;
 ; OUTPUTS:
 ;   hk [structure]:           Return array of housekeeping (monitors, status) packets
@@ -38,7 +38,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires access to MinXSS binary data and MinXSS code package
-;   
+;
 ; MODIFICATION HISTORY:
 ;   2014-06-05: Tom Woods:        Hex Dump implemented first to view the file's data
 ;   2014-07-01: Christina Wilson: HK and SCI packets added
@@ -74,9 +74,9 @@
 ;   2016-06-22: James Paul Mason: EXPORT_RAW_ADCS_TLM keyword now just copies the ISIS telemetry file rather than trying to interpret it
 ;   2016-08-21: Tom Woods:        Fix the MOSFET switch enable flags
 ;   2017-05-05: James Paul Mason: Added HAM_HEADER keyword to allow for KISS header extension but no KISS decode
-;   2018-08-10: James Paul Mason: Updated this modification history for consistent formatting. 
+;   2018-08-10: James Paul Mason: Updated this modification history for consistent formatting.
 ;   2018-12-08: Amir Caspi:       Fixed ADCS packet definitions to accommodate extra 6 bytes at the end (FSW bug workaround)
-;   
+;
 ;+
 pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xactimage, $
                          hexdump=hexdump, adcs1=adcs1, adcs2=adcs2, adcs3=adcs3, adcs4=adcs4, fm=fm, $
@@ -139,7 +139,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     IF keyword_set(verbose) THEN message, /info, "Converting KISS escape sequences..."
     data = minxss_unkiss(temporary(data), fm=fm, verbose=verbose)
   ENDIF
-  
+
   ; If "ham" shows up in the input filepath/name, then set the HAM_HEADER keyword
   IF isA(input, 'string') THEN BEGIN
     IF strmatch(input, '*ham*') THEN BEGIN
@@ -300,7 +300,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     image_data: bytarr(xactimage_DATA_LEN), checksum: 0U, SyncWord: 0U}
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Rev 34 Change ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
+
   adcs1_count = 0L
   adcs1_DATA_LEN = 193
   adcs1_struct1 =  {  apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, time: 0.0D0, $
@@ -367,7 +367,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     cdh_info: 0B, adcs_info: 0B, adcs_group: 0U, SpareByte: 0, checkbytes: 0U, SyncWord: 0U, $
     tracker_attitude1: 0.0, tracker_attitude2: 0.0, tracker_attitude3: 0.0, tracker_attitude4: 0.0, $
     tracker_rate1: 0.0, tracker_rate2: 0.0, tracker_rate3: 0.0, $
-    tracker_RA: 0.0, tracker_declination: 0.0, tracker_roll: 0.0, tracker_detector_temp: 8B, $
+    tracker_RA: 0.0, tracker_declination: 0.0, tracker_roll: 0.0, tracker_detector_temp: 0.0, $
     tracker_covariance_amp: 0.0, $
     tracker_covariance_matrix1: 0.0, tracker_covariance_matrix2: 0.0, tracker_covariance_matrix3: 0.0, $
     tracker_covariance_matrix4: 0.0, tracker_covariance_matrix5: 0.0, tracker_covariance_matrix6: 0.0, $
@@ -542,19 +542,19 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
         ;  ************************
         ;
         if arg_present(hk) then begin
-          
+
           ; Deal with strange offset that sometimes appears in HAM data
           IF keyword_set(HAM_HEADER) THEN BEGIN
             IF (pindex + 253) GE n_elements(data) THEN BEGIN
               pindex = pindex - ((pindex + 253) - (n_elements(data) - 1))
             ENDIF
           ENDIF
-          
+
           pkt_expectedCheckbytes = fletcher_checkbytes(data[pindex:pindex+249])
           pkt_expectedCheckbytes = long(pkt_expectedCheckbytes[0]) + ishft(long(pkt_expectedCheckbytes[1]),8)
           pkt_actualCheckbytes = long(data[pindex+250]) + ishft(long(data[pindex+251]),8)
           IF ((pkt_expectedCheckbytes NE pkt_actualCheckbytes) AND keyword_set(verbose)) THEN message, /info, "CHECKSUM ERROR!  HK seq count = " + strtrim(packet_seq_count,2) + " ... expected " + strtrim(pkt_expectedCheckbytes,2) + ", saw " + strtrim(pkt_actualCheckbytes,2)
-          
+
           hk_struct1.apid = packet_id_full  ; keep Playback bit in structure
           hk_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           hk_struct1.seq_count = packet_seq_count
@@ -573,7 +573,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           hk_struct1.adcs_time_valid = ISHFT(hk_struct1.adcs_info AND '04'X, -2) ; extract 1-bit flag
           hk_struct1.adcs_recommend_sun = ISHFT(hk_struct1.adcs_info AND '02'X, -1) ; extract 1-bit flag
           hk_struct1.adcs_mode = ISHFT(hk_struct1.adcs_info AND '01'X, 0) ; extract 1-bit flag
-            
+
           hk_struct1.checkbytes = pkt_actualCheckbytes
           hk_struct1.checkbytes_calculated = pkt_expectedCheckbytes
           hk_struct1.checkbytes_valid = pkt_actualCheckbytes EQ pkt_expectedCheckbytes
@@ -654,8 +654,8 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           hk_struct1.enable_batt_heater = ISHFT(hk_struct1.cdh_enables AND '0080'X, -7) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
           hk_struct1.enable_spare = ISHFT(hk_struct1.cdh_enables AND '0100'X, -8) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
           hk_struct1.enable_inst_heater = ISHFT(hk_struct1.cdh_enables AND '0200'X, -9) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          
-          
+
+
           hk_struct1.cdh_i2c_err = (long(data[pindex+90]) + ishft(long(data[pindex+91]),8))  ;none
           hk_struct1.cdh_rtc_err = (long(data[pindex+92]) + ishft(long(data[pindex+93]),8))  ;none
           hk_struct1.cdh_spi_sd_err = (long(data[pindex+94]) + ishft(long(data[pindex+95]),8))   ;none
@@ -746,7 +746,8 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           ;Add XACT monitors to HK for the TLM Rev D.25 changes
           hk_struct1.XACT_P5VTrackerVoltage = (uint(data[pindex+214])) * 0.025  ; DN * 0.025 = V
           hk_struct1.XACT_P12VBusVoltage = (uint(data[pindex+215])) * 0.256 ; DN * 0.256 = V
-          hk_struct1.XACT_TrackerDetectorTemp = (FIX(data[pindex+216])) * 0.8 ; DN * 0.8 = C deg.
+          snum = fix(data[pindex+216])   ; Signed Byte logic added, T. Woods, 2018-Dec-09
+          hk_struct1.XACT_TrackerDetectorTemp = (snum ge 128?snum-256.:snum) * 0.8 ; DN * 0.8 = C deg.
           hk_struct1.XACT_Wheel2Temp = (convert_signedbyte2signedint(data[pindex+217])) * 1.28 ;  DN * 1.28 = C deg.
           hk_struct1.XACT_MeasSunBodyVectorX = (data[pindex+218] ge 128 ? fix(data[pindex+218]) - 256 : fix(data[pindex+218]) ) * 0.0256
           hk_struct1.XACT_MeasSunBodyVectorY = (data[pindex+219] ge 128 ? fix(data[pindex+219]) - 256 : fix(data[pindex+219]) ) * 0.0256
@@ -878,7 +879,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
             sci_struct1.time = packet_time
             sci_struct1.seq_count = packet_seq_count
             sci_lastSeqCount = packet_seq_count
-            
+
             sci_struct1.checkbytes = pkt_actualCheckbytes
             sci_struct1.checkbytes_calculated = pkt_expectedCheckbytes
             sci_struct1.SyncWord = (long(data[pindex+252]) + ishft(long(data[pindex+253]),8))  ;none
@@ -1034,7 +1035,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
         ;  ADCS-1 Packet (if user asked for it)
         ;  ************************
         ;
-        
+
         if arg_present(adcs1) then begin
           adcs1_struct1.apid = packet_id_full  ; keep Playback bit in structure
           adcs1_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
@@ -1086,7 +1087,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
 ;          pindex1 = pindex + 1
 ; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
           pindex1 = pindex
-          
+
           adcs1_struct1.orbit_time = (ishft(ulong(data[pindex1+81]),24) + ishft(ulong(data[pindex1+82]),16) $
                                    +  ishft(ulong(data[pindex1+83]),8)  +       ulong(data[pindex1+84])) * 0.2               ; [s]
           adcs1_struct1.q_ecef_wrt_eci1 = (ishft(long(data[pindex1+85]),24) + ishft(long(data[pindex1+86]),16) $
@@ -1239,7 +1240,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
 ;          pindex1 += 1
 ; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
           pindex1 = pindex
-         
+
           adcs2_struct1.commanded_attitude_quat1 = (ishft(long(data[pindex1+62]),24) + ishft(long(data[pindex1+63]),16) $
                                                  +  ishft(long(data[pindex1+64]),8 ) +       long(data[pindex1+65])) * 5.0E-10 ; [none]
           adcs2_struct1.commanded_attitude_quat2 = (ishft(long(data[pindex1+66]),24) + ishft(long(data[pindex1+67]),16) $
@@ -1373,7 +1374,8 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.tracker_RA = (ishft(uint(data[pindex+38]),8) + uint(data[pindex+39])) * 0.0055
           adcs3_struct1.tracker_declination = (ishft(uint(data[pindex+40]),8) + uint(data[pindex+41])) * 0.0055
           adcs3_struct1.tracker_roll = (ishft(uint(data[pindex+42]),8) + uint(data[pindex+43])) * 0.0055
-          adcs3_struct1.tracker_detector_temp = data[pindex+44] * 0.80000001
+          snum = fix(data[pindex+44])  ; 9-Dec-2018: T. Woods, fixed signed byte
+          adcs3_struct1.tracker_detector_temp = (snum ge 128?snum-256:snum) * 0.80000001
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (1/6 bytes)
 ;          pindex1 = pindex + 1
@@ -1444,12 +1446,12 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.tracker_store_sequential_images = data[pindex1+125]
           adcs3_struct1.tracker_track_ref_available = data[pindex1+126]
           adcs3_struct1.num_bright_stars = data[pindex1+127]
-          
+
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6 bytes, remaining 4 are at the end)
 ;          pindex1 += 1
 ; 8 Dec 2018: Amir Caspi + Tom Woods: EXCEPT... turns out all the extra bytes ARE at the end, because the data is byte-copied into the union...
           pindex1 = pindex
-          
+
           adcs3_struct1.attitude_error1 = (ishft(long(data[pindex1+128]),24) + ishft(long(data[pindex1+129]),16) $
                                        +  ishft(long(data[pindex1+130]),8 ) +       long(data[pindex1+131])) * 2.0E-9
           adcs3_struct1.attitude_error2 = (ishft(long(data[pindex1+132]),24) + ishft(long(data[pindex1+133]),16) $
@@ -1745,7 +1747,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     ENDIF
     timeIndex++
   ENDWHILE
-  
+
   IF keyword_set(EXPORT_RAW_ADCS_TLM) THEN BEGIN
     IF typename(input) EQ 'STRING' THEN BEGIN
       IF adcs1Raw NE !NULL OR adcs2Raw NE !NULL OR adcs3Raw NE !NULL OR adcs4Raw NE !NULL THEN BEGIN
