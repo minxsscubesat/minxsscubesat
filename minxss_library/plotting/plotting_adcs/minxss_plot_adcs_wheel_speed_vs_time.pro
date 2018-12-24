@@ -77,6 +77,7 @@ p2 = plot(timeJd, wheel2Speed, '2', SYMBOL = '*', COLOR = 'lime green', /OVERPLO
           NAME = 'Y')
 p3 = plot(timeJd, wheel3Speed, '2', SYMBOL = '*', COLOR = 'dodger blue', /OVERPLOT, $
           NAME = 'Z')
+STOP
 p1a = plot(timeJd, wheel1SpeedSmooth, '2', COLOR = 'firebrick', /OVERPLOT, $
            NAME = '1 smooth*') 
 p2a = plot(timeJd, wheel2SpeedSmooth, '2', COLOR = 'lime', /OVERPLOT, $
@@ -89,7 +90,6 @@ t1 = text(0.37, 0.16, 'solids = ' + JPMPrintNumber(smoothNumberOfPoints, /NO_DEC
 
 IF keyword_set(STACKPLOT_VS_ALTITUDE) THEN BEGIN
   altitude = minxss_get_altitude(timeJd = timeJd)
-  STOP
   p4 = plot(altitude, wheel1Speed, '2', SYMBOL = '*', COLOR = 'tomato', POSITION = [0.18, 0.59, 0.95, 0.93], /CURRENT, FONT_SIZE = fontSize, $
             TITLE = 'MinXSS-1 On-Orbit', $
             XTITLE = 'Altitude [km]', XRANGE = [430, 140])

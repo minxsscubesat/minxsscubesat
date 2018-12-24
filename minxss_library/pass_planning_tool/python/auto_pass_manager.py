@@ -213,7 +213,7 @@ class pass_manager:
             if(self.cfg.do_update_satpc_tle==1):
                 satpc_tle_file_dropbox = os.path.join(self.cfg.idl_tle_dir, self.cfg.station_name)
                 satpc_tle_file_dropbox = os.path.join(satpc_tle_file_dropbox, self.satpc_tle_name)
-    
+
                 if(os.path.exists(self.cfg.satpc_tle_dir) and os.path.exists(satpc_tle_file_dropbox)):
                     satpc_tle_file_dest = os.path.join(self.cfg.satpc_tle_dir, self.satpc_tle_name)
                     copyfile(satpc_tle_file_dropbox, satpc_tle_file_dest)
@@ -253,7 +253,7 @@ class pass_manager:
                 print("ERROR: No SATPC TLE file at {0}".format(satpc_tle_file_dest))
                 self.email("NoFile")
                 return 1 # if we don't have the file path we have to assume it updates every time
-    
+
             if(self.tle_contents == None):
                 self.tle_contents = current_tle_data
                 return 1
@@ -270,7 +270,7 @@ class pass_manager:
                 else:
                     self.tle_contents = current_tle_data
                     return 1
-    
+
             self.tle_contents = current_tle_data
         #if we made it here, we're good to go
         return 0
@@ -284,7 +284,7 @@ class pass_manager:
         #   passes_latest_STATION2.sav
         #[etc]
         passes_idl_file = os.path.join(self.cfg.idl_tle_dir, self.cfg.station_name)
-        passes_idl_file = os.path.join(passes_idl_file,'passes_latest_' + self.cfg.station_name + '.sav')
+        passes_idl_file = os.path.join(passes_idl_file,'passes_latest_' + self.cfg.station_name.upper() + '.sav')
 
         #print("Reading from IDL file: ",passes_idl_file) #enable if needed for debugging
 

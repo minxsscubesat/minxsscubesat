@@ -52,7 +52,7 @@ WHILE 1 DO BEGIN
 
   IF currentMinuteOfDay GT 1438. THEN BEGIN ; 1440 minutes per day, so 1438 is within 2 minutes of midnight
     message, /INFO, JPMsystime() + ' Starting automated MinXSS processing' 
-    minxss_processing, /COPY_GOES
+    minxss_processing, /TO_0C_ONLY;, /COPY_GOES
   ENDIF ELSE BEGIN
     message, /INFO, JPMsystime() + ' Processing will begin in ' + JPMPrintNumber(1440. - currentMinuteOfDay) + ' minutes'
     wait, 60.

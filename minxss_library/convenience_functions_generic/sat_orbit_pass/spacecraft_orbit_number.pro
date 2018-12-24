@@ -81,8 +81,11 @@ endif else begin
 endelse
 
 path_name = getenv('TLE_dir')
-if strlen(path_name) gt 0 then path_name += slash + 'orbit_number' + slash
+if strlen(path_name) gt 0 then begin
+  if ((strpos(path_name,slash,/reverse_search)+1) lt strlen(path_name)) then path_name += slash
+endif
 ; else path_name is empty string
+if strlen(path_name) gt 0 then path_name += 'orbit_number' + slash
 file_name = strlowcase( sc_name ) + '_orbit_number.dat'
 if not file_test( path_name + file_name ) then begin
 	print, 'ERROR finding Orbit Number File: ', path_name + file_name

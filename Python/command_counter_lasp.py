@@ -25,7 +25,7 @@ import re
 import glob
 
 #Path to Rundirs Folder in HYDRA
-os.chdir('C:/Users/OPS/Dropbox/Hydra/MinXSS/HYDRA_FM-2_Fairbanks/Rundirs')
+os.chdir('C:/Users/OPS/Dropbox/Hydra/MinXSS/HYDRA_FM-2_Boulder/Rundirs')
 
 #make array of all rundirs directories
 dirs = os.listdir()
@@ -127,7 +127,7 @@ def output():
 	
 	
 	#now to display what we recognized. First the command counter, then the scripts ran.
-	time = 'Command Counter: '+str(cmdCount)+'\n\nScripts Ran:'+scripts
+	time = 'LASP Ground Station\n\nCommand Counter: '+str(cmdCount)+'\n\nScripts Ran:'+scripts
 	
 	#configure the text to be left justified
 	lab.config(text=time, anchor=W, justify=LEFT)

@@ -1630,9 +1630,27 @@ IF keyword_set(EXPORT_RAW_ADCS_TLM) THEN BEGIN
       ; Handle incorrectly burned fm=3 in fm=2 flight
       IF fm EQ 3 THEN fmTmp = 2 ELSE fmTmp = fm
       
-      ; Handle broken fm
+      ; Don't export if FM is broken
       IF fmTmp NE -1 THEN BEGIN
-        file_copy, input, getenv('minxss_data') + '/fm' + strtrim(fmTmp, 2) + '/xact_tlm_exported/' + inputStringParsed.Filename, /overwrite
+        xact_export_path_file = getenv('minxss_data') + '/fm' + strtrim(fmTmp, 2) + '/xact_tlm_exported/' + inputStringParsed.Filename
+        
+        ; Convert ascii SDR log to binary otherwise just copy the binary file from hydra
+        IF strmatch(input, '*sdr*.log') THEN BEGIN
+          binaryData = minxss_read_sdr_log(input)
+          openw, lun, strreplace(xact_export_path_file, 'log', 'bin'), /GET_LUN 
+          writeu, lun, binaryData
+          close, lun
+          
+          IF adcs4 NE !NULL THEN BEGIN
+            bla = where(adcs4.time GT 1228188625.8759999d and adcs4.time LE 1228189615.3820000d, ncount)
+          IF ncount GT 0 THEN BEGIN
+            print, 'HEY JAMES ' + input
+          ENDIF
+          ENDIF
+          
+        ENDIF ELSE BEGIN
+          file_copy, input, xact_export_path_file, /overwrite
+        ENDELSE
       ENDIF
     ENDIF
   ENDIF

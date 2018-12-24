@@ -940,22 +940,14 @@ minxsslevel1 = {x123:minxsslevel1_x123, $
                 xp_meta:minxsslevel1_xp_meta, $
                 xp_dark:minxsslevel1_xp_dark}
                 
-;save the data as a .sav file
+;save the data as a .sav and .ncdf files
 save, /compress, minxsslevel1, file=outdir+outfile
+minxss_make_netcdf, '1', fm = fm, verbose = verbose
 
-if keyword_set(write_cdf_file) then begin
-  ; Save to netCDF files
-;  write_netcdf, minxsslevel1, outdir + file_basename(outfile, '.sav') + '.ncdf', $
-;    att_file = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/metadata/minxss1_solarSXR_level1_metadata.att'
+if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
 
-;  Export to netCDF
-   minxss_make_netcdf, '1', fm = fm 
-endif
-
-  if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
-
-  if keyword_set(debug) then stop, 'DEBUG at end of minxss_make_level1.pro ...'
+if keyword_set(debug) then stop, 'DEBUG at end of minxss_make_level1.pro ...'
 
 
-  RETURN
+RETURN
 END
