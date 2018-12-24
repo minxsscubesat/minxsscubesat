@@ -1,3 +1,5 @@
+#!/anaconda3/bin/python
+
 import plotly
 import plotly.plotly as py
 import plotly.graph_objs as go
@@ -9,7 +11,7 @@ plotly.tools.set_credentials_file(username='jmason86', api_key='wvT5wAI0l7q3uCvx
 
 
 # Make the list of files in ham_data
-ham_data_path = '/Users/jmason86/Dropbox/minxss_dropbox/data/ham_data/'
+ham_data_path = '/Users/minxss/Dropbox/minxss_dropbox/data/ham_data/'
 os.chdir(ham_data_path)
 os.system("ls -l 20{18,19,20,21,22}-* > ham_stats.txt")
 filename = ham_data_path + 'ham_stats.txt'
@@ -75,3 +77,4 @@ layout = go.Layout(
 
 fig = go.Figure(data=data, layout=layout)
 plot_url = py.iplot(fig, filename='MinXSS-2 Packets from Ham Operators', auto_open=False)
+print('Plot updated at {}'.format(plot_url.resource))
