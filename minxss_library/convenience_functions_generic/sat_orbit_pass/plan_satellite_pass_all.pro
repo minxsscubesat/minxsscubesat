@@ -15,12 +15,12 @@ pro plan_satellite_pass_all, verbose=verbose
 print, 'PROCESSING pass plans for BOULDER...'
 plan_satellite_pass,'Boulder', verbose=verbose
 
-; Other calls can skip updating TLEs and Orbit numbers
+; Other calls can skip updating (TLEs) and Orbit numbers
 print, 'PROCESSING pass plans for FAIRBANKS...'
-plan_satellite_pass,'Fairbanks',/no_update,/no_orbit, verbose=verbose
+plan_satellite_pass,'Fairbanks',/no_orbit, verbose=verbose
 
 print, 'PROCESSING pass plans for PARKER...'
-plan_satellite_pass,'Parker',/no_update,/no_orbit, verbose=verbose
+plan_satellite_pass,'Parker',/no_orbit, verbose=verbose
 
 return
 end
