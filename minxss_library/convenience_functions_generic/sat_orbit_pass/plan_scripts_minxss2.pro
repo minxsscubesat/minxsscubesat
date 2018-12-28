@@ -40,7 +40,7 @@ pro plan_scripts_minxss2, station, station_remote, date, debug=debug, verbose=ve
 ;
 ;	configure inputs
 ;
-if (n_params() lt 1) then station = 'Boulder'
+if (n_params() lt 1) then station = 'Fairbanks'
 station_caps = strupcase(station)
 if (n_params() lt 2) then station_remote = ''
 station_remote_caps = strupcase(station_remote)
