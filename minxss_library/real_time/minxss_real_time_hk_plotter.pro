@@ -141,9 +141,12 @@ keepGoing = 1
 hk = !NULL
 timeArray = !NULL
 
+socketIDbase = 10000  ; normal socket ID
+socketIDbase = 15100  ; Special test using CSIM Fairbanks Socket ID
+
 WHILE keepGoing DO BEGIN ; Infinite loop to reopen socket on error
   IF keyword_set(verbose) THEN message, /info, JPMsystime() + " -- " + "Opening socket to " + isisIP + ":10000 ..."
-  socket, lun, isisIP, 10000, ERROR = socketError, CONNECT_TIMEOUT = 5. * (socketErrorCounter EQ 0 ? 1 : 12), /RAWIO, /GET_LUN ; timeout is in seconds
+  socket, lun, isisIP, socketIDbase, ERROR = socketError, CONNECT_TIMEOUT = 5. * (socketErrorCounter EQ 0 ? 1 : 12), /RAWIO, /GET_LUN ; timeout is in seconds
   
   IF (socketError NE 0) THEN BEGIN
     message, /info, JPMsystime() + " -- " + "Could not open socket to " + isisIP + ":10000 ... retrying! (60 sec timeout)"
