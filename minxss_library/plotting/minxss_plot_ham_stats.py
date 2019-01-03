@@ -36,9 +36,9 @@ latitude = []
 longitude = []
 for item in split_filenames:
     if len(item) == 6:
-        callsign.append(item[3])
+        callsign.append(item[3].upper())
         latitude.append(item[4])
-        longitude.append(item[5][:-4])
+        longitude.append(item[5].replace('.dat', '').replace('.kss', '').replace('.d', ''))
     else:
         callsign.append('')
         latitude.append('')
@@ -51,7 +51,7 @@ df = df[df.callsign != '']
 df.reset_index(drop=True, inplace=True)
 
 # Generate the histogram
-unique_callsigns = df['callsign'].str.upper().unique()
+unique_callsigns = df['callsign'].unique()
 total_packets = []
 unique_latitudes = []
 unique_longitudes = []
@@ -66,6 +66,7 @@ df_unique['latitude'] = unique_latitudes
 df_unique['longitude'] = unique_longitudes
 df_unique['total packets'] = total_packets
 df_unique.sort_values(by=['total packets'], ascending=False, inplace=True)
+df_unique.reset_index(drop=True, inplace=True)
 
 # Make histogram
 data = [go.Bar(
@@ -123,7 +124,7 @@ layout = go.Layout(
             lon=-105.2705
         ),
         pitch=0,
-        zoom=0.4
+        zoom=0.2
     ),
 )
 
