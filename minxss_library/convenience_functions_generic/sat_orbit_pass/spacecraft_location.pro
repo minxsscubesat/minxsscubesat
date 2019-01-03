@@ -169,6 +169,8 @@ pro spacecraft_location, time, location, sunlight, id_satellite=id_satellite, $
 		tr = r
 	endelse
 
+	; help, tsun, tr
+	; stop, 'spacecraft_location: DEBUG tsun, tr ...'
 	comp_r_sun=dotp(tsun,tr) ;component of spacecraft position in direction of sun
 	sunlight_str = 'sunlight'
 	wsun = where( comp_r_sun le 0, scount )
