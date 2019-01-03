@@ -197,7 +197,7 @@ WHILE keepGoing DO BEGIN ; Infinite loop to reopen socket on error
       ENDELSE
 
       ; We're only here if the socket had data on it...
-      minxss_read_packets, socketData, hk = hkTemp, log = logTemp, verbose = verbose
+      minxss2_read_packets, socketData, hk = hkTemp, log = logTemp, verbose = verbose
       
       FOR i = 0, n_elements(logTemp) - 1 DO BEGIN
         timejd = gps2jd(log[i].time)
