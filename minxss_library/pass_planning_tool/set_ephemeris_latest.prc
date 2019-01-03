@@ -57,18 +57,18 @@ declare ephVelZ double64
 ;	IDL> print, 'Velocity X-Y-Z (km/sec) = ', pv[3:5]
 ;
 ;	*****  Lines 50-61 MUST be edited as Time During Pass when you will click GO button *****
-set ephYear = 18
-set ephMonth = 12
-set ephDay = 28
+set ephYear = 19
+set ephMonth = 1
+set ephDay = 1
 set ephHour = 4
-set ephMinute = 19
-set ephSecond = 52
-set ephPosX =  2452.5229
-set ephPosY = 6163.2638
-set ephPosZ = 2134.4288
-set ephVelX = 0.15692946
-set ephVelY = -2.5442674
-set ephVelZ = 7.1181056
+set ephMinute = 40
+set ephSecond = 18
+set ephPosX =  1985.1583
+set ephPosY = 6494.1300
+set ephPosZ = 1563.8507
+set ephVelX = 0.51954435
+set ephVelY = -1.9316674
+set ephVelZ = 7.2915448
 
 SET_EPHEMERIS:
 
