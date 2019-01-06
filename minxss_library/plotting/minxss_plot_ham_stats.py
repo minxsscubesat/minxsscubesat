@@ -13,13 +13,12 @@ mapbox_access_token = 'pk.eyJ1Ijoiam1hc29uODYiLCJhIjoiY2pxNXNwNWxtMjg0bzQ5bno1N2
 # Make the list of files in ham_data
 ham_data_path = '/Users/minxss/Dropbox/minxss_dropbox/data/ham_data/'
 os.chdir(ham_data_path)
-os.system("ls -l 20{18,19,20,21,22}-* > ham_stats.txt")
+os.system("ls -ltr 20{18,19,20,21,22}-* | awk '{ print $5, $9 }' > ham_stats.txt")
 filename = ham_data_path + 'ham_stats.txt'
 
 # Load and filter the data
-df = pd.read_fwf(filename, colspecs='infer')
-df.columns = ['', '', '', '', 'filesize', '', '', '', 'filename']
-df = df[['filename', 'filesize']]
+df = pd.read_csv(filename, sep=' ')
+df.columns = ['filesize', 'filename']
 df = df[df.filesize != 0]
 test_uploads = df['filename'].str.contains('JPM')
 df = df[~test_uploads]
