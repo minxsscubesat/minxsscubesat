@@ -33,7 +33,7 @@ for ground_station in ground_stations:
         header=dict(values=list(df.columns),
                     fill=dict(color='#C2D4FF'),
                     align=['center'] * 5),
-        cells=dict(values=[df['Satellite'], df[' Start Time'], df[' End Time'], df[' Duration Minutes'], df[' Peak Elevation'], df[' In Sunlight']],
+        cells=dict(values=[df[' Satellite'], df[' Start Time'], df[' End Time'], df[' Duration Minutes'], df[' Peak Elevation'], df[' In Sunlight']],
                    fill=dict(color=row_color),
                    align=['center']),
         columnwidth = [60, 125, 125, 60, 60, 80])
