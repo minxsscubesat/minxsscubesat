@@ -141,8 +141,8 @@ keepGoing = 1
 hk = !NULL
 timeArray = !NULL
 
-socketIDbase = 10000  ; normal socket ID
-socketIDbase = 15100  ; Special test using CSIM Fairbanks Socket ID
+ socketIDbase = 10000  ; normal socket ID
+; socketIDbase = 15100  ; Special test using CSIM Fairbanks Socket ID
 
 WHILE keepGoing DO BEGIN ; Infinite loop to reopen socket on error
   IF keyword_set(verbose) THEN message, /info, JPMsystime() + " -- " + "Opening socket to " + isisIP + ":10000 ..."
