@@ -17,7 +17,7 @@ for satellite in satellites:
     elif satellite == 'CSIM':
         filename = '/Users/minxss/Dropbox/minxss_dropbox/tle/orbit_number/CSIM_orbit_number.dat'
 
-    df = pd.read_fwf(filename, skiprows=3)
+    df = pd.read_fwf(filename, skiprows=3, colspecs=[[0, 6], [7, 15], [18, 23], [25, 31], [33, 39], [42, 46], [47, 52]])
     columns = ['Orbit #', 'YYYYDOY', 'UT second', 'Sunrise UT second', 'Sunset UT second', 'Beta Angle [º]', 'Pass minutes']
     df.columns = columns
 
