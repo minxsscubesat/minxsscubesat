@@ -161,7 +161,11 @@ IF keyword_set(MISSION_LENGTH) THEN BEGIN
     ; Define the path and filename strings
     data_dir = getenv('minxss_data') + '/fm' + strtrim(fm,2) + '/level0' + level_str + '/'
     time_date_str = strmid(strtrim(yyyyDoy, 2), 0, 4) + '_' + strmid(strtrim(yyyyDoy, 2), 4, 3)
-    data_file = 'minxss_l0' + level_str + '_' + time_date_str + '.sav'
+    IF fm EQ 1 THEN BEGIN
+      data_file = 'minxss_l0' + level_str + '_' + time_date_str + '.sav'
+    ENDIF ELSE IF fm EQ 2 THEN BEGIN
+      data_file = 'minxss2_l0' + level_str + '_' + time_date_str + '.sav'
+    ENDIF
     
     ; Search for the file 
     full_filename = file_search(data_dir + data_file, COUNT = fcount)
