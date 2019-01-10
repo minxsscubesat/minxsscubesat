@@ -5,11 +5,11 @@
 ; PURPOSE:
 ;	  Plot trends of Telemetry (Tlm) data and merge into single PDF file.
 ;	  User can pass MinXSS Tlm packets or specify date/time range for the plots.
-;	  This is intended FOR HK packets but it works FOR any MinXSS structure.
+;	  This is intended for HK packets but it works for any MinXSS structure.
 ;	  This will not plot tags that are arrays.
 ;
 ; CATEGORY:
-;	  Useful FOR trend plots with MinXSS Level 0B and Level 0C data.
+;	  Useful for trend plots with MinXSS Level 0B and Level 0C data.
 ;
 ; CALLING SEQUENCE:
 ;	  minxss_trend_plots, packet, timeRange=timeRange, items=items, pdf=pdf, level=level, layout=layout, /verbose
@@ -19,21 +19,20 @@
 ;   
 ; OPTIONAL INPUTS:  
 ;	  packet [structure]:       For passing in standard MinXSS packet structures as defined by minxss_read_packets
-;	  timeRange	[dblarr]:       To specify date/time range for the plot in format yyyydoy.fod (fraction of day) e.g. 2015083.43482d. 
-;	                            Note that if a long fraction of day is specified, it's important to include the d to make it a double.  
+;	  timeRange	[dblarr]:       Time in either yyyydoy.fod format or yyymmdd format. 
 ;				                      If timeRange is one number, then it specifies a date and packet is ignored
 ;					                    and it searches for Level 0 data files
 ;				                      If timeRange is two numbers, then it specifies a time range and either uses packet
 ;					                    or it searches for Level 0  data files if packet is not provided
 ;	  items	[intarr or strarr]:	Input array to limit which tags are plotted (either tag number or tag name)
 ;	  tlmType [string]:         The type of data to plot e.g., 'ADCS', 'SCI', or other packetname. Default is HK. 	  
-;	  level [string]:       		To specify 'B' or 'C' FOR Level 0B or Level 0C (default) data. 
-;   layout [intarr]:      		To specify number of plots per page = [num_columns, num_rows] 
+;	  level [string]:       		Specify 'B' or 'C' for Level 0B or Level 0C (default) data. 
+;   layout [intarr]:      		Specify number of plots per page = [num_columns, num_rows]. Default is [2, 3]. 
 ;   fm [integer]:             Default = 1. Set to 1 or 2 for the corresponding MinXSS flight model. 
 ;
 ; KEYWORD PARAMETERS:
 ;   PDF:            Set to save a PDF and don't show on screen. 
-;                   If this keyword is not set, THEN the program just displays the plots interactively to the user.
+;                   If this keyword is not set, then the program just displays the plots interactively to the user.
 ;   VERBOSE:        Set to print progress messages. 
 ;   NO_TIME_LIMIT:  Set to prevent limiting data to the range of time given by timeRange (default is 'NO', to process data for the entire day)
 ;   MISSION_LENGTH: Set to plot whole mission from start to most recent received packet
@@ -51,20 +50,6 @@
 ;   1. Check validity of input
 ;	  2. Find (read) the data IF necessary
 ;	  3. Make plots
-;
-; MODIFICATION HISTORY:
-;   2015/01/24: Tom Woods:        First version of code.
-;	  2015/03/19: Tom Woods:        Update with /NO_TIME_LIMIT optional input.
-;   2015/04/13: James Paul Mason: Updated formatting for consistency, and expanded descriptions in this header. 
-;                                 Made PDF a keyword only. To specify type of plots, use tlmType as PDF used to be used.
-;                                 Also made it so when PDF is set, it doesn't show the plots on screen to increase performance. 
-;   2015/06/24: James Paul Mason: Changed y-axis tick and title formatting to prevent clipping, and expanded size of plots.
-;   2015/06/29: James Paul Mason: timeRange can now accept standard date formatting (yyyymmdd) as well as yyyydoy e.g., either 20150629 or 2015180. 
-;                                 No keywords are needed, can just enter as normal. Also added mmdd to output PDF file names.
-;                                 Changed keyword TIMELIMIT to NO_TIME_LIMIT to get expected default behavior for program call. 
-;   2015/10/23: James Paul Mason: Refactored minxss_processing -> minxss_data and changed affected code to be consistent
-;   2016/05/16: Amir Caspi: Added FM optional input and value into filepath
-;   2016/05/20: James Paul Mason: Added MISSION_LENGTH keyword.
 ;+
 PRO minxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = tlmType, level = level, layout = layout, fm = fm, $
                          PDF = PDF, VERBOSE = VERBOSE, NO_TIME_LIMIT = NO_TIME_LIMIT, MISSION_LENGTH = MISSION_LENGTH
@@ -74,12 +59,18 @@ PRO minxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType =
 ;
 
 IF FM EQ !NULL THEN BEGIN
-  message, /INFO, "WARNING: No flight model specified; defaulting to FM = 1"
-  FM = 1
+  message, /INFO, "WARNING: No flight model specified; defaulting to FM = 2"
+  FM = 2
 ENDIF ELSE FM = fix(FM) ; Use fix() just in case someone passed in a string
 IF keyword_set(verbose) THEN message, /INFO, "Using flight model FM = " + strtrim(FM, 2)
 
-IF keyword_set(MISSION_LENGTH) THEN timeRange = [20160516, JPMjd2yyyymmdd(systime(/JULIAN, /UTC))]
+IF keyword_set(MISSION_LENGTH) THEN BEGIN 
+  IF fm EQ 1 THEN BEGIN
+    timeRange = [20160516, 20170514]
+  ENDIF ELSE BEGIN
+    timerange = [20181203, JPMjd2yyyymmdd(systime(/JULIAN, /UTC))]
+  ENDELSE
+ENDIF
 
 IF timeRange NE !NULL THEN BEGIN
   ; Make doubles for time1, time2
@@ -89,13 +80,9 @@ IF timeRange NE !NULL THEN BEGIN
   ; Determine if using normal date formatting (i.e., yyyymmdd) and convert to yyyydoy
   
   IF strlen(JPMPrintNumber(time1, /NO_DECIMALS)) GT 7 THEN BEGIN
-    yearDoy1 = JPMyyyymmdd2yyyydoy(time1)
-    IF yearDoy1.doy LT 100 THEN doyString = '0' + strtrim(yearDoy1.doy, 2) ELSE doyString = strtrim(yearDoy1.doy, 2)
-    timeRange[0] = long(strtrim(yearDoy1.year, 2) + doyString)
+    timeRange[0] = JPMyyyymmdd2yyyydoy(time1)
     IF n_elements(timeRange) EQ 2 THEN BEGIN
-      yearDoy2 = JPMyyyymmdd2yyyydoy(time2)
-      IF yearDoy2.doy LT 100 THEN doyString = '0' + strtrim(yearDoy2.doy, 2) ELSE doyString = strtrim(yearDoy2.doy, 2)
-      timeRange[1] = long(strtrim(yearDoy2.year, 2) + doyString)
+      timeRange[1] = JPMyyyymmdd2yyyydoy(time2)
     ENDIF
   ENDIF
 ENDIF
@@ -130,11 +117,10 @@ ENDELSE
 ;	2. Find (read) the data if necessary
 ;
 IF (readFiles NE 0) THEN BEGIN
-  ; FIXME:  default choice is L0B FOR now but will want to change it to be L0C FOR flight
   IF keyword_set(level) THEN BEGIN
     level_str = strlowcase(strmid(level,0,1))
-  ENDIF ELSE level_str = 'b'
-  IF level_str NE 'b' OR level_str NE 'c' THEN level_str = 'b'
+  ENDIF ELSE level_str = 'c'
+  IF level_str NE 'b' OR level_str NE 'c' THEN level_str = 'c'
 
   ;  Define time_day_str based on time1 value expected to be in YYYYDOY format
   time_date = long(time1)
@@ -146,7 +132,11 @@ IF (readFiles NE 0) THEN BEGIN
   time_date_str += doy_str
 
   data_dir = getenv('minxss_data') + '/fm' + strtrim(fm,2) + '/level0' + level_str + '/'
-  data_file = 'minxss_l0' + level_str + '_' + time_date_str + '.sav'
+  IF fm EQ 1 THEN BEGIN
+    data_file = 'minxss_l0' + level_str + '_' + time_date_str + '.sav'
+  ENDIF ELSE IF fm EQ 2 THEN BEGIN
+    data_file = 'minxss2_l0' + level_str + '_' + time_date_str + '.sav'
+  ENDIF
 
    ; see if file exists before continuing
    full_filename = file_search( data_dir + data_file, count=fcount )
@@ -312,8 +302,8 @@ IF keyword_set(pdf) THEN BEGIN
   IF dd LE 9 THEN dd = '0' + strtrim(dd, 2) ELSE dd = strtrim(dd, 2)
   pdf_file = 'minxss_' + pdf_type + '_' + time_date_str + '_' + mm + dd + '.pdf'
   IF keyword_set(MISSION_LENGTH) THEN pdf_file = 'minxss_' + pdf_type + '_mission.pdf'
-  ; IF keyword_set(verbose) THEN $
-    print, 'minxss_trend_plots:  PDF file = ' + pdf_dir + pdf_file
+  IF keyword_set(verbose) THEN $
+    message, /INFO, 'PDF file = ' + pdf_dir + pdf_file
 ENDIF
 
 ;
@@ -349,6 +339,7 @@ FOR k=0L,page_count-1 DO BEGIN
           w.Erase
       ENDIF
       temp_data = pdata.(indices[pnum])
+      IF strmatch(plot_names[indices[pnum]], 'time_*', /FOLD_CASE) THEN CONTINUE
       IF (size(temp_data,/n_dimension) GT 1) THEN BEGIN
         ; compress 2-D data array into total of second dimension
         temp_data = temporary( total(temp_data,2) )
