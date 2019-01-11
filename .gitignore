@@ -33,3 +33,4 @@ minxss_library/plotting/.idea/workspace.xml
 minxss_library/plotting/__pycache__/minxss_plot_csim_ground_station_conflict.cpython-36.pyc
 minxss_library/pass_planning_tool/set_ephemeris_latest.prc
 minxss_library/pass_planning_tool/set_ephemeris_latest.prc
+*.prc
