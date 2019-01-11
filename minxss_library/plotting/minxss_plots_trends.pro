@@ -317,7 +317,7 @@ ENDIF
 title2 = time_date_str
 title1 = 'Page '
 IF (num_col GT 1) THEN xtitle='UTC [Hour]' ELSE xtitle = 'Hour of ' + time_date_str
-IF keyword_set(MISSION_LENGTH) THEN xtitle = 'Hours Since Mission Start (2016/05/16 10:05:26)'
+IF keyword_set(MISSION_LENGTH) THEN xtitle = 'Hours Since Mission Start'
 xrange = [min(ptime), max(ptime)]
 xdim = num_col * 300L
 ydim = num_row * 250L
