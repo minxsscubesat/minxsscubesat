@@ -32,7 +32,7 @@
 ; MODIFICATION HISTORY:
 ;   2017-03-24: James Paul Mason: Wrote script.
 ;-
-FUNCTION minxss_get_beta, PLOT = PLOT
+FUNCTION minxss_get_beta
 
 ; Restore the ascii interpreter template generated beforehand with ascii_template 
 restore, '/Users/' + getenv('username') + '/Dropbox/minxss_dropbox/tle/orbit_number/minxss_orbit_number_ascii_read_template.sav'
