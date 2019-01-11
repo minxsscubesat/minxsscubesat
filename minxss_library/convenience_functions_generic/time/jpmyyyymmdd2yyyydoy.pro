@@ -26,12 +26,6 @@
 ;
 ; EXAMPLE:
 ;   yearDoy = JPMyyyymmdd2yyyydoy(20150626)
-;
-; MODIFICATION HISTORY:
-;   1991-09-18: GAL:              Wrote script.
-;   2015-06-29: James Paul Mason: Changed idate from yymmdd to yyyymmdd and associated code and changed return type to structure. 
-;   2016-03-25: James Paul Mason: Added RETURN_STRING keyword to return a string in yyyydoy format (including leading 0 in doy where necessary). 
-;   2016-10-31: James Paul Mason  Changed return format to long instead of structure and function name from JPMyyyymmdd2doy. 
 ;-
 
 FUNCTION JPMyyyymmdd2yyyydoy, idate, RETURN_STRING = RETURN_STRING
@@ -85,14 +79,20 @@ FUNCTION JPMyyyymmdd2yyyydoy, idate, RETURN_STRING = RETURN_STRING
   ENDELSE
   
   IF (ascII) THEN BEGIN
-    yearOutput = STRTRIM( STRING(yyyy), 2)  ;convert to string   
-    myDOY = STRTRIM( STRING(myDOY), 2) ;convert to string   
+    yearOutput = STRTRIM(STRING(yyyy), 2)  ;convert to string   
+    myDOY = STRTRIM(STRING(myDOY), 2) ;convert to string   
  ENDIF ELSE BEGIN
    yearOutput = yyyy
  ENDELSE      
 
 ; Create yyyydoy string
-IF myDoy LT 100 THEN doyString = '0' + strtrim(myDoy, 2) ELSE doyString = strtrim(myDoy, 2)
+IF myDoy LT 10 THEN BEGIN
+  doyString = '00' + strtrim(myDoy, 2) 
+ENDIF ELSE IF myDoy LT 100 THEN BEGIN
+  doyString = '0' + strtrim(myDoy, 2) 
+ENDIF ELSE BEGIN
+  doyString = strtrim(myDoy, 2)
+ENDELSE
 yyyydoyString = strtrim(yearOutput, 2) + doyString
 
 IF keyword_set(RETURN_STRING) THEN BEGIN
