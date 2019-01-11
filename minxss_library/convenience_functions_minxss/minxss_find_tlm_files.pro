@@ -21,7 +21,9 @@
 ;	  None
 ;	
 ;	KEYWORDS
-;	  VERBOSE: Option to print messages for the search results
+;	  NOHAM:    Set this to exclude data from ham operators
+;	  NOSDRLOG: Set this to exclude data from the SDR log
+;	  VERBOSE:  Option to print messages for the search results
 ;
 ; OUTPUTS:
 ;	  file_list [strarr]: List of files as an array of strings.  Full path is included.
@@ -36,17 +38,9 @@
 ; PROCEDURE:
 ;   1. Call IDL's file_search procedure with specified date in $minxss_data/
 ;	  2. Set numfiles and return the file list
-;
-; MODIFICATION HISTORY:
-;   2015-08-30: Tom Woods:        ISIS changed tlm_packets files to NOT have the *.out extension
-;   2015-10-23: James Paul Mason: Refactored minxss_processing -> minxss_data and changed affected code to be consistent
-;   2016-03-25: James Paul Mason: Updated to reflect changes to the ISIS rundirs location in minxss_dropbox
-;   2016-09-08: James Paul Mason: Added telemetry from Jim White's ground station to be concatenated with LASP's
-;   2017-01-09: James Paul Maosn: Fixed bug in case where Jim's ground station didn't have any data for a whole day
-;   2018-07-12: James Paul Mason: Added fm optional input. Added Hydra for flatsat directory. Replaced all "isis" with "hydra". 
 ;+
 
-function minxss_find_tlm_files, yyyydoy, fm=fm, numfiles=numfiles, verbose=verbose
+function minxss_find_tlm_files, yyyydoy, fm=fm, numfiles=numfiles, noham=noham, nosdrlog=nosdrlog, verbose=verbose
 
 ; Defaults and input checks
 if n_params() lt 1 then begin
@@ -150,21 +144,25 @@ IF fm EQ 3 THEN BEGIN
   ENDIF
 ENDIF
 
-; Add telemetry from HAM operators
-IF getenv('ham_data') NE '' THEN BEGIN
-  hamFiles = file_search(getenv('ham_data'), JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.{dat,kss,kiss}', count = countHam)
-  IF countHam NE 0 THEN BEGIN
-    file_list = [file_list, hamFiles]
-    count = count + countHam
+IF NOT keyword_set(NOHAM) THEN BEGIN
+  ; Add telemetry from HAM operators
+  IF getenv('ham_data') NE '' THEN BEGIN
+    hamFiles = file_search(getenv('ham_data'), JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.{dat,kss,kiss}', count = countHam)
+    IF countHam NE 0 THEN BEGIN
+      file_list = [file_list, hamFiles]
+      count = count + countHam
+    ENDIF
   ENDIF
 ENDIF
 
-; Add raw SDR output
-IF getenv('sdr_data') NE '' THEN BEGIN
-  sdrFiles = file_search(getenv('sdr_data'), '*' + JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.{bin,log}', count = countSDR)
-  IF countSDR NE 0 THEN BEGIN
-    file_list = [file_list, sdrFiles]
-    count = count + countSDR
+IF NOT keyword_set(NOSDRLOG) THEN BEGIN
+  ; Add raw SDR output
+  IF getenv('sdr_data') NE '' THEN BEGIN
+    sdrFiles = file_search(getenv('sdr_data'), '*' + JPMyyyydoy2yyyymmdd(yyyydoy, /RETURN_STRING) + '*.{bin,log}', count = countSDR)
+    IF countSDR NE 0 THEN BEGIN
+      file_list = [file_list, sdrFiles]
+      count = count + countSDR
+    ENDIF
   ENDIF
 ENDIF
 
