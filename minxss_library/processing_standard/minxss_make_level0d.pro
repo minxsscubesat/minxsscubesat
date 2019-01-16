@@ -16,7 +16,7 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   fm [integer]:       Flight Model number 1 or 2 (default is 1)
+;   fm [integer]:       Flight Model number 1 or 2 (default is 2)
 ;   dateRange [dblarr]: Date range to process. Can be single date or date range, e.g., [2016001] or [2016001, 2016030].
 ;                       If single date input, then that full day will be processed. If two dates input, processing will be inclusive of the full range. 
 ;                       Date formats can be either yyyydoy or yyyymmdd, e.g., [2016152] or [20160601]. 
@@ -49,12 +49,6 @@
 ;   2. Interpolate time to have single timestamp for all data
 ;   3. Retrieve and package relevant ancillary data with MinXSS data
 ;   4. Save interpolated, unified array of structures to disk
-;   
-; MODIFICATION HISTORY:
-;   2015/10/23: James Paul Mason: Started program
-;   2015/11/16: James Paul Mason: Finished rev1 of code and main dependent codes e.g., minxss_telemetry_interpolate.pro ... phew!
-;   2016/06/23: James Paul Mason: Changed default dateRange start time to actual MinXSS FM-1 deployment date
-;   2016/07/25: James Paul Mason: Fixed an issue that was overwriting the array with all the same value. Now uses JPMAddTagsToStructure. 
 ;+
 PRO minxss_make_level0d, fm = fm, dateRange = dateRange, $ 
                          VERBOSE = VERBOSE
@@ -64,7 +58,7 @@ PRO minxss_make_level0d, fm = fm, dateRange = dateRange, $
 ;;
 
 ; Defaults and validity checks - FM
-IF ~keyword_set(fm) THEN fm = 1
+IF ~keyword_set(fm) THEN fm = 2
 IF (fm GT 2) OR (fm LT 1) THEN BEGIN
   print, "ERROR: minxss_make_level0d needs a valid 'fm' value. FM can be 1 or 2."
   return
@@ -95,9 +89,12 @@ IF dateRange NE !NULL THEN BEGIN
   IF dateRangeYYYYDOY[1] EQ 0 THEN dateRangeYYYYDOY[1] = dateRangeYYYYDOY[0] + 1L
   
 ENDIF ELSE BEGIN ; endif dateRange ≠ NULL else dateRange not set
-  ; If no dateRange input then process all possible flight dates to present
-  IF fm EQ 1 THEN dateRangeYYYYDOY = [2016136L, long(jd2yd(systime(/julian) + 0.5))] ELSE $
-                  dateRangeYYYYDOY = [2016300L, long(jd2yd(systime(/julian) + 0.5))]
+  ; If no dateRange input then process mission length
+  IF fm EQ 1 THEN BEGIN
+    dateRangeYYYYDOY = [JPMyyyymmdd2yyyydoy(20160516), JPMyyyymmdd2yyyydoy(20170506)]
+  ENDIF ELSE IF fm EQ 2 THEN BEGIN
+    dateRangeYYYYDOY = [JPMyyyymmdd2yyyydoy(20181203), long(jd2yd(systime(/julian) + 0.5))]
+  ENDIF
 ENDELSE
 
 ; Defaults and validity checks - output filename
@@ -108,8 +105,8 @@ IF dateRange EQ !NULL THEN outputFilename = outputPath + 'minxss' + strtrim(fm, 
 ;;
 ; 1. Restore the Level 0C mission lenghth file
 ;;
-level0cPath = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0c' + path_sep() + 'minxss1_l0c_all_mission_length.sav'
-IF file_test(level0cPath) THEN restore, level0CPath
+level0cFile = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0c' + path_sep() + 'minxss' + strtrim(fm, 2) + '_l0c_all_mission_length.sav'
+IF file_test(level0cFile) THEN restore, level0cFile
 
 ;;
 ; 2. Interpolate time to have single timestamp for all data
