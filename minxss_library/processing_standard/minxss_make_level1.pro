@@ -781,159 +781,149 @@ endfor
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1_xp_dark += 1
 endfor
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end xp dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;    endif
-  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end xp dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; Truncate down to the elements used
+minxsslevel1_x123 = minxsslevel1_x123[0:num_L1-1]
+minxsslevel1_xp = minxsslevel1_xp[0:num_L1_xp-1]
+minxsslevel1_x123_dark = minxsslevel1_x123_dark[0:num_L1_dark-1]
+minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
 
-  ;
-  ; truncate down to the elements used
-  minxsslevel1_x123 = minxsslevel1_x123[0:num_L1-1]
-  minxsslevel1_xp = minxsslevel1_xp[0:num_L1_xp-1]
-  minxsslevel1_x123_dark = minxsslevel1_x123_dark[0:num_L1_dark-1]
-  minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
+VERSION = '3.0'
+REVISION = '3.0.1'
+FORM_VER = 'IDL Save Set'
+SOFT_VER = '3.0.1'
+CAL_VER = '3.0.1'
+if keyword_set(output_filename) then begin
+  outfile = output_filename + '.sav'
+endif else begin
+  outfile = 'minxss' + fm_str + '_l1_mission_length.sav'
+endelse
 
-  ;
+; X123 information structure
+minxsslevel1_x123_meta = { $
+  Title: 'MinXSS Level 1 Data Product', $
+  Source: 'MinXSS SOC at LASP / CU', $
+  Mission: 'MinXSS-'+fm_str, $
+  Data_product_type: 'MinXSS Level 1', $
+  Data_product_version: VERSION, $
+  Data_product_revision: REVISION, $
+  Product_format_version: FORM_VER, $
+  Software_version: SOFT_VER, $
+  Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
+  Calibration_version: CAL_VER, $
+  Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
+  History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
+  '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data'], $
+  Filename: outfile, $
+  Date_generated: systime(), $
+  TIME_struct: 'Time structure for different date/time formats', $
+  TIME_struct_ISO: 'Time in ISO text format', $
+  TIME_struct_HUMAN: 'Time in Human-readable text format', $
+  TIME_struct_YYYYMMDD: 'Time in Year-Month-Day long integer format', $
+  TIME_struct_YYYYDOY: 'Time in Year Day-Of-Year (DOY) long integer format', $
+  TIME_struct_HHMMSS: 'Time in Hour-Minute-Second text format', $
+  TIME_struct_SOD: 'Time in Seconds of Day (SOD) long integer format', $
+  TIME_struct_FOD: 'Time in Fraction of Day (FOD) double format', $
+  TIME_struct_JD: 'Time in Julian Date double format', $
+  TIME_struct_spacecraftgpsformat: 'Time recorded by spacecraft in GPS Seconds double format', $
+  INTERVAL_START_TIME_JD: 'Start Time of the Interval in which the data is averaged in Julian Date double format', $
+  INTERVAL_END_TIME_JD: 'End Time of the Interval in which the data is averaged in Julian Date double format', $
+  INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
+  INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
+  FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
+  IRRADIANCE: 'X123 Irradiance in units of photons/sec/cm^2/keV, float array[1024]', $
+  IRRADIANCE_UNCERTAINTY: 'X123 Irradiance uncertainty, float array[1024]', $
+  IRRADIANCE_LOW: 'X123 Irradiance low estimate, float array[1024]', $
+  IRRADIANCE_HIGH: 'X123 Irradiance High estimate, float array[1024]', $
+  ENERGY: 'X123 Energy bins in units of keV, float array[1024]', $
+  SPECTRUM_CPS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
+  SPECTRUM_CPS_ACCURACY: 'X123 Deadtime corrected spectrum uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
+  SPECTRUM_CPS_PRECISION: 'X123 Deadtime corrected spectrum uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
+  SPECTRUM_CPS_STDDEV: 'X123 Deadtime corrected spectrum standard deviation of the, float array[1024]', $
+  DEADTIME_CORRECTION_FACTOR: 'X123 first order deadtime correction factor, double', $
+  VALID_FLAG: 'X123 Valid Flag for Irradiance conversion (1=TRUE, 0=FALSE), float array[1024]', $
+  SPECTRUM_TOTAL_COUNTS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
+  SPECTRUM_TOTAL_COUNTS_ACCURACY: 'X123 Deadtime corrected spectrum uncertainty including the 10% SURF accuracy (total spectral counts over the entire time frame), float array[1024]', $
+  SPECTRUM_TOTAL_COUNTS_PRECISION: 'X123 Deadtime corrected spectrum uncertainty soley incluting the instrument measurement precision (total spectral counts over the entire time frame), float array[1024]', $
+  INTEGRATION_TIME: 'X123 Integration Time', $
+  NUMBER_SPECTRA: 'X123 Number of Spectra in the time interval', $
+  X123_FAST_COUNT: 'X123 Fast Counter value', $
+  X123_SLOW_COUNT: 'X123 Slow Counter value: spectral integration of counts over 1024 bins', $
+  SPS_ON: 'SPS power flag (1=ON, 0=OFF)', $
+  SPS_SUM: 'SPS signal in units of fC, normally about 2E6 fC when in sunlight', $
+  SPS_X: 'SPS X-axis offset from the sun center (NaN if SPS is not in the sun)', $
+  SPS_Y: 'SPS Y-axis offset from the sun center (NaN if SPS is not in the sun)', $
+  SPS_X_HK: 'SPS X-axis offset from the sun center (NaN if SPS is not in the sun)', $
+  SPS_Y_HK: 'SPS Y-axis offset from the sun center (NaN if SPS is not in the sun)', $
+  LONGITUDE: 'Earth Longitude for this measurement in units of degrees', $
+  LATITUDE : 'Earth Latitude for this measurement in units of degrees', $
+  ALTITUDE : 'Earth Altitude for this measurement in units of km from Earth center', $
+  SPACECRAFT_IN_SAA: 'South Atlantic Anomaly (SAA) Flag (1=In_SAA, 0=Out_of_SAA)', $
+  SUN_RIGHT_ASCENSION: 'Sun Right Ascension from orbit location', $
+  SUN_DECLINATION: 'Sun Declination from orbit location', $
+  EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
+  CORRECT_AU: 'Earth-Sun Distance correction factor' $
+}
 
-  VERSION = '3.0'
-  REVISION = '3.0.1'
-  FORM_VER = 'IDL Save Set'
-  SOFT_VER = '3.0.1'
-  CAL_VER = '3.0.1'
-  if keyword_set(output_filename) then begin
-    outfile = output_filename + '.sav'
-  endif else begin
-    outfile = 'minxss' + fm_str + '_l1_mission_length.sav'
-  endelse
+; XP information structure
+minxsslevel1_xp_meta = { $
+  Title: 'MinXSS Level 1 Data Product corrected', $
+  Source: 'MinXSS SOC at LASP / CU', $
+  Mission: 'MinXSS-'+fm_str, $
+  Data_product_type: 'MinXSS Level 1', $
+  Data_product_version: VERSION, $
+  Data_product_revision: REVISION, $
+  Product_format_version: FORM_VER, $
+  Software_version: SOFT_VER, $
+  Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
+  Calibration_version: CAL_VER, $
+  Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
+  History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
+  '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, XP data'], $
+  Filename: outfile, $
+  Date_generated: systime(), $
+  TIME_struct: 'Time structure for different date/time formats', $
+  TIME_struct_ISO: 'Time in ISO text format', $
+  TIME_struct_HUMAN: 'Time in Human-readable text format', $
+  TIME_struct_YYYYMMDD: 'Time in Year-Month-Day long integer format', $
+  TIME_struct_YYYYDOY: 'Time in Year Day-Of-Year (DOY) long integer format', $
+  TIME_struct_HHMMSS: 'Time in Hour-Minute-Second text format', $
+  TIME_struct_SOD: 'Time in Seconds of Day (SOD) long integer format', $
+  TIME_struct_FOD: 'Time in Fraction of Day (FOD) double format', $
+  TIME_struct_JD: 'Time in Julian Date double format', $
+  TIME_struct_spacecraftgpsformat: 'Time recorded by spacecraft in GPS Seconds double format', $
+  INTERVAL_START_TIME_JD: 'Start Time of the Interval in which the data is averaged in Julian Date double format', $
+  INTERVAL_END_TIME_JD: 'End Time of the Interval in which the data is averaged in Julian Date double format', $
+  INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
+  INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
+  FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
+  XP_FC_BACKGROUND_SUBTRACTED: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
+  XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_ACCURACY: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
+  XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_PRECISION: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
+  XP_FC_BACKGROUND_SUBTRACTED_STDDEV: 'XP signal standard deviation of the float array[1024]', $
+  INTEGRATION_TIME: 'X123 Integration Time accumulated over the', $
+  XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
+  XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
+  FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
+  NUMBER_XP_DATUM: 'XP number of datum in the (1-6 possible)' $
+}
 
-  ;x123 information structure
-  minxsslevel1_x123_meta = { $
-    Title: 'MinXSS Level 1 Data Product', $
-    Source: 'MinXSS SOC at LASP / CU', $
-    Mission: 'MinXSS-'+fm_str, $
-    Data_product_type: 'MinXSS Level 1', $
-    Data_product_version: VERSION, $
-    Data_product_revision: REVISION, $
-    Product_format_version: FORM_VER, $
-    Software_version: SOFT_VER, $
-    Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
-    Calibration_version: CAL_VER, $
-    Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
-    History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
-    '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data'], $
-    Filename: outfile, $
-    Date_generated: systime(), $
-    TIME_struct: 'Time structure for different date/time formats', $
-    TIME_struct_ISO: 'Time in ISO text format', $
-    TIME_struct_HUMAN: 'Time in Human-readable text format', $
-    TIME_struct_YYYYMMDD: 'Time in Year-Month-Day long integer format', $
-    TIME_struct_YYYYDOY: 'Time in Year Day-Of-Year (DOY) long integer format', $
-    TIME_struct_HHMMSS: 'Time in Hour-Minute-Second text format', $
-    TIME_struct_SOD: 'Time in Seconds of Day (SOD) long integer format', $
-    TIME_struct_FOD: 'Time in Fraction of Day (FOD) double format', $
-    TIME_struct_JD: 'Time in Julian Date double format', $
-    TIME_struct_spacecraftgpsformat: 'Time recorded by spacecraft in GPS Seconds double format', $
-    INTERVAL_START_TIME_JD: 'Start Time of the Interval in which the data is averaged in Julian Date double format', $
-    INTERVAL_END_TIME_JD: 'End Time of the Interval in which the data is averaged in Julian Date double format', $
-    INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
-    INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
-    FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
-    IRRADIANCE: 'X123 Irradiance in units of photons/sec/cm^2/keV, float array[1024]', $
-    IRRADIANCE_UNCERTAINTY: 'X123 Irradiance uncertainty, float array[1024]', $
-    IRRADIANCE_LOW: 'X123 Irradiance low estimate, float array[1024]', $
-    IRRADIANCE_HIGH: 'X123 Irradiance High estimate, float array[1024]', $
-    ENERGY: 'X123 Energy bins in units of keV, float array[1024]', $
-    SPECTRUM_CPS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
-    SPECTRUM_CPS_ACCURACY: 'X123 Deadtime corrected spectrum uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
-    SPECTRUM_CPS_PRECISION: 'X123 Deadtime corrected spectrum uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
-    SPECTRUM_CPS_STDDEV: 'X123 Deadtime corrected spectrum standard deviation of the, float array[1024]', $
-    DEADTIME_CORRECTION_FACTOR: 'X123 first order deadtime correction factor, double', $
-    VALID_FLAG: 'X123 Valid Flag for Irradiance conversion (1=TRUE, 0=FALSE), float array[1024]', $
-    SPECTRUM_TOTAL_COUNTS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
-    SPECTRUM_TOTAL_COUNTS_ACCURACY: 'X123 Deadtime corrected spectrum uncertainty including the 10% SURF accuracy (total spectral counts over the entire time frame), float array[1024]', $
-    SPECTRUM_TOTAL_COUNTS_PRECISION: 'X123 Deadtime corrected spectrum uncertainty soley incluting the instrument measurement precision (total spectral counts over the entire time frame), float array[1024]', $
-    INTEGRATION_TIME: 'X123 Integration Time', $
-    NUMBER_SPECTRA: 'X123 Number of Spectra in the time interval', $
-    X123_FAST_COUNT: 'X123 Fast Counter value', $
-    X123_SLOW_COUNT: 'X123 Slow Counter value: spectral integration of counts over 1024 bins', $
-    SPS_ON: 'SPS power flag (1=ON, 0=OFF)', $
-    SPS_SUM: 'SPS signal in units of fC, normally about 2E6 fC when in sunlight', $
-    SPS_X: 'SPS X-axis offset from the sun center (NaN if SPS is not in the sun)', $
-    SPS_Y: 'SPS Y-axis offset from the sun center (NaN if SPS is not in the sun)', $
-    SPS_X_HK: 'SPS X-axis offset from the sun center (NaN if SPS is not in the sun)', $
-    SPS_Y_HK: 'SPS Y-axis offset from the sun center (NaN if SPS is not in the sun)', $
-    LONGITUDE: 'Earth Longitude for this measurement in units of degrees', $
-    LATITUDE : 'Earth Latitude for this measurement in units of degrees', $
-    ALTITUDE : 'Earth Altitude for this measurement in units of km from Earth center', $
-    SPACECRAFT_IN_SAA: 'South Atlantic Anomaly (SAA) Flag (1=In_SAA, 0=Out_of_SAA)', $
-    SUN_RIGHT_ASCENSION: 'Sun Right Ascension from orbit location', $
-    SUN_DECLINATION: 'Sun Declination from orbit location', $
-    EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
-    CORRECT_AU: 'Earth-Sun Distance correction factor' $
-  }
+; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .netcdf files also
+;
+; Create the file name extension that changes with the minute average chossen as a variable
+;  outdir = fmdir + 'level1' + x_minute_average_string +'minute' + path_sep()
 
-  ;xp information structure
-  minxsslevel1_xp_meta = { $
-    Title: 'MinXSS Level 1 Data Product corrected', $
-    Source: 'MinXSS SOC at LASP / CU', $
-    Mission: 'MinXSS-'+fm_str, $
-    Data_product_type: 'MinXSS Level 1', $
-    Data_product_version: VERSION, $
-    Data_product_revision: REVISION, $
-    Product_format_version: FORM_VER, $
-    Software_version: SOFT_VER, $
-    Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
-    Calibration_version: CAL_VER, $
-    Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
-    History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
-    '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, XP data'], $
-    Filename: outfile, $
-    Date_generated: systime(), $
-    TIME_struct: 'Time structure for different date/time formats', $
-    TIME_struct_ISO: 'Time in ISO text format', $
-    TIME_struct_HUMAN: 'Time in Human-readable text format', $
-    TIME_struct_YYYYMMDD: 'Time in Year-Month-Day long integer format', $
-    TIME_struct_YYYYDOY: 'Time in Year Day-Of-Year (DOY) long integer format', $
-    TIME_struct_HHMMSS: 'Time in Hour-Minute-Second text format', $
-    TIME_struct_SOD: 'Time in Seconds of Day (SOD) long integer format', $
-    TIME_struct_FOD: 'Time in Fraction of Day (FOD) double format', $
-    TIME_struct_JD: 'Time in Julian Date double format', $
-    TIME_struct_spacecraftgpsformat: 'Time recorded by spacecraft in GPS Seconds double format', $
-    INTERVAL_START_TIME_JD: 'Start Time of the Interval in which the data is averaged in Julian Date double format', $
-    INTERVAL_END_TIME_JD: 'End Time of the Interval in which the data is averaged in Julian Date double format', $
-    INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
-    INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
-    FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
-    XP_FC_BACKGROUND_SUBTRACTED: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
-    XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_ACCURACY: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
-    XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_PRECISION: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
-    XP_FC_BACKGROUND_SUBTRACTED_STDDEV: 'XP signal standard deviation of the float array[1024]', $
-    INTEGRATION_TIME: 'X123 Integration Time accumulated over the', $
-    XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
-    XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
-    FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
-    NUMBER_XP_DATUM: 'XP number of datum in the (1-6 possible)' $
-  }
+if keyword_set(directory_output_file) then begin
+  outdir = directory_output_file
+endif else begin
+  outdir = fmdir + 'level1' + path_sep()
+endelse
 
+if keyword_set(verbose) then message, /INFO, ': Saving Level 1 save set in ' +  outdir+outfile
 
-
-  ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .fits files also
-  ;
-  ;create the file name extension that changes with the minute average chossen as a variable
-  ;  outdir = fmdir + 'level1' + x_minute_average_string +'minute' + path_sep()
-  
-  if keyword_set(directory_output_file) then begin
-    outdir = directory_output_file
-  endif else begin
-    outdir = fmdir + 'level1' + path_sep()
-  endelse
-
-  if keyword_set(verbose) then print, '   Saving Level 1 save set in ', outdir+outfile
-;  save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
-;    minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
-
-;combine all the individual structures into one big structure (structures in structures in sructures in structures! :)
-minxsslevel1 = {x123:minxsslevel1_x123, $
+; Combine all the individual structures into one big structure (structures in structures in sructures in structures! :)
+minxsslevel1 = {x123:minxsslevel1_x123, $ ; FIXME: time structure needs to be elevated to this same level, i.e., minxsslevel1.time instead of redundantly minxsslevel1.x123.time minxsslevel1.x123_dark.time, etc
                 x123_meta:minxsslevel1_x123_meta, $
                 x123_dark:minxsslevel1_x123_dark, $
                 xp:minxsslevel1_xp, $
@@ -949,5 +939,4 @@ if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
 if keyword_set(debug) then stop, 'DEBUG at end of minxss_make_level1.pro ...'
 
 
-RETURN
 END
