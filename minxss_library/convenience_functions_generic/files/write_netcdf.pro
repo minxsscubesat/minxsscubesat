@@ -432,7 +432,7 @@ while not( eof(alun) ) do begin
 					jj = jj + 1
 				endwhile
 				if (cur_varid lt 0) then begin
-					print, 'WARNING: write_netCDF variable NOT found for attribute ', test_vname
+					message, /INFO, 'WARNING: variable NOT found for attribute ' +  test_vname
 					if (debug_mode gt 0) then stop, 'Check out warning...'
 				endif
 			endelse
