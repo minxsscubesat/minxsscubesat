@@ -36,8 +36,6 @@
 ; RESTRICTIONS:
 ;   Requires IDL 8.3 or later
 ;
-; MODIFICATION HISTORY:
-;   2015/11/13: James Paul Mason: Write program.
 ;+
 FUNCTION JPMRemoveTags, structure, tagNamesArray
 
@@ -63,7 +61,7 @@ FOREACH structureArrayElement, structure DO BEGIN
   
   ; Loop through input tagNamesArray (works even if it's only a single tagName)
   FOREACH tagToRemove, tagNamesArray DO $
-    IF hashTemporary.HasKey(tagToRemove) THEN hashTemporary.Remove, tagToRemove ELSE message, /INFO, systime() + 'Structure tag "' + tagToRemove + '" does not exist in structure'   
+    IF hashTemporary.HasKey(tagToRemove) THEN hashTemporary.Remove, tagToRemove ELSE message, /INFO, JPMsystime() + ' Structure tag "' + tagToRemove + '" does not exist in structure'   
   
   outputStructure = [outputStructure, hashTemporary.ToStruct()]
   
