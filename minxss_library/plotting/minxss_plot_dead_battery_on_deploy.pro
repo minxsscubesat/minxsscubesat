@@ -76,6 +76,5 @@ p = polygon(polyx, polyy, /DATA, /FILL_BACKGROUND, FILL_TRANSPARENCY = 80, FILL_
 p = polygon(polyx, polyy, /DATA, /FILL_BACKGROUND, FILL_TRANSPARENCY = 80, FILL_COLOR = 'goldenrod', target = [p6])
 t = text(0.80, 0.93, 'sunlight', COLOR = 'goldenrod', TARGET = [w], FONT_SIZE = fontSize)
 t = text(0.88, 0.93, 'eclipse', COLOR = 'light grey', TARGET = [w], FONT_SIZE = fontSize)
-STOP
 
 END
