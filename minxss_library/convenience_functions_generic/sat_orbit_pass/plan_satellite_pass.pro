@@ -536,8 +536,8 @@ csv_name2 = 'passes_' + date_str + '_' + station_caps + '.csv'
 
 if keyword_set(verbose) then print, 'Saving "passes" CSV file to ', save_path+csv_name1
 openw, lun, save_path+csv_name1, /get_lun
-printf, lun, 'Satellite Passes at ' + station_caps + ' for ' + date_str
-csv_header = 'Satellite, Start Time, End Time, Duration Minutes, Peak Elevation, In Sunlight'
+printf, lun, ' Satellite Passes at ' + station_caps + ' for ' + date_str
+csv_header = ' Satellite, Start Time, End Time, Duration Minutes, Peak Elevation, In Sunlight'
 printf, lun, csv_header
 for k=0L, number_passes_total-1 do begin
 	; pass_num_str = string( pass_orbit_number[k], format='(I6)')
@@ -550,7 +550,7 @@ for k=0L, number_passes_total-1 do begin
 	elevation_str = string( passes[k].max_elevation, format='(F8.2)')
 	if (passes[k].sunlight ne 0) then sun_str = 'YES' else sun_str='eclipse'
 	; MinXSS-1 option used pass_num_str  instead of pass_name
-	pass_str = sat_name + ', ' + start_str + ', ' + end_str + ', ' + duration_str + ', ' + $
+	pass_str = ' ' + sat_name + ', ' + start_str + ', ' + end_str + ', ' + duration_str + ', ' + $
 				elevation_str + ', ' + sun_str
 	printf, lun, pass_str
 endfor
