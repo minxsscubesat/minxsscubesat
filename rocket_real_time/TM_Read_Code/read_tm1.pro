@@ -46,6 +46,7 @@
 ;
 ;	Updated June 2018 for 36.336 for CSOL analog monitors and new SPS-CSOL serial data
 ;		Also fixed so file doesn't have to start on Row 0
+;		Note that XRS = GOES-R XRS + MinXSS X123 + X123's SPS-PicoSIM
 ;
 pro  read_tm1, filename, cd=cd, launchtime=launchtime, time=time, single=single, $
 				analog=analog, esp=esp, pmegs=pmegs, xps=xps, axs=axs, xrs=xrs, x123=x123, $
