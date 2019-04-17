@@ -15,7 +15,7 @@
 ;   minxss_make_level1, fm=fm
 ;
 ; INPUTS:
-;   NONE
+;   None
 ;
 ; OPTIONAL INPUTS:
 ;    low_count=low_count, verbose=verbose, debug=debug
@@ -27,7 +27,7 @@
 ;   VERBOSE     Set this to print processing messages
 ;
 ; OUTPUTS:
-;     NONE
+;   None
 ;
 ; COMMON BLOCKS:
 ;   None
@@ -528,7 +528,6 @@ num_xp_dark = num_dark
     ; increment k and num_L1
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1 += 1
-    ;    endif
 endfor
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

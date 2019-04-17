@@ -152,7 +152,7 @@ finer_minxss_xp_response[index_negative_finer_minxss_xp_response] = 0.0
   output_model_xp_signal_dn = minxss_model_xp_signal_fC*minxss_xp_gain_dn_fC
 
 
-  ;Multiply by he minxss xp area
+  ;Multiply by the minxss xp area
   if keyword_set(use_detector_area) then begin
   output_model_xp_signal_dn *= minxss_detector_response.xp_aperture_geometric_area
   minxss_model_xp_signal_fC *= minxss_detector_response.xp_aperture_geometric_area
