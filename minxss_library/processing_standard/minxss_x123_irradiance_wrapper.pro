@@ -14,7 +14,7 @@
 ; 2016-06-23  T. Woods  Original Code
 ; 2017-06-20  Chris Moore added the MinXSS calibration file energy bins, energy gain and offset (the true offset should be fit for every observation)
 ;
-pro minxss_x123_irradiance_wrapper_cm, raw_count_sp, uncertainty_raw_count_sp, irradiance_sp, result=result, fm=fm, directory_calibration_file=directory_calibration_file, debug=debug
+pro minxss_x123_irradiance_wrapper, raw_count_sp, uncertainty_raw_count_sp, irradiance_sp, result=result, fm=fm, directory_calibration_file=directory_calibration_file, debug=debug
 
   if n_params() lt 2 then begin
     print, 'USAGE:  x123_irradiance_wrapper, raw_count_sp, uncertainty_raw_count_sp, irradiance_sp, fm=fm, full_result=full_result'
