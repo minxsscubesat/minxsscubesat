@@ -131,7 +131,7 @@ unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStruct
 
 ; Get spacecraft location (lon, lat, alt)
 IF fm EQ 1 THEN id_satellite = 41474L ELSE $ 
-                id_satellite = 25544 ; FIXME: This is the ISS identifier, update once have number for MinXSS FM-2 
+                id_satellite = 43758
 spacecraft_location, interpolatedUnifiedPacket.time.jd, spacecraftLocation, sunlightFlag, id_satellite = id_satellite, tle_path = getenv('TLE_dir'), /KEEPNAN
 
 ; FIXME: 2016/09/05: JPM: Temporary fix for something wrong with spacecraft_location returning too few values
