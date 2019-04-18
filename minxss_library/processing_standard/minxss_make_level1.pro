@@ -176,7 +176,7 @@ n_times_nominal = n_elements(sp[0,*])
 initial_x123_irradiance = dblarr(n_spectra, n_times_nominal)
 
 for k = 0, n_times_nominal - 1 do begin
-  minxss_x123_irradiance_wrapper_cm, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
+  minxss_x123_irradiance_wrapper, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
   initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
 endfor
   
@@ -202,7 +202,7 @@ endfor
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
   ; Version 1 logic used (lowcnts lt low_limit).  Version 2 uses ((lowcnts-new_low_limit) lt 0)
   ; wsci1 = Version 1 selection (when low_limit = 7.0)
-  ;make sure the spacecraft is not in the South Atlantic Anomally (SAA)
+  ; make sure the spacecraft is not in the South Atlantic Anomally (SAA)
 
   ;  wsci1 = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
   ;    and (minxsslevel0d.adcs_mode eq 1) and (lowcnts lt 7.0) $
@@ -325,9 +325,6 @@ endfor
 
   ;  save energy bins for the return
   energy_bins_kev = nominal_x123_energy_bins_kev + energy_bins_offset
-
-
-
 
   ; Define the data structures that will be filled in later
   ;minxss-1 x123 science structure
@@ -481,7 +478,7 @@ num_xp_dark = num_dark
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;  6.  Calculate the MinXSS X123 irradiance
-    minxss_x123_irradiance_wrapper_cm, x123_cps_count_rate, x123_cps_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
+    minxss_x123_irradiance_wrapper, x123_cps_count_rate, x123_cps_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; 7. Put data into structures
@@ -584,14 +581,7 @@ endfor
       energy_bins_offset_zero = 0.0
       if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
 
-      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ ; input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, $
-        ;  output_uncertainty_XP_DN_signal_estimate_ARRAY=output_model_uncertainty_XP_DN_signal_estimate, $
-        ;  output_XP_fC_signal_estimate_ARRAY=output_model_XP_fC_signal_estimate, $
-        ;  output_uncertainty_XP_fC_signal_estimate_ARRAY=output_model_uncertainty_XP_fC_signal_estimate, $
-        ;  output_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_DN_signal_estimate_be_si_photopeak_only, $
-        ;  output_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only, $
-        ;  output_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_fC_signal_estimate_be_si_photopeak_only, $
-        ;  output_uncertainty_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_fC_signal_estimate_be_si_photopeak_only, $
+      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ 
         output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
         output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
