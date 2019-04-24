@@ -23,6 +23,7 @@
 ;	2017-06-11: Tom Woods: Updated with new file names:
 ;								         minxssM_solarSXR_levelNN_2016-05-16-mission_V002.ncdf
 ;								         where M=1 or 2, NN = 0C, 0D, 1, or 3
+;	2019-04-14: Tom Woods: Updated with Level '1X123' and '1XP'
 ;
 pro minxss_make_netcdf, level, fm=fm, version=version, verbose=verbose, debug=debug
 
@@ -85,6 +86,18 @@ case level_name of
 			outfile = 'minxss'+fm_str+'_solarSXR_level1_2016-05-16-mission_V'+ver_str+'.ncdf'
 			attfile = 'minxss'+fm_str+'_solarSXR_level1_metadata.att'
 			end
+	'1X123':  begin
+			indir = dir_data + 'level1' + slash
+			infile = 'minxss'+fm_str+'_l1_x123_mission_length.sav'
+			outfile = 'minxss'+fm_str+'_solarSXR_level1_x123_2016-05-16-mission_V'+ver_str+'.ncdf'
+			attfile = 'minxss'+fm_str+'_solarSXR_level1_x123_metadata.att'
+			end
+	'1XP':  begin
+			indir = dir_data + 'level1' + slash
+			infile = 'minxss'+fm_str+'_l1_xp_mission_length.sav'
+			outfile = 'minxss'+fm_str+'_solarSXR_level1_xp_2016-05-16-mission_V'+ver_str+'.ncdf'
+			attfile = 'minxss'+fm_str+'_solarSXR_level1_xp_metadata.att'
+			end
 	'3':	begin
 			indir = dir_data + 'level3' + slash
 			infile = 'minxss'+fm_str+'_l3_mission_length.sav'
@@ -124,6 +137,14 @@ case level_name of
 			end
 	'1':	begin
 			write_netcdf, minxsslevel1, indir + outfile, status, $
+				path=dir_metadata, att_file=attfile, /clobber
+			end
+	'1X123': begin
+			write_netcdf, minxsslevel1_x123, indir + outfile, status, $
+				path=dir_metadata, att_file=attfile, /clobber
+			end
+	'1XP':	begin
+			write_netcdf, minxsslevel1_xp, indir + outfile, status, $
 				path=dir_metadata, att_file=attfile, /clobber
 			end
 	'3':	begin

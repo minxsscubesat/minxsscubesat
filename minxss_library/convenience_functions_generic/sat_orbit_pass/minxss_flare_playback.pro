@@ -31,7 +31,7 @@
 ;		7/12/16  Tom Woods	Original code based on minxss_plot_flare.pro
 ;
 pro minxss_flare_playback, date, reload=reload, eps=eps,  chosen_filename=chosen_filename, $
-				script_path=script_path, debug=debug
+				script_path=script_path, debug=debug, station=station
 
 common minxss_data0c, hkdoy, hk, scidoy, sci, log, goes_doy, goes_xrsa, goes_xrsb, sunrise, sunset, base_year
 
@@ -49,11 +49,11 @@ endif
 ;	read the MinXSS L0C merged file, GOES XRS data, and MinXSS Orbit Number data
 ;
 dir_merged = getenv('minxss_data')+slash+'merged'+slash
-dir_level0c = getenv('minxss_data') + slash+'fm1'+slash+'level0c'+slash
+dir_level0c = getenv('minxss_data') + slash+'fm2'+slash+'level0c'+slash
 if n_elements(hkdoy) lt 2 or keyword_set(reload) then begin
   ; file0c = 'minxss1_l0c_hk_mission_length.sav'
   ;  "all" file has all packet types for the MinXSS-1 mission (as of 6/10/2016)
-  file0c = 'minxss1_l0c_all_mission_length.sav'
+  file0c = 'minxss2_l0c_all_mission_length.sav'
   print, 'Loading ', dir_level0c+file0c
   restore, dir_level0c + file0c		; hk
   ;
@@ -88,7 +88,7 @@ if n_elements(hkdoy) lt 2 or keyword_set(reload) then begin
   endelse
   if strlen(tle_dir) gt 0 then tle_dir += slash
   orbit_dir = tle_dir +'orbit_number'+slash
-  orbit_num_file = 'minxss_orbit_number.dat'
+  orbit_num_file = 'minxss2_orbit_number.dat'
   orbit_num = read_dat( orbit_dir + orbit_num_file )
   ;  make DOY value
   sunrise = orbit_num[1,*] - base_year*1000.D0 + orbit_num[3,*]/(24.D0*3600.)
@@ -140,9 +140,11 @@ loopCnt = 0L
   IF keyword_set(script_path) THEN BEGIN
     spath_name = script_path
   ENDIF ELSE BEGIN
-    ;  default is to use directory $ISIS_scripts_dir
-    spath_name = getenv('ISIS_scripts_dir')
-    ; else path_name is empty string
+    if keyword_set(station) then begin
+      spath_name='C:\Users\OPS\Dropbox\Hydra\MinXSS\HYDRA_FM-2_'+strtrim(station,2)+'\Scripts\'
+    endif else begin
+      spath_name='C:\Users\OPS\Dropbox\Hydra\MinXSS\HYDRA_FM-2_Fairbanks\Scripts\'
+    endelse
   ENDELSE
   IF strlen(spath_name) GT 0 THEN BEGIN
     ; check if need to add slash
@@ -171,7 +173,7 @@ fast_count = sci.x123_fast_count / (sci.x123_accum_time/1000.)
 fast_limit = 1.E5
 slow_count = sci.x123_slow_count / (sci.x123_live_time/1000.)
 
-sps_sum = total(sci.sps_data[0:3],1) / float(sci.sps_xps_count)
+sps_sum = total(sci.sps_data[0:3],1) / float(sci.xps_data)
 sps_sum_sun_min = 280000.   ; June 2016 it is 310K; this  allows for 1-AU changes and 5% degradation
 
 ; exclude spectra with radio on (flag > 1), not in sun, and high low counts
@@ -201,7 +203,7 @@ wxrs1 = where( (goes_doy ge doy) and (goes_doy lt (doy+1)), num_xrs1 )
 if (num_xrs1 le 1) then begin
 	print, 'ERROR: no GOES X-ray data for DOY = ' + doy_str
 	if keyword_set(debug) then stop, 'DEBUG minxss_flare_playback ...'
-	return
+	;return
 endif
 
 LOOP_START:
@@ -226,7 +228,7 @@ xrange = hour_range
 
 yr = [1E1,1E5]
 ytitle='X123 Total Signal (cts/sec)'
-mtitle='MinXSS-1'
+mtitle='MinXSS-2'
 
 plot, sphour, fast_count1, /nodata, psym=1, xr=xrange, xs=1, yr=yr, ys=1, $
 	xtitle=xtitle, ytitle=ytitle, title=mtitle, /ylog
@@ -471,7 +473,7 @@ print, ' '
   ;
   ;		Read playback_flare_template SCRIPT file
   ;
-  filename = spath_name+'playback_flare_template.prc'
+  filename = 'C:\Users\OPS\Dropbox\Hydra\MinXSS\HYDRA_FM-2_Fairbanks\Scripts\scripts_auto_template\playback_flare_template.prc'
   finfo = file_info(filename)
   openr, lun, filename, /get_lun
   scriptbytes = bytarr(finfo.size)
@@ -483,10 +485,8 @@ print, ' '
   ;		write playback_flare_YYYYDOY SCRIPT file
   ;
   filledscript = string(scriptbytes)
-  filledscript = strreplace(filledscript, ['<THKstartSector>', '<THKstopSector>', '<THKstepSize>', $
-  						'<TSCIstartSector>', '<TSCIstopSector>', '<TSCIstepSize>'], $
-  					strtrim(long([HKstartSector, HKstopSector, HKstepSize, $
-  						SCIstartSector, SCIstopSector, SCIstepSize]),2))
+  filledscript = strreplace(filledscript, ['<THKstartSector>', '<TSCIstartSector>', '<StepSize>'], $
+  					strtrim(long([HKstartSector, SCIstartSector, SCIstepSize]),2))
 
 IF keyword_set(chosen_filename) then new_file = chosen_filename + '.prc' else begin
   ;Flare start hour
@@ -506,10 +506,8 @@ if (doPreflare ne 0) then begin
   ;		write playback_preflare_YYYYDOY SCRIPT file
   ;
   filledscript = string(scriptbytes)
-  filledscript = strreplace(filledscript, ['<THKstartSector>', '<THKstopSector>', '<THKstepSize>', $
-  						'<TSCIstartSector>', '<TSCIstopSector>', '<TSCIstepSize>'], $
-  					strtrim(long([preHKstartSector, preHKstopSector, preHKstepSize, $
-  						preSCIstartSector, preSCIstopSector, preSCIstepSize]),2))
+  filledscript = strreplace(filledscript, ['<THKstartSector>','<TSCIstartSector>','<StepSize>'], $
+  					strtrim(long([preHKstartSector, preSCIstartSector, preSCIstepSize]),2))
 
 IF keyword_set(chosen_filename) then new_file = chosen_filename + '_preflare.prc' else begin
   hr = xprea

@@ -71,7 +71,7 @@ if keyword_set(verbose) then begin
 	print, 'MinXSS-2 scripts are being generated for ',station_caps,' station...'
 	if (valid_2 eq 1) then print, '   and for ',station_remote_caps,' remote station.'
 endif
-	
+
 ;
 ;	Get TLE path
 ;  		default is to use directory $TLE_dir
@@ -140,12 +140,14 @@ if (number_passes lt 2) then begin
 endif
 
 pass_date_str = strarr(number_passes)
+pass_hour = fltarr(number_passes)
 for k=0,number_passes-1 do begin
 	caldat, passes[k].start_jd, month, day, year, hh, mm, ss
 	; pass_date_str[] is needed for /auto_pass option below
 	pass_date_str[k] = string(long(year),format='(I04)') + string(long(month),format='(I02)')+$
 						string(long(day),format='(I02)') + '_' + $
 						string(long(hh),format='(I02)') + string(long(mm),format='(I02)')
+	pass_hour[k] = hh + mm/60. + ss/3600.
 endfor
 
 ;
@@ -207,9 +209,24 @@ endif
 ;	2.  Delete old scripts
 ;	3.	Create new scripts
 ;
-elev_ranges = [ [0.,5], [5, 15], [15, 90] ]
+elev_ranges = [ [0.,2.], [2, 10], [10, 90] ]
 script_names = [ 'pass_do_nothing.prc', 'route_realtime.prc', 'playback2_last_24_hours.prc' ]
-script_plan_names = [ 'EL<5: Do Nothing', '5<EL<15: Route Data', 'Playback Last 24 Hours' ]
+script_plan_names = [ 'EL<2: Do Nothing', '2<EL<10: Route Data', 'Playback Last 24 Hours' ]
+;  Fairbanks doesn't have mountains to mask out
+if (station_caps eq 'FAIRBANKS') then begin
+  elev_ranges = [ [0.,2.], [2, 5], [5, 90] ]
+  script_plan_names = [ 'EL<2: Do Nothing', '2<EL<5: Route Data', 'Playback Last 24 Hours' ]
+endif
+; Boulder has special plans for 2019 Recovery of MinXSS-2
+if (station_caps eq 'BOULDER') then begin
+  DO_MINXSS2_RECOVERY_SCRIPTS = 1
+  if (DO_MINXSS2_RECOVERY_SCRIPTS ne 0) then begin
+    day_script_names = [ 'pass_do_nothing.prc', 'pass_do_nothing.prc', 'route_realtime.prc' ]
+    ;  ATTEMPT TO DO HARD RESET WHEN IN THE DARK IN BOULDER
+    night_script_names = [ 'pass_do_nothing.prc', 'pass_do_nothing.prc', 'auto_hard_reset.prc' ]
+  endif
+endif
+  
 num_ranges = n_elements(script_names)
 
 ;
@@ -278,6 +295,16 @@ for k=0L, number_passes-1 do begin
 		endif
 	endfor
 	; Note that pass_date_str[] was created above after reading the passes data
+	if (DO_MINXSS2_RECOVERY_SCRIPTS ne 0) then begin
+	   ; SPECIAL RECOVERY OPTION FOR MINXSS-2 WITH SELECTION OF SCRIPT BASED ON DAY OR NIGHT TIME FOR PASS
+	   ; pass_hour is calculated as hours in UT on pass day while parsing the PASS data file
+	   ; NIGHT = 4 UT (10 PM MDT or 9 PM MST) to 11 UT (5 AM MDT or 4 AM MST)
+	   if (pass_hour[k] ge 4.0 and pass_hour[k] le 11.0) then begin
+	     script_names = night_script_names
+	   endif else begin
+	     script_names = day_script_names
+	   endelse
+	endif
 	new_file = pass_date_str[k] + 'UT_' + script_names[ii]
 	template_file = script_names[ii]
 	;  COPY template file TO NEW FILE
@@ -341,7 +368,6 @@ endif
 ;
 ; 5. generate set_ephemeris_latest.prc HYDRA script
 ;
-; +++++ TO DO (fix)
 make_set_ephemeris_script, /latest
 
 if keyword_set(debug) then stop, 'DEBUG plan_scripts_minxss2 results ...'

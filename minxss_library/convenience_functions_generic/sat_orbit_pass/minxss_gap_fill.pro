@@ -58,15 +58,16 @@ restore,file
 ; TODO - need to find the HK and SCI overwrite times
 ;only look back as far as the sd_offset will not be written over (~1030016 seconds per sd rollover)
 adcsoverwrite = where(adcs4.time gt adcs4[-1].time - 1000000.0)
+validhk = where(hk.sd_hk_write_offset lt 5e5 and hk.time gt hk[-1].time - 2500000)
 
 ;create arrays to hold the differences between sd_write_offsets
-diffarr = make_array(N_ELEMENTS(hk.time)-1,1,value=0.)
+diffarr = make_array(N_ELEMENTS(hk[validhk].time)-1,1,value=0.)
 scidiffarr = make_array(N_ELEMENTS(sci.time)-1,1,value=0.)
 adcsdiffarr = make_array(N_ELEMENTS(adcs4[adcsoverwrite].time)-1,1,value=0.)
 
 ;find differences between sd_hk_write_offsets
-for i = 0, N_ELEMENTS(hk.time)-2 do begin
-  diffarr[i] = hk[i+1].sd_hk_write_offset-hk[i].sd_hk_write_offset
+for i = 0, N_ELEMENTS(hk[validhk].time)-2 do begin
+  diffarr[i] = hk[validhk[i+1]].sd_hk_write_offset-hk[validhk[i]].sd_hk_write_offset
 endfor
 ;find differences between sd_sci_write_offsets
 for i = 0, N_ELEMENTS(sci.time)-2 do begin
@@ -97,7 +98,7 @@ location_diff_adcs = reverse(sort(adcsdiffarr))
 ;cutoffs for plotting
 war = where(diffarr gt 1000 and diffarr lt 200000)
 sciwar = where(scidiffarr gt 5000)
-adcswar = where(adcsdiffarr gt 5000)
+adcswar = where(adcsdiffarr gt 10000)
 
 ;if keyword /plots is set, plot hk
 if keyword_set(plots) then begin
@@ -106,8 +107,8 @@ endif
 ;then overplot the largest differences in data
 for i = 0, N_ELEMENTS(war)-1 do begin
   
-  hkpt1 = [hk[war[i]].time,hk[war[i]+1].time]
-  hkpt2 = [hk[war[i]].sd_hk_write_offset,hk[war[i]+1].sd_hk_write_offset]
+  hkpt1 = [hk[war[i]+validhk[0]].time,hk[war[i]+1+validhk[0]].time]
+  hkpt2 = [hk[war[i]+validhk[0]].sd_hk_write_offset,hk[war[i]+1+validhk[0]].sd_hk_write_offset]
   
   if keyword_set(plots) then begin
     fill = plot(hkpt1,hkpt2,/overplot,symbol='x',color='tomato')
@@ -149,14 +150,19 @@ endfor
 ;LOADS the template script
 ;
 
-hydra_dir = getenv('Hydra')
-if strlen(hydra_dir) gt 0 then begin
-  if ((strpos(hydra_dir,slash,/reverse_search)+1) lt strlen(hydra_dir)) then hydra_dir += slash
+fairbanks_hydra_dir = getenv('MINXSS2_FAIRBANKS_scripts_dir')
+if strlen(fairbanks_hydra_dir) gt 0 then begin
+  if ((strpos(fairbanks_hydra_dir,slash,/reverse_search)+1) lt strlen(fairbanks_hydra_dir)) then fairbanks_hydra_dir += slash
+endif
+
+boulder_hydra_dir = getenv('MINXSS2_BOULDER_scripts_dir')
+if strlen(fairbanks_hydra_dir) gt 0 then begin
+  if ((strpos(fairbanks_hydra_dir,slash,/reverse_search)+1) lt strlen(fairbanks_hydra_dir)) then fairbanks_hydra_dir += slash
 endif
 
 ;path to scripts_to_run_automatically folder
-if isFairbanks eq 1 then passdir = hydra_dir+'MinXSS'+slash+'HYDRA_FM-2_Fairbanks'+slash+'Scripts'+slash+'scripts_to_run_automatically'+slash
-if isFairbanks eq 0 then passdir = hydra_dir+'MinXSS'+slash+'HYDRA_FM-2_Boulder'+slash+'Scripts'+slash+'scripts_to_run_automatically'+slash
+if isFairbanks eq 1 then passdir = fairbanks_hydra_dir+'scripts_to_run_automatically'+slash
+if isFairbanks eq 0 then passdir = boulder_hydra_dir+'scripts_to_run_automatically'+slash
 
 ;disect the name to rip only the date and time stamp
 if keyword_set(init) then begin
@@ -183,11 +189,10 @@ for i = 0,N_ELEMENTS(passfiles)-1 do begin
 endfor
 
 ;path to the template script playback_custom_template.prc
-custom_template = hydra_dir+'MinXSS'+slash+'HYDRA_FM-2_Fairbanks'+slash+'Scripts'+slash+'scripts_auto_template'+slash+'playback_custom_template.prc'
-flare_template = hydra_dir+'MinXSS'+slash+'HYDRA_FM-2_Fairbanks'+slash+'Scripts'+slash+'scripts_auto_template'+slash+'playback_flare.prc'
+custom_template = fairbanks_hydra_dir+'scripts_auto_template'+slash+'playback_custom_template.prc'
+flare_template = boulder_hydra_dir+'scripts_auto_template'+slash+'playback_flare.prc'
 
 for i = 0,nfiles do begin
-  
   if largest_diff_hk[gooddata[i]] ge 1000 then begin  
     ;read the CUSTOM PLAYBACK template script
     finfo = file_info(custom_template)
@@ -204,8 +209,8 @@ for i = 0,nfiles do begin
     ;
   
     ;Edit the start/stop values for HK, SCI, and ADCS. Also change the stop value of the LOG to be same as the start value
-    newscript = strjoin(strsplit(filledscript,'HKstartSector = 32333',/regex,/extract,/preserve_null),'HKstartSector = '+strtrim(string(hk[location_diff_hk[gooddata[i]]].sd_hk_write_offset),1))
-    newscript = strjoin(strsplit(newscript,'HKstopSector = 32333',/regex,/extract,/preserve_null),'HKstopSector = '+strtrim(string(hk[location_diff_hk[gooddata[i]]+1].sd_hk_write_offset),1))
+    newscript = strjoin(strsplit(filledscript,'HKstartSector = 32333',/regex,/extract,/preserve_null),'HKstartSector = '+strtrim(string(hk[location_diff_hk[gooddata[i]]+validhk[0]].sd_hk_write_offset),1))
+    newscript = strjoin(strsplit(newscript,'HKstopSector = 32333',/regex,/extract,/preserve_null),'HKstopSector = '+strtrim(string(hk[location_diff_hk[gooddata[i]]+1+validhk[0]].sd_hk_write_offset),1))
     newscript = strjoin(strsplit(newscript,'SCIstartSector = 1334691',/regex,/extract,/preserve_null),'SCIstartSector = '+strtrim(string(sci[location_diff_sci[i]].sd_sci_write_offset),1))
     newscript = strjoin(strsplit(newscript,'SCIstopSector = 1335594',/regex,/extract,/preserve_null),'SCIstopSector = '+strtrim(string(sci[location_diff_sci[i]+1].sd_sci_write_offset),1))
     newscript = strjoin(strsplit(newscript,'ADCSstartSector = 655283',/regex,/extract,/preserve_null),'ADCSstartSector = '+strtrim(string(adcs4[location_diff_adcs[i]+adcsoverwrite[0]].sd_adcs_write_offset),1))

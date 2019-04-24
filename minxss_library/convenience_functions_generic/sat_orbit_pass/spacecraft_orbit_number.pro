@@ -47,19 +47,64 @@
 ;	HISTORY
 ;		2016-May-14  T. Woods	Original Code
 ;		2016-Jun-22  T. Woods	Updated to include sunrise time, sunset time, beta angle
-;		2017-Jan-04  T. Woods Changed so backup file has date and stored in "backup" directory
+;		2017-Jan-04  T. Woods   Changed so backup file has date and stored in "backup" directory
+;		2018-Jan-05  T. Woods   Updated to add column for if Pass is during an orbit (/stations)
 ;
-pro spacecraft_orbit_number, location, sc_name, data=data, debug=debug, verbose=verbose
+pro spacecraft_orbit_number, location, sc_name, data=data, stations=stations, $
+								debug=debug, verbose=verbose
 
 ;
 ;	1.  Check inputs
 ;
 data=-1L
 if n_params() lt 2 then begin
-	print, 'USAGE: satellite_orbit_number, location, sc_name [, data=data, /verbose, /debug]
+	print, 'USAGE: satellite_orbit_number, location, sc_name [, data=data, stations=stations, /verbose, /debug]
 	return
 endif
 if keyword_set(debug) then verbose = 1
+
+; New for 2019 to add Stations option and to identify number of minutes during orbit is with PASS time
+if not keyword_set(stations) then stations=['Boulder','Fairbanks']
+num_stations = n_elements(stations)
+station_long_lat = fltarr( 2, num_stations )  ; longtitude & latitude of each station
+for ii=0,num_stations-1 do begin
+	station_caps = strupcase(stations[ii])
+	if (station_caps eq 'BOULDER') or (station_caps eq 'PARKER') or (station_caps eq 'COLORADO') then begin
+		station_long_lat[0,ii] = -105.2705  ; longitude (W = negative, E = positive)
+		station_long_lat[1,ii] = 40.015	; latitude
+	endif else if (station_caps eq 'FAIRBANKS') or (station_caps eq 'ALASKA') then begin
+		station_long_lat[0,ii] = -147.7164  ; longitude
+		station_long_lat[1,ii] = 64.8378	; latitude
+	endif else begin
+		; don't know this station name / location (yet)
+		if keyword_set(verbose) then print, '*** WARNING: ignoring station = ',stations[ii]
+	endelse
+endfor
+;
+;	Find times when ground station can see spacecraft
+;	Check each ground station to meet minimum distance requirement (same logic as in spacecraft_pass.pro)
+;
+location_pass = fltarr( n_elements(location) )
+for ii=0,num_stations-1 do begin
+  if (station_long_lat[0,ii] ne 0) and (station_long_lat[1,ii] ne 0) then begin
+	dLat = (location.latitude - station_long_lat[1,ii]) / !radeg  ; convert to radians
+	dLong = (location.longitude - station_long_lat[0,ii])
+	wneg = where(dLong gt 180, numneg)
+	if (numneg gt 0) then dLong[wneg] -= 360
+	wpos = where(dLong lt -180, numpos)
+	if (numpos gt 0) then dLong[wpos] += 360
+	dLong /= !radeg
+	Lat1 = station_long_lat[1,ii] / !radeg
+	Lat2 = location.latitude / !radeg
+	chord = (sin(dLat/2.))^2.   +   cos(Lat1) * cos(Lat2) * (sin(dLong/2.))^2.
+	arc = abs( 2.0 * atan( sqrt(chord), sqrt(1.0 - chord) ) )
+	R_earth = 6371.0D0  ; km
+	distance = R_earth * arc
+	pass_limit = R_earth * acos( R_earth / location.altitude )
+	wgood = where( (distance - pass_limit) lt 0.0, num_good )
+	if (num_good ge 2) then location_pass[wgood] = 1  ; set flag that this location has pass
+  endif
+endfor
 
 ;	check early that location is indeed structured array
 ;		of time_jd, longitude, latitude, altitude, sunlight
@@ -89,6 +134,7 @@ if strlen(path_name) gt 0 then path_name += 'orbit_number' + slash
 file_name = strlowcase( sc_name ) + '_orbit_number.dat'
 if not file_test( path_name + file_name ) then begin
 	print, 'ERROR finding Orbit Number File: ', path_name + file_name
+	if keyword_set(debug) then stop, 'DEBUG spacecraft_orbit_number.pro ...'
 	return
 endif
 if keyword_set(verbose) then print, '*** Orbit Number File = ', path_name+file_name
@@ -98,6 +144,20 @@ if keyword_set(verbose) then print, '*** Orbit Number File = ', path_name+file_n
 ;			also make a backup file
 ;
 data_old = read_dat( path_name+file_name )
+
+; 2019 version has extra column
+old_size=size(data_old)
+if (old_size[0] ne 2) or (old_size[1] lt 6) or (old_size[1] gt 7) then begin
+	print, 'ERROR reading Orbit Number File with wrong number of columns !'
+	if keyword_set(debug) then stop, 'DEBUG spacecraft_orbit_number.pro ...'
+endif
+if (old_size[1] eq 6) then begin
+	; add extra column for PASS information
+	if keyword_set(verbose) then print, '*** Adding Extra Column for PASS information.'
+	data_old_org = data_old
+	data_old = dblarr( 7, old_size[2] )
+	for ii=0,5 do data_old[ii,*] = data_old_org[ii,*]
+endif
 
 path_name2 = path_name + 'backup' + slash
 file_name2 = file_name + '.backup_' + strtrim(long(jd2yd(systime(/julian))),2)
@@ -147,7 +207,7 @@ gap_min = 10./(24.D0*60.)  ; 10 min gap required to signal ascending phase trans
 wnew = where( (pos_time_step-org_time_step) gt gap_min, num_new_orbits )
 if keyword_set(verbose) then print, '*** Adding ', strtrim(num_new_orbits+1,2), ' new orbits...'
 
-data = [ [data_old], [fltarr(6,num_new_orbits)] ]
+data = [ [data_old], [fltarr(7,num_new_orbits)] ]
 kstart = n_elements(data_old[0,*])
 kcnt = -1L
 
@@ -216,6 +276,12 @@ for k=0L,num_new_orbits-1 do begin
 		if (numpos gt 0) then beta = acos(  max(sun_angle[wpos] ) ) * 180. / !pi else beta=0.0
 		; stop, 'DEBUG beta angle ...'
 		data[5,kstart+kcnt] = beta
+		;  NEW for 2019 is to add PASS_minutes column
+		wpass = where( location_pass[org_i1:org_i2] gt 0, num_pass )
+		pass_minutes = num_pass / 60.  ; convert seconds to minutes
+		if (pass_minutes lt 1) then pass_minutes = 0.0  ; truncate very short passes
+		; stop, 'DEBUG PASS_flag ...'
+		data[6,kstart+kcnt] = pass_minutes
 	endif
 endfor
 
@@ -226,9 +292,9 @@ data = data[*,0:kstart+kcnt]
 ;	5.  Write new Orbit Number data file
 ;
 if keyword_set(verbose) then print, '*** Writing back to Orbit Number File'
-write_dat, data, file=path_name+file_name, format='(F6.0,F10.0,F8.0,F8.0,F8.0,F6.1)', $
+write_dat, data, file=path_name+file_name, format='(F6.0,F10.0,F8.0,F8.0,F8.0,F6.1,F6.1)', $
 				lintext='File '+file_name, $
-				coltext='Orbit#, YYYYDOY, UT_sec Sunrise_UTsec Sunset_UTsec Beta_Angle'
+				coltext='Orbit#, YYYYDOY, UT_sec Sunrise_UTsec Sunset_UTsec Beta_Angle PASS_minutes'
 
 if keyword_set(debug) then stop, 'DEBUG satellite_orbit_number() results ...'
 

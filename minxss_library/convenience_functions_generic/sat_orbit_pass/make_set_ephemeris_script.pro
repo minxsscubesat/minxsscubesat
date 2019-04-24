@@ -14,7 +14,7 @@
 ; Ephemeris can be validated with conversion of ECEF values to LLH at  (link in Firefox browser)
 ;     http://www.oc.nps.edu/oc2902w/coord/llhxyz.htm
 ;     Those values should be near Boulder (40 Lat, -105 Long) (-105 is same as 255 Long value)
-;     
+;
 ; History
 ;   6/17/16 Amir Caspi    Original Code
 ;   6/25/16 Tom Woods   Updated with comments
@@ -94,15 +94,15 @@ fracday = hr/24. + mn/60./24. + sec/60./60./24.
 
 ; fix year to be greater than 2016
 if (yr lt 2016) or (yr gt 2025) then begin
-  if (yr ge 16) and (yr le 25) then begin 
+  if (yr ge 16) and (yr le 25) then begin
       yr = 2000 + yr
       print, 'WARNING:  changing YEAR to be ', yr
   endif else begin
       print, 'ERROR with YEAR value, exiting...'
       return
-  endelse  
+  endelse
 endif
-  
+
 ; always make verbose
 verbose = 1
 
@@ -119,13 +119,16 @@ verbose = 1
   free_lun, lun
 
   jd_start = ymd2jd(yr, mo, day + fracday)
-  MINXSS2_SAT_ID = 43807L  ; 12/10/18 solution (might change!)
+  ; MINXSS2_SAT_ID = 43807L  ; 12/10/18 solution (might change!)
+  ;MINXSS2_SAT_ID = 43817L  ; 12/27/18 solution (might change!) OPTIONS are 43807, 43817, 43818
+  MINXSS2_SAT_ID = 43758L  ; 1/10/19 solution (might change!)
   spacecraft_location, id_satellite=MINXSS2_SAT_ID, jd_start, location, sunlight, eci_pv = pv, /J2000, verbose=verbose
 ;  pv = [123.456, 456.789, -789.000, 321.123, -654.456, 987.789] ; TESTING PURPOSES
+
   filledscript = string(scriptbytes)
   filledscript = strreplace(filledscript, ['<TephYear>', '<TephMonth>', '<TephDay>', '<TephHour>', '<TephMinute>', '<TephSecond>'], strtrim(fix([yr - 2000, mo, day, hr, mn, sec]),2))
   filledscript = strreplace(filledscript, ['<TephPosX>', '<TephPosY>', '<TephPosZ>', '<TephVelX>', '<TephVelY>', '<TephVelZ>'], strtrim(pv,2))
-  
+
   date_str = string(long(yr),format='(I04)') + string(long(mo),format='(I02)') + string(long(day),format='(I02)') + $
         '_' + string(long(hr),format='(I02)') + string(long(mn),format='(I02)') + 'UT'
   new_file = 'set_ephemeris_' + date_str + '.prc'
@@ -146,11 +149,11 @@ verbose = 1
   copy_cmd = file_copy + '"' + filename + '" "' + $
     scripts_Boulder+new_file + '"'
   spawn, copy_cmd, exit_status=status
-  
+
   scripts_Fairbanks = scripts_dir + 'HYDRA_FM-2_Fairbanks' + slash + 'Scripts' + slash
   print, '*** Also saving this into ', scripts_Fairbanks
   copy_cmd = file_copy + '"' + filename + '" "' + $
     scripts_Fairbanks+new_file + '"'
   spawn, copy_cmd, exit_status=status
-  
+
 END

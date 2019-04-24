@@ -93,7 +93,7 @@ pro spacecraft_pass, date, pass_array, number_passes, id_satellite=id_satellite,
 	if keyword_set(id_satellite) then begin
 		satid = id_satellite
 	endif else begin
-		satid = 25544		; Satellite ID for ISS
+		satid = 43817		; Satellite ID for MinXSS-2
 	endelse
 	if not keyword_set(satellite_name) then satellite_name = strtrim(satid,2)
 
@@ -120,7 +120,7 @@ pro spacecraft_pass, date, pass_array, number_passes, id_satellite=id_satellite,
 	;
 	;	Set Pass Elevation Minimum
 	;
-	pass_elevation_min = 10.0  ; degrees
+	pass_elevation_min = 5.0  ; degrees
 	if keyword_set(elevation_min) then begin
 		if (elevation_min[0] gt 0) and (elevation_min[0] lt 90) then begin
 			pass_elevation_min = elevation_min[0]
@@ -157,10 +157,10 @@ pro spacecraft_pass, date, pass_array, number_passes, id_satellite=id_satellite,
 	;		configure results for optional return for spacecraft_pass
 	;
 	spacecraft_location, time, location, sunlight, id_satellite=satid, tle_path=path_name, $
-		verbose=verbose, sun_dot_pos=sun_dot_pos, debug=debug
+		verbose=verbose, sun_dot_pos=sun_dot_pos, eci_pv=eci_pv, debug=debug
 	; stop, 'DEBUG time, location, sunlight ...'
 	sc_locate1 = { time_jd: 0.0D0, longitude: 0.0, latitude: 0.0, altitude: 0.0, $
-				sunlight: 0, sun_dot_pos: 0.0 }
+				sunlight: 0, sun_dot_pos: 0.0, doppler_vel: 0.0, pass_range: 0.0 }
 	sc_location = replicate(sc_locate1,n_elements(time))
 	sc_location.time_jd = time
 	sc_location.longitude = reform(location[0,*])
@@ -168,6 +168,34 @@ pro spacecraft_pass, date, pass_array, number_passes, id_satellite=id_satellite,
 	sc_location.altitude = reform(location[2,*])
 	sc_location.sunlight = sunlight
 	sc_location.sun_dot_pos = sun_dot_pos
+
+  ;
+  ;  Calculate Doppler Velocity
+  ;    View_Vector = SC ECI Location -  Ground Station ECI location
+  ;    Doppler_Velocity = rate of change of View_Distance
+  ;
+  pv_size = size(eci_pv)
+  ; help, eci_pv
+  ; print, pv_size
+  ;   Can Process Doppler Velocity if have 2D array of PV
+  if (pv_size[0] eq 2) then begin
+  	  ; stop, 'spacecraft_pass:  DEBUG eci_pv ...'
+	  gs_lla = fltarr(3,pv_size[2])
+	  gs_lla[0,*] = gs_lon_lat[1]   ;  Latitude
+	  gs_lla[1,*] = gs_lon_lat[0]	;  Longitude
+	  gs_lla[2,*] = 1.0  ; in km, compromise of Boulder at 1.6 km and Fairbanks at 0.2 km
+	  gs_jd = time
+	  lla_jd_to_eci, gs_jd, gs_lla, gs_coord  ; convert from LLA to ECI in km units
+	  view_vector = [eci_pv[0,*] - gs_coord[0,*], eci_pv[1,*] - gs_coord[1,*], eci_pv[2,*] - gs_coord[2,*]]
+	  view_dist = reform(sqrt( view_vector[0,*]^2. + view_vector[1,*]^2. + view_vector[2,*]^2.))
+	  time_step = ((shift(time,-1) - shift(time,1))/2.)*(24.*3600.) ; convert time_step to seconds
+	  time_step[0] = time_step[1] & time_step[pv_size[2]-1] = time_step[pv_size[2]-2]
+	  doppler = ((shift(view_dist,-1) - shift(view_dist,1))/2./time_step)
+	  doppler[0] = doppler[1] & doppler[pv_size[2]-1] = doppler[pv_size[2]-2]
+	  sc_location.doppler_vel = doppler   ; km/sec
+	  sc_location.pass_range = view_dist  ; km
+	  ; stop, 'spacecraft_pass:  DEBUG doppler and view_dist ...'
+  endif
 
 	;
 	;	Find times when ground station can see spacecraft
@@ -185,6 +213,7 @@ pro spacecraft_pass, date, pass_array, number_passes, id_satellite=id_satellite,
 	arc = abs( 2.0 * atan( sqrt(chord), sqrt(1.0 - chord) ) )
 	R_earth = 6371.0D0  ; km
 	distance = R_earth * arc
+	; stop, 'spacecraft_pass:  DEBUG doppler, view_dist, and arc distance ...'
 
 	pass_limit = R_earth * acos( R_earth / reform(location[2,*]) )
 	wgood = where( (distance - pass_limit) lt 0.0, num_good )
