@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Accepts array of telemetry packets, sorts the packets in time, and returns them sorted by time
-;	This does require that the structure has TIME tag to be used for sorting
+;	  This does require that the structure has time tag to be used for sorting
 ;
 ; CATEGORY:
 ;   MinXSS Generic, but primarily for MinXSS Level 0B and 0C
