@@ -58,6 +58,7 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
     ; process all possible dates
     start_yd = 2019001L
     stop_yd = long(jd2yd(systime(/julian))+0.5)
+    yyyydoy = [start_yd, stop_yd]
   endelse
   if n_elements(yyyydoy) GT 1 THEN stop_yd = long(yyyydoy[1]) ELSE stop_yd = start_yd
 
@@ -87,6 +88,8 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
 
   ; Identify which file can first be used: all files with date > start_yd
   start_index = 0L
+  first_file = daxss_filename_parts(fileNamesArray[0])
+  start_yd = first_file.yyyydoy
 
   ; Make array of yd and jd
   jd1 = yd2jd(start_yd)
@@ -109,9 +112,7 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
     for iFile = start_index, numfiles-1 do begin
       ; identify which file can first be read
       fn_parts = daxss_filename_parts(fileNamesArray[iFile])
-
-      ;    if (fn_parts.yyyydoy lt yd) then start_index = iFile + 1 else begin
-      IF (fn_parts.yyyydoy LT (yd - 1)) THEN CONTINUE ELSE BEGIN
+      IF (fn_parts.yyyydoy LE (yd - 1)) THEN CONTINUE ELSE BEGIN
 
         ; Null out all variables before reading new ones in to avoid stale data propagation
         sci = !NULL
@@ -150,7 +151,7 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
     doy_str = strtrim(doy, 2)
     if strlen(doy_str) eq 1 then doy_str = '00' + doy_str $
     else if strlen(doy_str) eq 2 then doy_str = '0' + doy_str
-    str_yd = strtrim(year,2) + '_' + doy_str
+    str_yd = strtrim(year, 2) + '_' + doy_str
     outputFilename = 'daxss' + '_l0c_' + str_yd
     full_Filename = getenv('minxss_data') + path_sep() + 'fm4' + path_sep() + 'level0c' + path_sep() + outputFilename + '.sav'
 
