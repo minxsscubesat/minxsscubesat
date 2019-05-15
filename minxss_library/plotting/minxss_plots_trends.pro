@@ -67,9 +67,9 @@ IF keyword_set(verbose) THEN message, /INFO, "Using flight model FM = " + strtri
 IF keyword_set(MISSION_LENGTH) THEN BEGIN 
   IF fm EQ 1 THEN BEGIN
     timeRange = [20160516, 20170514]
-  ENDIF ELSE BEGIN
+  ENDIF ELSE IF fm EQ 2 THEN BEGIN
     timerange = [20181203, JPMjd2yyyymmdd(systime(/JULIAN, /UTC))]
-  ENDELSE
+  ENDIF
 ENDIF
 
 IF timeRange NE !NULL THEN BEGIN
@@ -109,7 +109,7 @@ ENDIF ELSE IF timeRange NE !NULL THEN BEGIN
   ENDELSE
 ENDIF ELSE begin
   ; no data or time inputs were provided so need to exit
-  print, 'USAGE: minxss_trend_plots, packet, timeRange=timeRange, items=items, tlmType = tlmType, level=level, layout=layout, /PDF, /VERBOSE, /NO_TIME_LIMIT'
+  message, /INFO, 'USAGE: minxss_trend_plots, packet, timeRange=timeRange, items=items, tlmType = tlmType, level=level, layout=layout, /PDF, /VERBOSE, /NO_TIME_LIMIT'
   return
 ENDELSE
 

@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   A wrapper for minxss_plots_trends that will produce a PDF for each day of the mission
-;   and the a single of plots spanning the whole mission
+;   and a single PDF of plots spanning the whole mission
 ;
 ; INPUTS:
 ;   None
@@ -33,14 +33,14 @@ PRO minxss_plots_trends_daily_wrapper
 ; Make an array with the date of each day of the mission
 startjd = jpmiso2jd('2018-12-03T21:28:22Z')
 endjd = systime(/JULIAN, /UTC)
-datesOfMission = JPMjd2yyyymmdd(timegen(start=startjd, final=endjd, units='Days'))
+datesOfMission = JPMjd2yyyymmdd(timegen(start = startjd, final = endjd, units = 'Days'))
 
 ; Loop the PDF plotter for each day
 FOREACH date, datesOfMission DO BEGIN
-  minxss_plots_trends, fm=2, timeRange=date, level = 'C', /PDF, /VERBOSE
+  minxss_plots_trends, fm = 2, timeRange = date, level = 'C', /PDF, /VERBOSE
 ENDFOREACH
 
 ; Produce the mission length PDF
-minxss_plots_trends, fm=2, /MISSION_LENGTH, level = 'C', /PDF, /VERBOSE
+minxss_plots_trends, fm = 2, /MISSION_LENGTH, level = 'C', /PDF, /VERBOSE
 
 END
