@@ -11,7 +11,7 @@
 ;   Either packet or timeRange. Must specify one or the other. See optional inputs below
 ;
 ; OPTIONAL INPUTS:
-;   packet [structure]:       For passing in standard MinXSS packet structures as defined by minxss_read_packets
+;   packet [structure]:       For passing in standard DAXSS packet structures as defined by daxss_read_packets
 ;   timeRange [dblarr]:       Time in either yyyydoy.fod format or yyymmdd format.
 ;                             If timeRange is one number, then it specifies a date and packet is ignored
 ;                             and it searches for Level 0 data files
@@ -91,7 +91,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     ENDELSE
   ENDIF ELSE begin
     ; no data or time inputs were provided so need to exit
-    message, /INFO, 'USAGE: minxss_trend_plots, packet, timeRange=timeRange, items=items, tlmType = tlmType, level=level, layout=layout, /PDF, /VERBOSE, /NO_TIME_LIMIT'
+    message, /INFO, 'USAGE: daxss_trend_plots, packet, timeRange=timeRange, items=items, tlmType = tlmType, level=level, layout=layout, /PDF, /VERBOSE, /NO_TIME_LIMIT'
     return
   ENDELSE
 
@@ -185,7 +185,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
   IF ~keyword_set(NO_TIME_LIMIT) THEN BEGIN
     wgood = where( packet_time_yd ge time1 AND packet_time_yd le time2, numgood )
     IF (numgood LT 2) THEN BEGIN
-      message, /INFO, 'ERROR: minxss_trend_plots needs valid data in the time range of ' + strtrim(time1,2) + ' - ' + strtrim(time2,2)
+      message, /INFO, ' need valid data in the time range of ' + strtrim(time1,2) + ' - ' + strtrim(time2,2)
       IF keyword_set(verbose) THEN stop, 'DEBUG ...'
       return
     ENDIF
@@ -243,14 +243,14 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
       IF (numgd ge 1) THEN BEGIN
         indices = indices[wgd]
       ENDIF ELSE begin
-        message, /INFO, 'ERROR: minxss_trend_plots needs valid Tag strings in items'
+        message, /ERROR, ' needs valid Tag strings in items'
         return
       ENDELSE
     ENDIF ELSE IF (items_type ge 1) AND (items_type le 5) THEN BEGIN
       ; number array
       indices = (long(items) > num_exclude) < (plot_num-1)
     ENDIF ELSE begin
-      message, /INFO, 'ERROR: minxss_trend_plots ITEMS needs to be array of numbers OR strings'
+      message, /ERRPR, ' Items need to be array of numbers or strings'
       IF keyword_set(verbose) THEN stop, 'DEBUG ...'
       return
     ENDELSE
@@ -263,7 +263,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
   ans = ' '
 
   IF keyword_set(verbose) THEN BEGIN
-    print, 'minxss_trend_plots:  ' + strtrim(num_items,2) + ' items will be plotted onto ' + $
+    message, /INFO, strtrim(num_items,2) + ' items will be plotted onto ' + $
       strtrim(page_count,2) + ' pages.'
   ENDIF
 
@@ -278,8 +278,8 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     IF mm LE 9 THEN mm = '0' + strtrim(mm, 2) ELSE mm = strtrim(mm, 2)
     dd = fix(yyyymmdd(2))
     IF dd LE 9 THEN dd = '0' + strtrim(dd, 2) ELSE dd = strtrim(dd, 2)
-    pdf_file = 'minxss_' + pdf_type + '_' + time_date_str + '_' + mm + dd + '.pdf'
-    IF keyword_set(MISSION_LENGTH) THEN pdf_file = 'minxss_' + pdf_type + '_mission.pdf'
+    pdf_file = 'daxss_' + pdf_type + '_' + time_date_str + '_' + mm + dd + '.pdf'
+    IF keyword_set(MISSION_LENGTH) THEN pdf_file = 'daxss_' + pdf_type + '_mission.pdf'
     IF keyword_set(verbose) THEN $
       message, /INFO, 'PDF file = ' + pdf_dir + pdf_file
   ENDIF
@@ -357,7 +357,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
   ENDFOR ; loop through pages
 
   IF keyword_set(verbose) THEN BEGIN
-    print, 'minxss_trend_plots: completed all of the plots'
+    message, /INFO, ' completed all of the plots'
     ; stop, 'DEBUG the data used in the plots...'
   ENDIF
 
