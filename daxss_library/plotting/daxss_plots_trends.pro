@@ -120,7 +120,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     full_filename = file_search(data_dir + data_file, count=fcount)
 
     IF (fcount GT 0) THEN BEGIN
-      IF keyword_set(verbose) THEN message, /INFO, 'Restoring data from ', data_file
+      IF keyword_set(verbose) THEN message, /INFO, 'Restoring data from ' + data_file
       restore, data_dir + data_file
       packet = temporary(sci)
       pdf_type = 'sci'
