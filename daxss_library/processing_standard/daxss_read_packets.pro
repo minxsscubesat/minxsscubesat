@@ -500,12 +500,16 @@ pro daxss_read_packets, input, sci=sci, log=log, dump=dump, hexdump=hexdump, fm=
           	sci_struct1.eps_3v_volt = (long(data[pindex+72]) + ishft(long(data[pindex+73]),8)) * 32.76 / 32768.0 ; Volts
           	sci_struct1.eps_5v_cur = (long(data[pindex+74]) + ishft(long(data[pindex+75]),8)) * 163.8 / 327.68 ; milliAmp
           	sci_struct1.eps_5v_volt = (long(data[pindex+76]) + ishft(long(data[pindex+77]),8)) * 32.76 / 32768.0 ; Volts
+            ; updated picosim_temp to be signed 8-bits (instead of 16-bits)
+            ; sci_struct1.picosim_temp = (FIX(data[pindex+78]) + ishft(FIX(data[pindex+79]),8))  ;deg C
+            sci_struct1.picosim_temp = FIX(data[pindex+78])  ;deg C
+            if (sci_struct1.picosim_temp gt 127.) then begin
+								sci_struct1.picosim_temp = sci_struct1.picosim_temp-256
+            endif
+            sci_struct1.sps_board_temp = (FIX(data[pindex+80]) + ishft(FIX(data[pindex+81]),8))/256.  ;deg C
 
-			sci_struct1.picosim_temp = (FIX(data[pindex+78]) + ishft(FIX(data[pindex+79]),8))  ;deg C
-			sci_struct1.sps_board_temp = (FIX(data[pindex+80]) + ishft(FIX(data[pindex+81]),8))/256.  ;deg C
-
-			sci_struct1.sci_sps_sum = (long(data[pindex+82]) + ishft(long(data[pindex+83]),8) $
-              + ishft(long(data[pindex+84]),16) + ishft(long(data[pindex+85]),24))  ; counts
+			      sci_struct1.sci_sps_sum = (long(data[pindex+82]) + ishft(long(data[pindex+83]),8) $
+               + ishft(long(data[pindex+84]),16) + ishft(long(data[pindex+85]),24))  ; counts
             sci_struct1.sci_sps_x = (fix(data[pindex+86]) + ishft(fix(data[pindex+87]),8))   ; range from -10000 to 10000
           	sci_struct1.sci_sps_y = (fix(data[pindex+88]) + ishft(fix(data[pindex+89]),8))   ; range from -10000 to 10000
           	sci_struct1.sci_spares = (long(data[pindex+90]) + ishft(long(data[pindex+91]),8) $
