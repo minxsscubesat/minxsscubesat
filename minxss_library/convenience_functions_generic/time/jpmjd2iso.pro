@@ -27,15 +27,6 @@
 ;
 ; EXAMPLE:
 ;   timeIso = JPMjd2iso(2457328.500000)
-;
-; MODIFICATION HISTORY:
-;   2016-06-13: James Paul Mason: Wrote script
-;   2016-07-08: James Paul Mason: Added handling for end of day second (increments day and month, year if appropriate)
-;   2016-09-03: James Paul Mason: Changed method from using a loop and ssw routine to using where statement and built-in caldat
-;                                 to improve processing time by a factor of 10,000
-;   2016-09-08: James Paul Mason: Added a check that lowMonth etc are not -1, to avoid getting results for month like 010 instead of 10
-;   2018-08-21: James Paul Mason: Round seconds before converting to string and truncating the fraction of a second off.
-;                                 For example, 1.45e-5 seconds should be 0 seconds, not 1 second. 
 ;-
 FUNCTION JPMjd2iso, jd, NO_T_OR_Z = NO_T_OR_Z
 
@@ -62,6 +53,8 @@ minuteAllString = strtrim(minuteAll, 2)
 IF lowMinute NE [-1] THEN minuteAllString[lowMinute] = '0' + minuteAllString[lowMinute]
 
 secondAll = round(secondAll)
+rolloverSecondIndices = where(secondAll EQ 60)
+IF rolloverSecondIndices NE [-1] THEN secondAll[rolloverSecondIndices] = 59
 lowSecond = where(secondAll LT 10)
 secondAllString = strtrim(secondAll, 2)
 IF lowSecond NE [-1] THEN secondAllString[lowSecond] = '0' + secondAllString[lowSecond]
