@@ -28,6 +28,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   2016-08-31: James Paul Mason: Wrote script.
+;   2019-06-19: James Paul Mason: Updated for version 2 of the MinXSS data
 ;-
 PRO minxss_plot_timeseries_example, savePath = savePath, $
                                     VERBOSE = VERBOSE
@@ -42,8 +43,8 @@ restore, '/Users/jmason86/Dropbox/minxss_dropbox/data/fm1/level1/minxss1_l1_miss
 ; Plot a single arbitrary bin at index 30 as a function of time
 IF keyword_set(VERBOSE) THEN message, /INFO, systime() + ' Plotting MinXSS level 1 arbitrary bin at 2.0 keV vs time'
 labelDate = label_date(DATE_FORMAT = ['%M', '%Y'])
-p1 = plot(minxsslevel1.time.jd, minxsslevel1.irradiance[73], SYMBOL = 'dot', SYM_THICK = 3, COLOR = 'dodger blue', $
-             TITLE = 'MinXSS Solar SXR ' + strtrim(minxsslevel1[0].energy[73], 2) + ' keV Over Time', $
+p1 = plot(minxsslevel1.x123.time.jd, minxsslevel1.x123.irradiance[73], SYMBOL = 'dot', SYM_THICK = 3, COLOR = 'dodger blue', $
+             TITLE = 'MinXSS Solar SXR ' + strtrim(minxsslevel1.x123[0].energy[73], 2) + ' keV Over Time', $
              XTITLE = 'Time [UTC]', XTICKFORMAT = ['LABEL_DATE', 'LABEL_DATE'], XTICKUNITS = ['Month', 'Year'], XTICKINTERVAL = 1, $
              YTITLE = 'Irradiance [photons / sec / cm$^2$ / keV]')
 IF savePath NE !NULL THEN p1.save, savePath + path_sep() + 'minxss level 1 0.75 keV.png'
