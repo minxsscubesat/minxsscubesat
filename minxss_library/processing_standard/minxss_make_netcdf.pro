@@ -112,7 +112,6 @@ case level_name of
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
 	'0D':	begin
-	 STOP
 			write_netcdf, minxsslevel0d, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
