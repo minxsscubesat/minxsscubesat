@@ -22,7 +22,7 @@
 ;   None
 ;
 ; KEYWORD PARAMETERS:
-;   None
+;   VERBOSE: Set this to print processing messages
 ;
 ; OUTPUTS:
 ;   outputStructure [same as structure input]: The same structure or array of structures as the input but with tags in tagNamesArray removed
@@ -37,7 +37,8 @@
 ;   Requires IDL 8.3 or later
 ;
 ;+
-FUNCTION JPMRemoveTags, structure, tagNamesArray
+FUNCTION JPMRemoveTags, structure, tagNamesArray, $
+                        VERBOSE = VERBOSE
 
 ;;
 ; Validity checks and defaults
@@ -60,9 +61,11 @@ FOREACH structureArrayElement, structure DO BEGIN
   hashTemporary = orderedhash(structureArrayElement, /EXTRACT)
   
   ; Loop through input tagNamesArray (works even if it's only a single tagName)
-  FOREACH tagToRemove, tagNamesArray DO $
-    IF hashTemporary.HasKey(tagToRemove) THEN hashTemporary.Remove, tagToRemove ELSE message, /INFO, JPMsystime() + ' Structure tag "' + tagToRemove + '" does not exist in structure'   
-  
+  FOREACH tagToRemove, tagNamesArray DO BEGIN
+    IF hashTemporary.HasKey(tagToRemove) THEN BEGIN
+      hashTemporary.Remove, tagToRemove 
+    ENDIF
+  ENDFOREACH
   outputStructure = [outputStructure, hashTemporary.ToStruct()]
   
 ENDFOREACH ; array of structure loop

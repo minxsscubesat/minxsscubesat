@@ -153,7 +153,7 @@ case level_name of
 			end
 endcase
 
-if (verbose ne 0) then print, 'Completed the NetCDF file write.'
+if keyword_set(VERBOSE) then message, /INFO, 'Completed the NetCDF file write.'
 if keyword_set(debug) then stop, 'DEBUG: at end of minxss_make_netcdf.pro ...'
 return
 end
