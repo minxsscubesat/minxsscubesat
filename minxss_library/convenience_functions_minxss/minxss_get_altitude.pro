@@ -46,7 +46,11 @@ longitude = reform(spacecraftLocation[0, *])
 latitude = reform(spacecraftLocation[1, *])
 altitude = reform(spacecraftLocation[2, *]) - 6371. ; Subtract off Earth-radius to get altitude
 
-altitude[where(altitude GT 450 OR altitude LT 100)] = !VALUES.F_NAN
+badAltitudeIndices = where(altitude GT 450 OR altitude LT 100, badCount)
+
+IF badCount GT 0 THEN BEGIN
+  altitude[badAltitudeIndices] = !VALUES.F_NAN
+ENDIF 
 
 return, altitude
 END
