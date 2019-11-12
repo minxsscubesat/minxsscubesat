@@ -44,7 +44,7 @@ PRO rocket_xrs_real_time_display, isisIP = isisIP, number_of_packets_to_store = 
                                   VERBOSE = VERBOSE, LIGHT_BACKGROUND = LIGHT_BACKGROUND
 
 ; Defaults
-IF ~keyword_set(isisIP) THEN isisIP = '128.138.65.101' ; WinD2791 = 27" HP ; Rocket5 = 192.88.37.191, Rocket6 = 169.254.191.0
+IF ~keyword_set(isisIP) THEN isisIP = '128.138.65.240' ; WinD2791 = 27" HP ; Rocket5 = 192.88.37.191, Rocket6 = 169.254.191.0
 IF ~keyword_set(number_of_packets_to_store) THEN number_of_packets_to_store = 12
 IF ~keyword_set(data_cadence) THEN data_cadence = 3. ; seconds/packet
 IF keyword_set(time_window_to_store) THEN number_of_packets_to_store = time_window_to_store / data_cadence ; time_window_to_store in seconds
