@@ -1,25 +1,36 @@
+;+
+; NAME:
+;	  minxss_make_netcdf.pro
 ;
-;	minxss_make_netcdf.pro
-;
-;	Make MinXSS NetCDF file for specific Level data product stored as IDL save set.
-;	A metadata attributes file must exist.
+; PURPOSE:
+;	  Make MinXSS NetCDF file for specific Level data product stored as IDL save set.
+;	  A metadata attributes file must exist.
 ;
 ;	INPUTS
 ;		level		Level name: '0C', '0D', '1', '2', '3', '4'
-;		/fm			Flight model number (default is 1)
-;		/version	Option to specify version number (default is 2)
-;		/verbose	Option to print messages
-;		/debug		Option to debug this code
+;		
+; OPTIONAL INPUTS: 
+;   version [integer]: Option to specify MinXSS data version number (default is 2)
+;   
+; KEYWORD PARAMETERS:
+;		FM:			  Flight model number (default is 1)
+;		VERBOSE:	Set to print processing messages
+;		DEBUG:		Set to trigger stop points for debugging
 ;
 ;	OUTPUTS
-;		NONE
+;		None
+;		
+;	OPTIONAL OUTPUTS:
+;	  None
 ;
 ;	PROCEDURE
 ;	1.  Setup directory and file names based on Level name provided
 ;	2.  Read Level file (IDL save set restore)
 ;	3.	Write NetCDF file
-;
-pro minxss_make_netcdf, level, fm=fm, version=version, verbose=verbose, debug=debug
+;-
+pro minxss_make_netcdf, level, $
+                        version=version, $
+                        FM=FM, VERBOSE=VERBOSE, DEBUG=DEBUG
 
 if n_params() lt 1 then begin
 	print, 'USAGE: minxss_make_netcdf, level [, /fm, /verbose, /debug]'
