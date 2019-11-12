@@ -778,11 +778,11 @@ minxsslevel1_xp = minxsslevel1_xp[0:num_L1_xp-1]
 minxsslevel1_x123_dark = minxsslevel1_x123_dark[0:num_L1_dark-1]
 minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
 
-VERSION = '3.0'
-REVISION = '3.0.1'
+VERSION = '2.0'
+REVISION = '2.0.0'
 FORM_VER = 'IDL Save Set'
-SOFT_VER = '3.0.1'
-CAL_VER = '3.0.1'
+SOFT_VER = '2.0.0'
+CAL_VER = '2.0.0'
 if keyword_set(output_filename) then begin
   outfile = output_filename + '.sav'
 endif else begin
@@ -802,8 +802,9 @@ minxsslevel1_x123_meta = { $
   Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
   Calibration_version: CAL_VER, $
   Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
-  History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
-  '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data'], $
+  History: [ '2016-07-30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
+  '2016-07-25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017-06-23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data', $
+  '2019-11-12: James Paul Mason: Bug fixes and variable renaming.'], $
   Filename: outfile, $
   Date_generated: systime(), $
   TIME_struct: 'Time structure for different date/time formats', $
