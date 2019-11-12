@@ -7,7 +7,7 @@
 ;	  A metadata attributes file must exist.
 ;
 ;	INPUTS
-;		level		Level name: '0C', '0D', '1', '2', '3', '4'
+;		level [string]: Level name: '0C', '0D', '1', '2', '3', '4'
 ;		
 ; OPTIONAL INPUTS: 
 ;   version [integer]: Option to specify MinXSS data version number (default is 2)
@@ -22,6 +22,9 @@
 ;		
 ;	OPTIONAL OUTPUTS:
 ;	  None
+;	  
+;	RESTRICTIONS: 
+;	  Metadata file corresponding to the input level must exist
 ;
 ;	PROCEDURE
 ;	1.  Setup directory and file names based on Level name provided
@@ -134,22 +137,16 @@ case level_name of
 	   x123_dark_time = minxsslevel1.x123_dark.time
 	   x123_dark = rem_tag(minxsslevel1.x123_dark, 'time')
 	   
-	   x123_meta = minxsslevel1.x123_meta
-	   
 	   xp_time = minxsslevel1.xp.time
 	   xp = rem_tag(minxsslevel1.xp, 'time')
 	   
 	   xp_dark_time = minxsslevel1.xp_dark.time
-	   xp_dark = rem_tag(minxsslevel1.xp_dark, 'time')
-	   
-	   xp_meta = minxsslevel1.xp_meta
+	   xp_dark = rem_tag(minxsslevel1.xp_dark, 'time') 
 	   
 	   minxsslevel1 = create_struct('x123', x123, 'x123_time', x123_time, $
 	                                'x123_dark', x123_dark, 'x123_dark_time', x123_dark_time, $
-	                                'x123_meta', x123_meta, $
 	                                'xp', xp, 'xp_time', xp_time, $
-	                                'xp_dark', xp_dark, 'xp_dark_time', xp_dark_time, $
-	                                'xp_meta', xp_meta)
+	                                'xp_dark', xp_dark, 'xp_dark_time', xp_dark_time)
 	 
 			write_netcdf, minxsslevel1, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
