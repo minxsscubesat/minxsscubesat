@@ -159,7 +159,6 @@ FOR tagIndex = 0, n_tags(packetToProcess) - 1 DO BEGIN
                                                           [nearestInputTimeLower, nearestInputTimeUpper], $
                                                           timeToInterpolateTo[timeIndex])
       packetInterpolated.(tagIndex) = interpolatedPacketSingleTag
-      ;IF tagIndex EQ 104 AND timeIndex GT 100 THEN STOP
     ENDELSE
   ENDFOR ; timeIndex
 ENDFOR ; tagIndex

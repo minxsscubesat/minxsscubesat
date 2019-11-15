@@ -134,7 +134,7 @@ IF fm EQ 1 THEN id_satellite = 41474L ELSE $
                 id_satellite = 43758
 spacecraft_location, interpolatedUnifiedPacket.time.jd, spacecraftLocation, sunlightFlag, id_satellite = id_satellite, tle_path = getenv('TLE_dir'), /KEEPNAN
 
-; FIXME: 2016/09/05: JPM: Temporary fix for something wrong with spacecraft_location returning too few values
+; FIXME: 2016-09-05: JPM: Temporary fix for something wrong with spacecraft_location returning too few values
 longitude = reform(spacecraftLocation[0, *])
 latitude = reform(spacecraftLocation[1, *])
 altitude = reform(spacecraftLocation[2, *]) - 6371. ; Subtract off Earth-radius to get altitude
