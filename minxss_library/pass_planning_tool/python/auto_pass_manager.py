@@ -5,10 +5,9 @@
 #       pyinstaller auto_pass_manager.py -F -n auto_pass_manager_v2.0 --clean
 # 3) *.exe goes to .\dist
 
-######### SETTINGS #########
-#See pass_config.py
+# For settings, see pass_config.py
 
-#=======required to build, not to run ===========
+# Required to build, not to run
 import time
 from shutil import copyfile
 import os
@@ -43,7 +42,7 @@ def main(script):  # This is what calls the minxss_monitor_pass_times code and s
         [minutes_before_pass, info_list] = p.get_next_pass_info()
         if minutes_before_pass <= p.cfg.setup_minutes_before_pass or p.cfg.enable_rapidfire_test==1:
             # print a warning about ignored satellites
-            if(len(p.ignored_sats) > 0):
+            if len(p.ignored_sats) > 0:
                 txt = "\r\nWARNING: Ignoring the following satellites since they do not have config ini files: "
                 for sat in p.ignored_sats:
                     txt += sat + ", "
@@ -52,7 +51,7 @@ def main(script):  # This is what calls the minxss_monitor_pass_times code and s
             # If we have multiple adjacent passes, we should run them back-to-back.
             # Note that the sat pass manager automatically waits until the pass is complete before returning
             for pass_num in range(len(info_list)):
-                if len(info_list)>1 and pass_num<len(info_list)-1:
+                if len(info_list) > 1 and pass_num < len(info_list)-1:
                     is_quick_exit = 1
                 else:
                     is_quick_exit = 0
