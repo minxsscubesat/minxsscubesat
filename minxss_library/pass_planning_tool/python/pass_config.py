@@ -1,5 +1,4 @@
 import configparser
-import io
 import sys
 import os
 
@@ -9,6 +8,7 @@ class GenericConfig:
     def __init__(self, ini_file_name):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
+        print('Reading configuration file: {}'.format(ini_file_name))
         config.read(ini_file_name)
 
         # section_list = config.sections()
