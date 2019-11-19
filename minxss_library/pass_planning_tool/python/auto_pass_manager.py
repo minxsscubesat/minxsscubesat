@@ -162,7 +162,7 @@ class PassManager:
             self.tester = PassManagerTests()
 
         # create the generic config ini file
-        self.cfg = pass_config.generic_config('pass_config.ini')
+        self.cfg = pass_config.GenericConfig('pass_config.ini')
         # for the overall config, the email list for error and no error are the same
         self.email = minxss_email.email(self.cfg.email_list, self.cfg.email_list, "[No_Specific_Satellite]", self.cfg)
 
@@ -176,7 +176,7 @@ class PassManager:
         self.sat_emails = {}
         self.sat_pass_managers = {}
         for satellite_ini_file in self.cfg.sat_ini_files:
-            tmp_sat_cfg = pass_config.satellite_config(satellite_ini_file)
+            tmp_sat_cfg = pass_config.SatelliteConfig(satellite_ini_file)
             # add to the dictionaries
             self.sat_cfgs[tmp_sat_cfg.sat_name] = tmp_sat_cfg
             self.sat_emails[tmp_sat_cfg.sat_name] = minxss_email.email(tmp_sat_cfg.email_list_info, tmp_sat_cfg.email_list_full, tmp_sat_cfg.sat_name, self.cfg)
