@@ -8,7 +8,7 @@ class GenericConfig:
     def __init__(self, ini_file_name):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
-        print('Working from configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
+        print('Reading configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
         config.read(ini_file_name)
 
         # section_list = config.sections()
@@ -50,7 +50,7 @@ class GenericConfig:
         self.enable_rapidfire_test = int(config['testing_only']['enable_rapidfire_test'])
 
         # [directories]
-        self.idl_tle_dir = os.getenv('TLE_dir', 'TLE_dir__ENV_VAR_DOES_NOT_EXIST')  # Tom's IDL-generated TLE info
+        self.idl_tle_dir = config['directories']['tle_dir']
         if self.use_satpc == 1: 
             self.satpc_dir = config['directories']['satpc_dir']
             self.satpc_exe_name = config['directories']['satpc_exe_name']
@@ -70,7 +70,8 @@ class GenericConfig:
 
         self.error_check()
 
-    def error_handle(self):
+    @staticmethod
+    def error_handle():
         sys.exit()
 
     def error_check(self):
@@ -98,7 +99,7 @@ class GenericConfig:
                 print("Please update the 'satpc_tle_dir' item in pass_config.ini to point to the correct location\r\n")
                 iserr = 1
 
-        if iserr==1:
+        if iserr == 1:
             self.error_handle()
 
 
@@ -109,7 +110,7 @@ class SatelliteConfig(GenericConfig):
     def __init__(self, ini_file_name):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
-        print('Working from configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
+        print('Reading configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
         config.read(ini_file_name)
 
         # [satellite]
