@@ -22,15 +22,15 @@ if(len(mydir) == 0):
     mydir = os.getcwd()
 
 def test_random_stuff():
-    print("*********** Starting Generate ISIS Automatic Script (TEST) *************")
-    isisdir = os.path.join(mydir,"gen");
-    template_filepath = os.path.join(isisdir,"auto_data_dump_template.prc");
-    generate_filepath = os.path.join(isisdir,"generated_file.prc");
+    print("*********** Starting Generate Hydra Automatic Script (TEST) *************")
+    hydradir = os.path.join(mydir,"gen");
+    template_filepath = os.path.join(hydradir,"auto_data_dump_template.prc");
+    generate_filepath = os.path.join(hydradir,"generated_file.prc");
 
     vars = data_dump_vars()
     update_script(vars,template_filepath,generate_filepath)
 
-    print("*********** Finished Running Generate ISIS Automatic Script (TEST) *************")
+    print("*********** Finished Running Generate Hydra Automatic Script (TEST) *************")
 
 
 def update_script(vars,template_filepath,generate_filepath):

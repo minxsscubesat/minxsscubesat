@@ -79,7 +79,7 @@ class Rundir():
                         m = re.search('(?<=Done with script Scripts).*', lines[i])
                         scriptname = m.group(0)
                         scriptname = scriptname[1:] #ditch the backslash
-                        if "script_to_run_automatically_on_isis_boot.prc" in scriptname:
+                        if "script_to_run_automatically_on_hydra_boot.prc" in scriptname:
                             scriptname = self.scriptname
 
                     row = []

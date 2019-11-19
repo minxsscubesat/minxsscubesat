@@ -38,8 +38,8 @@ class load_config():
 
         self.computer_name = config['computer_specific']['computer_name']
         self.do_update_satpc_tle = int(config['computer_specific']['do_update_satpc_tle'])
-        self.do_monitor_isis = int(config['computer_specific']['do_monitor_isis'])
-        self.do_run_isis_scripts = int(config['computer_specific']['do_run_isis_scripts'])
+        self.do_monitor_hydra = int(config['computer_specific']['do_monitor_hydra'])
+        self.do_run_hydra_scripts = int(config['computer_specific']['do_run_hydra_scripts'])
 
         self.disable_restart_programs = int(config['testing_only']['disable_restart_programs'])
         self.enable_rapidfire_test = int(config['testing_only']['enable_rapidfire_test'])

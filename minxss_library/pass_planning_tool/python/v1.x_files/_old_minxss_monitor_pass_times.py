@@ -1,12 +1,12 @@
 ### Purpose:
 # NOTE: To generate an exe for this script, see minxss_pass_automation_exe_gen.py
-# 1) updates the ISIS auto-run script based on the pass current time/date (by copying an already-created file)
+# 1) updates the Hydra auto-run script based on the pass current time/date (by copying an already-created file)
 # 2) Closes and re-launches SATPC32
-# 3) Closes and re-launches ISIS
+# 3) Closes and re-launches Hydra
 # 4) Renames the script that got run from "*.prc" to "wasrun_*.prc"
 #
 # ============= Settings =============
-enable_restart_programs = 1 #Set to 0 if you're testing and you don't want to kill/restart ISIS/SATPC
+enable_restart_programs = 1 #Set to 0 if you're testing and you don't want to kill/restart Hydra/SATPC
 enable_rapidfire_test = 0 #set to 1 if you want to always trigger a pass
 do_send_prepass_email = 0 #set to 0 to disable sending the email before every pass (now standard operating procedure)
 setup_minutes_before_pass = 10 #how long before the pass do we start setup activities?
@@ -37,31 +37,31 @@ if(len(mydir) == 0):
     mydir = os.getcwd()
 
 class monitor():
-    def __init__(self, is_mon_isis, is_run_isis_scripts, is_update_satpc_tle, computer_name):
+    def __init__(self, is_mon_hydra, is_run_hydra_scripts, is_update_satpc_tle, computer_name):
         #initialize error class
         self.email = minxss_email.email()
         #store a variable for whether or not we're in a pass
         self.is_in_pass = 0
         self.satpc_dir = os.getenv('SATPC32_dir','SATPC32_dir__ENV_VAR_DOES_NOT_EXIST')
-        self.isis_dir = os.getenv('ISIS_dir','ISIS_dir__ENV_VAR_DOES_NOT_EXIST')
+        self.hydra_dir = os.getenv('Hydra_dir','Hydra_dir__ENV_VAR_DOES_NOT_EXIST')
         self.satpc_tle_dir = os.getenv('SATPC_TLE_dir', 'SATPC_TLE_dir__ENV_VAR_DOES_NOT_EXIST')
-        self.isis_scripts = os.path.join(self.isis_dir,'Scripts')
-        if( not(os.path.exists(self.isis_dir)) or not(os.path.exists(self.satpc_dir)) or not(os.path.exists(self.satpc_tle_dir)) ):
-            print("One of these locations does not exist (isis exe, satpc exe, and/or satpc tle directories):")
-            print(self.isis_dir)
+        self.hydra_scripts = os.path.join(self.hydra_dir,'Scripts')
+        if( not(os.path.exists(self.hydra_dir)) or not(os.path.exists(self.satpc_dir)) or not(os.path.exists(self.satpc_tle_dir)) ):
+            print("One of these locations does not exist (hydra exe, satpc exe, and/or satpc tle directories):")
+            print(self.hydra_dir)
             print(self.satpc_dir)
             print(self.satpc_tle_dir)
             self.email("NoFile",self.computer_name)
 
-        self.isis_script_dest_file = os.path.join(self.isis_scripts, 'script_to_run_automatically_on_isis_boot.prc')
-        self.isis_script_src_folder = os.path.join(self.isis_scripts, 'scripts_to_run_automatically')
+        self.hydra_script_dest_file = os.path.join(self.hydra_scripts, 'script_to_run_automatically_on_hydra_boot.prc')
+        self.hydra_script_src_folder = os.path.join(self.hydra_scripts, 'scripts_to_run_automatically')
         self.default_pass_script = "default_auto_script.prc"
 
         self.satpc32_exe = exe_management(self.satpc_dir,'SatPC32.exe')
         self.satpc32_server_exe = exe_management(self.satpc_dir,'ServerSDX.exe')
-        self.isis_exe = exe_management(self.isis_dir,'ISIS.exe')
-        self.is_mon_isis = is_mon_isis #Store whether or not we're monitoring the ISIS.exe (rocket PC won't do anything with ISIS)
-        self.is_run_isis_scripts = is_run_isis_scripts #Whether or not we're going to run scripts on this computer
+        self.hydra_exe = exe_management(self.hydra_dir,'Hydra.exe')
+        self.is_mon_hydra = is_mon_hydra #Store whether or not we're monitoring the Hydra.exe (rocket PC won't do anything with Hydra)
+        self.is_run_hydra_scripts = is_run_hydra_scripts #Whether or not we're going to run scripts on this computer
         self.is_update_satpc_tle = is_update_satpc_tle #whether or not we need to update the SATPC TLE from dropbox (for the rocket PC)
         self.computer_name = computer_name #store the name of the computer for emailing purposes
         self.wasrun_scriptloc = ""
@@ -102,8 +102,8 @@ class monitor():
 
         #Make sure we have a script to run (otherwise send an email!)
         #don't run scripts for Jim's machine
-        if(self.is_run_isis_scripts==1 and self.is_jims_machine==0):
-            scriptnamelist = [f for f in os.listdir(self.isis_script_src_folder) if os.path.isfile(os.path.join(self.isis_script_src_folder,f))]
+        if(self.is_run_hydra_scripts==1 and self.is_jims_machine==0):
+            scriptnamelist = [f for f in os.listdir(self.hydra_script_src_folder) if os.path.isfile(os.path.join(self.hydra_script_src_folder,f))]
             scriptnamelist.sort()
             while(not(".prc" in scriptnamelist[0]) and len(scriptnamelist)>0): #skip non .prc files
                 del scriptnamelist[0]
@@ -132,9 +132,9 @@ class monitor():
             if(do_send_prepass_email==1):
                 self.email("PassAboutToOccur",self.computer_name)
 
-            #Figure out what the next ISIS script to run is
-            if(self.is_run_isis_scripts==1 and self.is_jims_machine==0):
-                scriptnamelist = [f for f in os.listdir(self.isis_script_src_folder) if os.path.isfile(os.path.join(self.isis_script_src_folder,f))]
+            #Figure out what the next Hydra script to run is
+            if(self.is_run_hydra_scripts==1 and self.is_jims_machine==0):
+                scriptnamelist = [f for f in os.listdir(self.hydra_script_src_folder) if os.path.isfile(os.path.join(self.hydra_script_src_folder,f))]
                 scriptnamelist.sort()
                 #for f in scriptnamelist:
                 #    print(f) #TODO: Delete this, just for debug
@@ -145,23 +145,23 @@ class monitor():
                 nextscriptfilename = scriptnamelist[0];
                 if("default" in nextscriptfilename or "was_run" in nextscriptfilename):
                     self.email("NoPassScript",self.computer_name)
-                    isis_script_src_file = os.path.join(self.isis_script_src_folder, self.default_pass_script)
+                    hydra_script_src_file = os.path.join(self.hydra_script_src_folder, self.default_pass_script)
                     running_default = 1
                 else:
-                    isis_script_src_file = os.path.join(self.isis_script_src_folder, nextscriptfilename)
+                    hydra_script_src_file = os.path.join(self.hydra_script_src_folder, nextscriptfilename)
                     running_default = 0
-                self.email.StoreScriptName(isis_script_src_file)
+                self.email.StoreScriptName(hydra_script_src_file)
 
                 #Check to make sure the file exists
-                if(not(os.path.exists(isis_script_src_file))):
-                    print("ISIS default script does not exist!!! Expected path:")
-                    print(isis_script_src_file)
+                if(not(os.path.exists(hydra_script_src_file))):
+                    print("Hydra default script does not exist!!! Expected path:")
+                    print(hydra_script_src_file)
                     self.email("NoFile",self.computer_name)
                 else:
-                    print("Running ISIS script: ", isis_script_src_file)
+                    print("Running Hydra script: ", hydra_script_src_file)
                     #Copy the file over, then rename it to wasrun_"".prc
-                    copyfile(isis_script_src_file, self.isis_script_dest_file)
-                    wasrundest = os.path.join(self.isis_script_src_folder, "was_run") #this is just the folder still
+                    copyfile(hydra_script_src_file, self.hydra_script_dest_file)
+                    wasrundest = os.path.join(self.hydra_script_src_folder, "was_run") #this is just the folder still
                     #Now create the directory if it doesn't exist
                     try:
                         os.stat(wasrundest)
@@ -172,14 +172,14 @@ class monitor():
                     #If we run scripts with exactly the same name, give them uniquifiers (should not generally happen except when running default case)
                     i = 2 #start at 2 for "2nd time"
                     while(os.path.exists(wasrundest)):
-                        wasrundest = os.path.join(self.isis_script_src_folder, "was_run_" + str(i) + "_" + nextscriptfilename)
+                        wasrundest = os.path.join(self.hydra_script_src_folder, "was_run_" + str(i) + "_" + nextscriptfilename)
                         i = i + 1
 
                     if(running_default == 0):
-                        os.rename(isis_script_src_file, wasrundest)
+                        os.rename(hydra_script_src_file, wasrundest)
                     else:
                         #don't rename if it's the default, but we do want to track that we ran the default
-                        copyfile(isis_script_src_file, wasrundest)
+                        copyfile(hydra_script_src_file, wasrundest)
                     #store the script location so it can be emailed
                     self.email.StoreScriptLocation(wasrundest)
                     self.wasrun_scriptloc = wasrundest
@@ -207,17 +207,17 @@ class monitor():
                     self.satpc32_exe.kill()
                     time.sleep(5)
                     self.satpc32_server_exe.kill()
-                if(self.is_mon_isis==1):
+                if(self.is_mon_hydra==1):
                     time.sleep(5)
-                    self.isis_exe.kill()
+                    self.hydra_exe.kill()
                 #done terminating processes, now enable them
                 time.sleep(10)
                 #only start satpc if it's not running
                 if(self.satpc32_exe.is_running() == 0):
                     self.satpc32_exe.start()
-                if(self.is_mon_isis==1):
+                if(self.is_mon_hydra==1):
                     time.sleep(5)
-                    self.isis_exe.start()
+                    self.hydra_exe.start()
 
             return(1) #indicate that there was a pass
         else:
@@ -227,7 +227,7 @@ class monitor():
     def KillHydra(self):
         print("Killing the Hydra process!")
         time.sleep(1)
-        self.isis_exe.kill()
+        self.hydra_exe.kill()
         time.sleep(1)
 
 
@@ -292,7 +292,7 @@ class monitor():
 
     #gets a path to the rundir for the current pass and then has it analyzed
     def PassAnalysis(self):
-        rundirs_dir = os.path.join(self.isis_dir, 'Rundirs')
+        rundirs_dir = os.path.join(self.hydra_dir, 'Rundirs')
         rundir_list = [f for f in os.listdir(rundirs_dir) if not(os.path.isfile(os.path.join(rundirs_dir,f)))]
         rundir_list.sort()
 

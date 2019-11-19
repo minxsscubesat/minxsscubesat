@@ -515,7 +515,7 @@ def print_pass_info(info,minutes,is_prepass):
 
 
 class SatellitePassManager():
-    # is_mon_isis, is_run_isis_scripts, is_update_satpc_tle, computer_name
+    # is_mon_hydra, is_run_hydra_scripts, is_update_satpc_tle, computer_name
     def __init__(self, cfg, email_module, global_cfg):
         self.cfg = cfg
         self.global_cfg = global_cfg
@@ -523,26 +523,26 @@ class SatellitePassManager():
         self.email = email_module
         # store a variable for whether or not we're in a pass
         self.is_in_pass = 0
-        self.isis_scripts = os.path.join(self.cfg.isis_dir,'Scripts')
-        if not os.path.exists(self.cfg.isis_dir):
-            print("One of these locations does not exist (isis exe):")
-            print(self.cfg.isis_dir)
+        self.hydra_scripts = os.path.join(self.cfg.hydra_dir,'Scripts')
+        if not os.path.exists(self.cfg.hydra_dir):
+            print("One of these locations does not exist (hydra exe):")
+            print(self.cfg.hydra_dir)
             self.email("NoFile")
 
-        self.isis_script_dest_file = os.path.join(self.isis_scripts, 'script_to_run_automatically_on_isis_boot.prc')
-        self.isis_script_src_folder = os.path.join(self.isis_scripts, 'scripts_to_run_automatically')
+        self.hydra_script_dest_file = os.path.join(self.hydra_scripts, 'script_to_run_automatically_on_hydra_boot.prc')
+        self.hydra_script_src_folder = os.path.join(self.hydra_scripts, 'scripts_to_run_automatically')
         self.default_pass_script = "default_auto_script.prc"
-        if not os.path.exists(os.path.join(self.isis_script_src_folder,self.default_pass_script)):
+        if not os.path.exists(os.path.join(self.hydra_script_src_folder,self.default_pass_script)):
             print("\r\nERROR: Initial configuration failed!")
-            print("You should have a 'scripts_to_run_automatically' folder in your Hydra/ISIS directory")
+            print("You should have a 'scripts_to_run_automatically' folder in your Hydra/Scripts directory")
             print("That directory should have a file 'default_auto_script.prc'")
             print("This file is what will run if there are no scripts available to run.")
             print("This is the file the program is looking for that doesn't exist:")
-            print(os.path.join(self.isis_script_src_folder,self.default_pass_script))
+            print(os.path.join(self.hydra_script_src_folder,self.default_pass_script))
             print("\r\n")
             sys.exit()
 
-        self.isis_exe = ExeManagement(self.cfg.isis_dir, self.cfg.isis_exe_name, 1)
+        self.hydra_exe = ExeManagement(self.cfg.hydra_dir, self.cfg.hydra_exe_name, 1)
         self.wasrun_scriptloc = ""
 
     def run_pass(self,info,is_quick_exit):
@@ -550,34 +550,34 @@ class SatellitePassManager():
         if self.cfg.do_send_prepass_email==1:
             self.email("PassAboutToOccur")
 
-        # Figure out what the next ISIS script to run is
-        if self.cfg.do_run_isis_scripts==1:
-            scriptnamelist = [f for f in os.listdir(self.isis_script_src_folder) if os.path.isfile(os.path.join(self.isis_script_src_folder,f))]
+        # Figure out what the next Hydra script to run is
+        if self.cfg.do_run_hydra_scripts==1:
+            scriptnamelist = [f for f in os.listdir(self.hydra_script_src_folder) if os.path.isfile(os.path.join(self.hydra_script_src_folder,f))]
             scriptnamelist.sort()
-            while(not(".prc" in scriptnamelist[0]) and len(scriptnamelist)>0):  # skip non .prc files
+            while not(".prc" in scriptnamelist[0]) and len(scriptnamelist)>0:  # skip non .prc files
                 print("Ignoring file in scripts_to_run_automatically folder: " + scriptnamelist[0])
                 del scriptnamelist[0]
 
             nextscriptfilename = scriptnamelist[0];
             if "default" in nextscriptfilename or "was_run" in nextscriptfilename:
                 self.email("NoPassScript")
-                isis_script_src_file = os.path.join(self.isis_script_src_folder, self.default_pass_script)
+                hydra_script_src_file = os.path.join(self.hydra_script_src_folder, self.default_pass_script)
                 running_default = 1
             else:
-                isis_script_src_file = os.path.join(self.isis_script_src_folder, nextscriptfilename)
+                hydra_script_src_file = os.path.join(self.hydra_script_src_folder, nextscriptfilename)
                 running_default = 0
-            self.email.StoreScriptName(isis_script_src_file)
+            self.email.StoreScriptName(hydra_script_src_file)
 
             # Check to make sure the file exists
-            if not(os.path.exists(isis_script_src_file)):
-                print("ISIS default script does not exist!!! Expected path:")
-                print(isis_script_src_file)
+            if not(os.path.exists(hydra_script_src_file)):
+                print("Hydra default script does not exist!!! Expected path:")
+                print(hydra_script_src_file)
                 self.email("NoFile")
             else:
-                print("Running ISIS script: ", isis_script_src_file)
+                print("Running Hydra script: ", hydra_script_src_file)
                 # Copy the file over, then rename it to wasrun_"".prc
-                copyfile(isis_script_src_file, self.isis_script_dest_file)
-                wasrundest_folder = os.path.join(self.isis_script_src_folder, "was_run")  # this is just the folder still
+                copyfile(hydra_script_src_file, self.hydra_script_dest_file)
+                wasrundest_folder = os.path.join(self.hydra_script_src_folder, "was_run")  # this is just the folder still
                 # Now create the directory if it doesn't exist
                 try:
                     os.stat(wasrundest_folder)
@@ -592,17 +592,17 @@ class SatellitePassManager():
                     i = i + 1
 
                 if running_default == 0:
-                    os.rename(isis_script_src_file, wasrundest_file)
+                    os.rename(hydra_script_src_file, wasrundest_file)
                 else:
                     # don't rename if it's the default, but we do want to track that we ran the default
-                    copyfile(isis_script_src_file, wasrundest_file)
+                    copyfile(hydra_script_src_file, wasrundest_file)
                 # store the script location so it can be emailed
                 self.email.StoreScriptLocation(wasrundest_file)
                 self.wasrun_scriptloc = wasrundest_file
 
         if self.global_cfg.disable_restart_programs == 0:
-            if self.cfg.do_monitor_isis==1:
-                self.isis_exe.start()
+            if self.cfg.do_monitor_hydra==1:
+                self.hydra_exe.start()
 
         self.sleep_until_pass_is_done(info)
 
@@ -610,9 +610,9 @@ class SatellitePassManager():
             time.sleep(self.global_cfg.buffer_seconds_after_pass_end)
 
         if self.global_cfg.disable_restart_programs == 0:
-            if self.cfg.do_monitor_isis == 1:
-                self.isis_exe.kill()
-                time.sleep(10)  # give ISIS time to shut down
+            if self.cfg.do_monitor_hydra == 1:
+                self.hydra_exe.kill()
+                time.sleep(10)  # give Hydra time to shut down
 
         self.pass_analysis(info)
 
@@ -643,12 +643,12 @@ class SatellitePassManager():
     def kill_hydra(self):
         print("Killing the Hydra process!")
         time.sleep(1)
-        self.isis_exe.kill()
+        self.hydra_exe.kill()
         time.sleep(1)
 
     # gets a path to the rundir for the current pass and then has it analyzed
     def pass_analysis(self, info):
-        rundirs_dir = os.path.join(self.cfg.isis_dir, 'Rundirs')
+        rundirs_dir = os.path.join(self.cfg.hydra_dir, 'Rundirs')
         rundir_list = [f for f in os.listdir(rundirs_dir) if not(os.path.isfile(os.path.join(rundirs_dir,f)))]
         rundir_list.sort()
 

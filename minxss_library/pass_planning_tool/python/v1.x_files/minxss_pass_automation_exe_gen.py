@@ -38,7 +38,7 @@ def main(script): #This is what calls the minxss_monitor_pass_times code and set
     if(cfg.is_jims_machine==1):
         cfg.do_update_satpc_tle = 1
         cfg.computer_name = "JIM_COMP" #This goes into error emails
-        cfg.do_run_isis_scripts = 0
+        cfg.do_run_hydra_scripts = 0
 
     monitor_pass = minxss_monitor_pass_times.monitor(cfg)
     while(1):

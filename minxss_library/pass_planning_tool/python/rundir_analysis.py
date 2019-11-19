@@ -92,7 +92,7 @@ class Rundir():
                             scriptname = scriptname[1:] #ditch the backslash
                         except:
                             scriptname = 'Could not find scriptname'
-                        if "script_to_run_automatically_on_isis_boot.prc" in scriptname:
+                        if "script_to_run_automatically_on_hydra_boot.prc" in scriptname:
                             scriptname = self.scriptname
 
                     row = []

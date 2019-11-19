@@ -8,7 +8,7 @@ class GenericConfig:
     def __init__(self, ini_file_name):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
-        print('Reading configuration file: {}'.format(ini_file_name))
+        print('Working from configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
         config.read(ini_file_name)
 
         # section_list = config.sections()
@@ -109,6 +109,7 @@ class SatelliteConfig(GenericConfig):
     def __init__(self, ini_file_name):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
+        print('Working from configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
         config.read(ini_file_name)
 
         # [satellite]
@@ -137,23 +138,23 @@ class SatelliteConfig(GenericConfig):
         self.min_expected_data = float(config['email_config']['min_expected_data'])
 
         # [directories]
-        self.isis_dir = config['directories']['isis_dir']
-        self.isis_exe_name = config['directories']['isis_exe_name']
+        self.hydra_dir = config['directories']['hydra_dir']
+        self.hydra_exe_name = config['directories']['hydra_exe_name']
 
         # [behavior]
-        self.do_monitor_isis = int(config['behavior']['do_monitor_isis'])
-        self.do_run_isis_scripts = int(config['behavior']['do_run_isis_scripts'])
+        self.do_monitor_hydra = int(config['behavior']['do_monitor_hydra'])
+        self.do_run_hydra_scripts = int(config['behavior']['do_run_hydra_scripts'])
 
         self.error_check(ini_file_name)
 
     def error_check(self, ini_file_name):
         iserr = 0
         # check a couple of file paths
-        if not(os.path.exists(self.isis_dir)):
+        if not(os.path.exists(self.hydra_dir)):
             print("\r\nERROR: Initial configuration failed!")
-            print("[" + ini_file_name + "] isis_dir File path does not exist! Listed as: ")
-            print(self.isis_dir)
-            print("Please update the 'isis_dir' item in " + ini_file_name + " to point to the correct location\r\n")
+            print("[" + ini_file_name + "] hydra_dir File path does not exist! Listed as: ")
+            print(self.hydra_dir)
+            print("Please update the 'hydra_dir' item in " + ini_file_name + " to point to the correct location\r\n")
             iserr = 1
 
         if iserr==1:

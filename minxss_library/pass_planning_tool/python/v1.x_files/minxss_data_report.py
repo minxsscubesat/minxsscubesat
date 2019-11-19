@@ -30,7 +30,7 @@ if(len(mydir) == 0):
 #SCI: 1-14 packets per record (record = 7 sectors)     logged every 10 secs
 #SD read/write offsets are by the sector, which means only every 7th sector is a record
 #if many packets/record, GPS time should be close, so can probably count that way
-#Note that when doing ISIS commands, "step" is in SCI records, and offset is SD offsets
+#Note that when doing Hydra commands, "step" is in SCI records, and offset is SD offsets
 sd_max = {  # all numbers are in SD sectors
     'hk': 392960, #2 packets per sector
     'sci': 6750205, # See above

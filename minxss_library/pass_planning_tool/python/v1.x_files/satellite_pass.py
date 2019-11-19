@@ -1,8 +1,8 @@
 ### Purpose:
 # NOTE: To generate an exe for this script, see minxss_pass_automation_exe_gen.py
-# 1) updates the ISIS auto-run script based on the pass current time/date (by copying an already-created file)
+# 1) updates the Hydra auto-run script based on the pass current time/date (by copying an already-created file)
 # 2) Closes and re-launches SATPC32
-# 3) Closes and re-launches ISIS
+# 3) Closes and re-launches Hydra
 # 4) Renames the script that got run from "*.prc" to "wasrun_*.prc"
 
 
