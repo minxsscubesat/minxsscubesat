@@ -2,7 +2,7 @@ All documentation is on the google drive in:
 8070 Planning of auto operations
 
 Then check out:
-0) 8071MultipleCubesatOperations.docx
+0) 8071 Multiple Cubesat Operations
 
 1) "Setting up Python import IDL files and to call SQL"
 (for setup info for your dev machine)
