@@ -34,3 +34,9 @@ minxss_library/plotting/__pycache__/minxss_plot_csim_ground_station_conflict.cpy
 minxss_library/pass_planning_tool/set_ephemeris_latest.prc
 minxss_library/pass_planning_tool/set_ephemeris_latest.prc
 *.prc
+minxss_library/pass_planning_tool/python/.idea/$CACHE_FILE$
+minxss_library/pass_planning_tool/python/.idea/inspectionProfiles/profiles_settings.xml
+minxss_library/pass_planning_tool/python/.idea/misc.xml
+minxss_library/pass_planning_tool/python/.idea/modules.xml
+minxss_library/pass_planning_tool/python/.idea/python.iml
+minxss_library/pass_planning_tool/python/.idea/vcs.xml
