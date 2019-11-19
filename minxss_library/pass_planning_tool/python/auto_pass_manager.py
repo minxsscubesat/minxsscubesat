@@ -523,7 +523,7 @@ class SatellitePassManager():
         self.email = email_module
         # store a variable for whether or not we're in a pass
         self.is_in_pass = 0
-        self.hydra_scripts = os.path.join(self.cfg.hydra_dir,'Scripts')
+        self.hydra_scripts = os.path.join(self.cfg.hydra_dir, 'Scripts')
         if not os.path.exists(self.cfg.hydra_dir):
             print("One of these locations does not exist (hydra exe):")
             print(self.cfg.hydra_dir)
@@ -532,7 +532,7 @@ class SatellitePassManager():
         self.hydra_script_dest_file = os.path.join(self.hydra_scripts, 'script_to_run_automatically_on_hydra_boot.prc')
         self.hydra_script_src_folder = os.path.join(self.hydra_scripts, 'scripts_to_run_automatically')
         self.default_pass_script = "default_auto_script.prc"
-        if not os.path.exists(os.path.join(self.hydra_script_src_folder,self.default_pass_script)):
+        if not os.path.exists(os.path.join(self.hydra_script_src_folder, self.default_pass_script)):
             print("\r\nERROR: Initial configuration failed!")
             print("You should have a 'scripts_to_run_automatically' folder in your Hydra/Scripts directory")
             print("That directory should have a file 'default_auto_script.prc'")
@@ -545,13 +545,13 @@ class SatellitePassManager():
         self.hydra_exe = ExeManagement(self.cfg.hydra_dir, self.cfg.hydra_exe_name, 1)
         self.wasrun_scriptloc = ""
 
-    def run_pass(self,info,is_quick_exit):
+    def run_pass(self, info, is_quick_exit):
         print("\r\n\r\n======================== Prepping for a {0} pass! ========================\r\n".format(info.sat_name))
         if self.cfg.do_send_prepass_email==1:
             self.email("PassAboutToOccur")
 
         # Figure out what the next Hydra script to run is
-        if self.cfg.do_run_hydra_scripts==1:
+        if self.cfg.do_run_hydra_scripts == 1:
             scriptnamelist = [f for f in os.listdir(self.hydra_script_src_folder) if os.path.isfile(os.path.join(self.hydra_script_src_folder,f))]
             scriptnamelist.sort()
             while not(".prc" in scriptnamelist[0]) and len(scriptnamelist)>0:  # skip non .prc files
@@ -601,7 +601,7 @@ class SatellitePassManager():
                 self.wasrun_scriptloc = wasrundest_file
 
         if self.global_cfg.disable_restart_programs == 0:
-            if self.cfg.do_monitor_hydra==1:
+            if self.cfg.do_monitor_hydra == 1:
                 self.hydra_exe.start()
 
         self.sleep_until_pass_is_done(info)
@@ -683,18 +683,13 @@ class ExeManagement():
 
     def start(self):
         self.process = Popen(self.exec_full_path, cwd=self.exec_dir)
-        #batch_start_cmd = "start /D \"" + self.exec_dir + "\" \"" + os.path.join(self.exec_dir,self.exec_name) + "\""
-        #batch_start_cmd = "start /D \"" + self.exec_dir + "\" " + self.exec_name
-        #batch_start_cmd = "start C:\\Users\\Colden\\IDLWorkspace85\\minxss_colden_20151102\\src\\pass_planning_tool\\python\\start_satpc32.bat"
-        #print(batch_start_cmd)
-        #os.system(batch_start_cmd)
 
     def is_running(self):
         # Check to see if the process identifier exists
-        if(self.process == None):
+        if self.process is None:
             return 0
         # check to see if the process identifier exists, but the process is not running
-        elif(self.process.poll() != None):
+        elif self.process.poll() is not None:
             return 0
         # if neither of the above two, then it's running
         else:
@@ -702,12 +697,12 @@ class ExeManagement():
 
     def kill(self):
         terminated = 0  # did we kill the process?
-        if self.process != None:
-            if self.process.poll() == None:  # Will be "None" if nothing has terminated the process
+        if self.process is not None:
+            if self.process.poll() is None:  # Will be "None" if nothing has terminated the process
                 self.process.terminate()  # this is the nice way to terminate the process
                 terminated = 1
         if terminated == 0:  # if the "nice" way didn't work, do it the sledgehammer way
-            if os.name != 'posix': # It's windows, not Unix
+            if os.name != 'posix':  # It's windows, not Unix
                 os.system(self.batch_kill_cmd)
             print("NOTE: 'SUCCESS' = we killed an exe we weren't tracking, 'ERROR' = it wasn't running or was closed normally.")
 
