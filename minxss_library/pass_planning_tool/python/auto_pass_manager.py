@@ -9,34 +9,22 @@
 #See pass_config.py
 
 #=======required to build, not to run ===========
-import six
-import packaging.version #required to build, not to run
-import packaging.specifiers #required to build, not to run
-
 import time
 from shutil import copyfile
 import os
 import sys
-import signal
 from scipy.io.idl import readsav
-import scipy.integrate
-import scipy.linalg
-from scipy.sparse.csgraph import _validation
-import datetime
-import jdcal
 from subprocess import Popen
-from subprocess import check_output
-import psutil
 
 import minxss_email
 import jd_utc_time
 import pass_config
 import rundir_analysis
 
-from operator import itemgetter, attrgetter, methodcaller
+from operator import attrgetter
 
 mydir = os.path.dirname(__file__)
-if(len(mydir) == 0):
+if len(mydir) == 0:
     mydir = os.getcwd()
 
 test_pass_conflicts_enabled = 0
