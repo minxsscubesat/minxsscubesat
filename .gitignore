@@ -41,4 +41,4 @@ minxss_library/pass_planning_tool/python/.idea/modules.xml
 minxss_library/pass_planning_tool/python/.idea/python.iml
 minxss_library/pass_planning_tool/python/.idea/vcs.xml
 minxss_library/pass_planning_tool/python/.idea/workspace.xml
-minxss_library/pass_planning_tool/python/__pycache__/pass_config.cpython-37.pyc
+*.pyc
