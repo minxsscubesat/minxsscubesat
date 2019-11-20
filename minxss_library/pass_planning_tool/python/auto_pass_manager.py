@@ -514,7 +514,7 @@ def print_pass_info(info,minutes,is_prepass):
     print(txt)
 
 
-class SatellitePassManager():
+class SatellitePassManager:
     # is_mon_hydra, is_run_hydra_scripts, is_update_satpc_tle, computer_name
     def __init__(self, cfg, email_module, global_cfg):
         self.cfg = cfg
@@ -633,9 +633,9 @@ class SatellitePassManager():
             # print a message every 60 seconds, but check for pass completion every second
             for i in range(0,60):
                 time.sleep(1)
-                if(jd_utc_time.now_in_jd() > info.end_jd_adjusted):
+                if jd_utc_time.now_in_jd() > info.end_jd_adjusted:
                     return
-                if(self.global_cfg.enable_rapidfire_test==1):
+                if self.global_cfg.enable_rapidfire_test==1:
                     time.sleep(10)
                     return
 
@@ -671,7 +671,7 @@ class ExeManagement():
         self.process = None
         self.exec_dir = dir
         self.exec_name = name
-        self.exec_full_path = os.path.join(self.exec_dir,self.exec_name)
+        self.exec_full_path = os.path.join(self.exec_dir, self.exec_name)
         self.batch_kill_cmd = 'TASKKILL /f /IM ' + self.exec_name
 
         if is_launchable:
