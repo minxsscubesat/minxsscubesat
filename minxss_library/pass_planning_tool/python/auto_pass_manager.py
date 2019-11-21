@@ -604,12 +604,12 @@ class SatellitePassManager:
                 self.wasrun_scriptloc = wasrundest_file
 
         if self.global_cfg.disable_restart_programs == 0:
-            if self.do_run_pre_pass_script == 1:
+            if self.cfg.do_run_pre_pass_script == 1:
                 self.script_exe.start()
+            if self.cfg.do_monitor_sdr == 1:
+                self.sdr_exe.start()  # TODO: Need to make sure that this is done before Hydra opens up
             if self.cfg.do_monitor_hydra == 1:
                 self.hydra_exe.start()
-            if self.cfg.do_monitor_sdr == 1:
-                self.sdr_exe.start()
 
         self.sleep_until_pass_is_done(info)
 
