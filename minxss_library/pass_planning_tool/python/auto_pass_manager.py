@@ -56,7 +56,7 @@ def main(script):  # This is what calls the minxss_monitor_pass_times code and s
                     is_quick_exit = 1
                 else:
                     is_quick_exit = 0
-                p.sat_pass_managers[info_list[pass_num].sat_name].run_pass(info_list[pass_num],is_quick_exit)
+                p.sat_pass_managers[info_list[pass_num].sat_name].run_pass(info_list[pass_num], is_quick_exit)
 
         # check if we're less than a minute away, and if so, sleep for less
         elif minutes_before_pass-1 <= p.cfg.setup_minutes_before_pass:
@@ -544,11 +544,13 @@ class SatellitePassManager:
             sys.exit()
 
         self.hydra_exe = ExeManagement(self.cfg.hydra_dir, self.cfg.hydra_exe_name, 1)
+        self.sdr_exe = ExeManagement(self.cfg.sdr_dir, self.cfg.sdr_script_starter_name, 1)
+        self.script_exe = ExeManagement(self.cfg.script_dir, self.cfg.pre_pass_script, 1)
         self.wasrun_scriptloc = ""
 
     def run_pass(self, info, is_quick_exit):
         print("\r\n\r\n======================== Prepping for a {0} pass! ========================\r\n".format(info.sat_name))
-        if self.cfg.do_send_prepass_email==1:
+        if self.cfg.do_send_prepass_email == 1:
             self.email("PassAboutToOccur")
 
         # Figure out what the next Hydra script to run is
@@ -602,8 +604,12 @@ class SatellitePassManager:
                 self.wasrun_scriptloc = wasrundest_file
 
         if self.global_cfg.disable_restart_programs == 0:
+            if self.do_run_pre_pass_script == 1:
+                self.script_exe.start()
             if self.cfg.do_monitor_hydra == 1:
                 self.hydra_exe.start()
+            if self.cfg.do_monitor_sdr == 1:
+                self.sdr_exe.start()
 
         self.sleep_until_pass_is_done(info)
 
@@ -614,6 +620,11 @@ class SatellitePassManager:
             if self.cfg.do_monitor_hydra == 1:
                 self.hydra_exe.kill()
                 time.sleep(10)  # give Hydra time to shut down
+            if self.cfg.do_monitor_sdr == 1:
+                self.sdr_exe.kill()
+                time.sleep(10)  # give the SDR and ruby bridges time to shut down
+            if self.cfg.do_run_pre_pass_script == 1:
+                self.script_exe.kill()
 
         self.pass_analysis(info)
 

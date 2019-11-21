@@ -141,19 +141,17 @@ class SatelliteConfig(GenericConfig):
         # [directories]
         self.hydra_dir = config['directories']['hydra_dir']
         self.script_dir = config['directories']['script_dir']
+        self.sdr_dir = config['directories']['sdr_dir']
 
         # [executables]
         self.hydra_exe_name = config['executables']['hydra_exe_name']
-        self.script_list_full = []
-        try:
-            for script in config['pre_pass_scripts']:
-                self.script_list_full.append('{}{}{}'.format(self.script_dir, os.path.sep, config['pre_pass_scripts'][script]))
-        except:
-            print("ERROR: {} lacks the section 'pre_pass_scripts'. This section must exist even if empty".format(ini_filename))
+        self.sdr_script_starter_name = config['executables']['sdr_script_starter_name']
 
         # [behavior]
         self.do_monitor_hydra = int(config['behavior']['do_monitor_hydra'])
         self.do_run_hydra_scripts = int(config['behavior']['do_run_hydra_scripts'])
+        self.do_monitor_sdr = int(config['behavior']['do_monitor_sdr'])
+        self.do_run_pre_pass_script = int(config['behavior']['do_run_pre_pass_script'])
 
         self.error_check(ini_filename)
 
