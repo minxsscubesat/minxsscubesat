@@ -14,6 +14,7 @@ import os
 import sys
 from scipy.io.idl import readsav
 from subprocess import Popen
+import signal
 
 import minxss_email
 import jd_utc_time
@@ -682,7 +683,7 @@ class ExeManagement():
                 sys.exit()
 
     def start(self):
-        self.process = Popen(self.exec_full_path, cwd=self.exec_dir)
+        self.process = Popen(self.exec_full_path, cwd=self.exec_dir, preexec_fn=os.setsid)
 
     def is_running(self):
         # Check to see if the process identifier exists
@@ -702,8 +703,11 @@ class ExeManagement():
                 self.process.terminate()  # this is the nice way to terminate the process
                 terminated = 1
         if terminated == 0:  # if the "nice" way didn't work, do it the sledgehammer way
-            if os.name != 'posix':  # It's windows, not Unix
+            if os.name == 'posix':  # It's Unix (Linux or macOS)
+                os.killpg(self.process.pid, signal.SIGINT)
+            else:  # It's Windows
                 os.system(self.batch_kill_cmd)
+
             print("NOTE: 'SUCCESS' = we killed an exe we weren't tracking, 'ERROR' = it wasn't running or was closed normally.")
 
 
