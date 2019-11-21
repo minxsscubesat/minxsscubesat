@@ -5,11 +5,11 @@ import os
 
 class GenericConfig:
 
-    def __init__(self, ini_file_name):
+    def __init__(self, ini_filename):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
-        print('Reading configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
-        config.read(ini_file_name)
+        print('Reading configuration file: {}/{}'.format(os.getcwd(), ini_filename))
+        config.read(ini_filename)
 
         # section_list = config.sections()
 
@@ -29,7 +29,7 @@ class GenericConfig:
             for email in config['email_list']:
                 self.email_list.append(config['email_list'][email])
         except:
-            print("ERROR:", ini_file_name, "lacks the section '[email_list]'. This sections must exist, even if empty!")
+            print("ERROR:", ini_filename, "lacks the section '[email_list]'. This sections must exist, even if empty!")
             self.error_handle()
 
         # [computer_config]
@@ -107,11 +107,11 @@ class GenericConfig:
 class SatelliteConfig(GenericConfig):
 
     # loads info for the specific CubeSat ini file fed in
-    def __init__(self, ini_file_name):
+    def __init__(self, ini_filename):
         config = configparser.ConfigParser()
         # TODO: Add better error handler (need to pass actual error into the "except" clause)
-        print('Reading configuration file: {}/{}'.format(os.getcwd(), ini_file_name))
-        config.read(ini_file_name)
+        print('Reading configuration file: {}/{}'.format(os.getcwd(), ini_filename))
+        config.read(ini_filename)
 
         # [satellite]
         self.sat_name = config['satellite']['sat_name']
@@ -129,7 +129,7 @@ class SatelliteConfig(GenericConfig):
                 if config['email_list_error_only'][email] not in self.email_list_full:
                     self.email_list_full.append(config['email_list_error_only'][email])
         except:
-            print("ERROR:", ini_file_name, "lacks the section '[email_list_info]' or '[email_list_error_only]'. These sections must exist, even if empty")
+            print("ERROR:", ini_filename, "lacks the section '[email_list_info]' or '[email_list_error_only]'. These sections must exist, even if empty")
             self.error_handle()
 
         # [email_config]
@@ -140,22 +140,31 @@ class SatelliteConfig(GenericConfig):
 
         # [directories]
         self.hydra_dir = config['directories']['hydra_dir']
-        self.hydra_exe_name = config['directories']['hydra_exe_name']
+        self.script_dir = config['directories']['script_dir']
+
+        # [executables]
+        self.hydra_exe_name = config['executables']['hydra_exe_name']
+        self.script_list_full = []
+        try:
+            for script in config['pre_pass_scripts']:
+                self.script_list_full.append('{}{}{}'.format(self.script_dir, os.path.sep, config['pre_pass_scripts'][script]))
+        except:
+            print("ERROR: {} lacks the section 'pre_pass_scripts'. This section must exist even if empty".format(ini_filename))
 
         # [behavior]
         self.do_monitor_hydra = int(config['behavior']['do_monitor_hydra'])
         self.do_run_hydra_scripts = int(config['behavior']['do_run_hydra_scripts'])
 
-        self.error_check(ini_file_name)
+        self.error_check(ini_filename)
 
-    def error_check(self, ini_file_name):
+    def error_check(self, ini_filename):
         iserr = 0
         # check a couple of file paths
         if not(os.path.exists(self.hydra_dir)):
             print("\r\nERROR: Initial configuration failed!")
-            print("[" + ini_file_name + "] hydra_dir File path does not exist! Listed as: ")
+            print("[" + ini_filename + "] hydra_dir File path does not exist! Listed as: ")
             print(self.hydra_dir)
-            print("Please update the 'hydra_dir' item in " + ini_file_name + " to point to the correct location\r\n")
+            print("Please update the 'hydra_dir' item in " + ini_filename + " to point to the correct location\r\n")
             iserr = 1
 
         if iserr==1:
