@@ -29,8 +29,8 @@
 ;               
 ; KEYWORD PARAMETERS:
 ;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
-;   VERBOSE: Set this to print processing messages
-;   DEBUG:   Set this to trigger breakpoints for debugging
+;   VERBOSE:             Set this to print processing messages
+;   DEBUG:               Set this to trigger breakpoints for debugging
 ;
 ; OUTPUTS:
 ;   Saves .sav and .ncdf files to disk containing the level 1 data product
@@ -413,7 +413,7 @@ endfor
     x123_estimated_xp_fc: 0.0, $
     x123_estimated_xp_fc_uncertainty: 0.0, $
     fractional_difference_x123_estimated_xp_fc: 0.0, $
-    number_xp_datum: 0L}
+    number_xp_samples: 0L}
 
 
   ;minxss-1 xp dark data structure, same as the normal structure
@@ -600,8 +600,7 @@ endfor
       minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
       minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
       minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      minxsslevel1_xp[num_L1_xp].number_xp_datum = 1
-
+      minxsslevel1_xp[num_L1_xp].number_xp_samples = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time ; Time and number here are equivalent because each sample is 1 second
 
       ; increment k and num_L1
       if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
@@ -759,7 +758,7 @@ endfor
     minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
-    minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_datum = 1
+    minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = minxsslevel0d[wdark[k]].sps_xp_integration_time ; time and number are equivalent here because each sample is 1 second
 
 
     ; increment k and num_L1
@@ -890,7 +889,7 @@ minxsslevel1_xp_meta = { $
   XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
   XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
   FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
-  NUMBER_XP_DATUM: 'XP number of datum in the (1-6 possible)' $
+  NUMBER_XP_SAMPLES: 'XP number of samples' $
 }
 
 ; Overwrite flight model number by default. 
