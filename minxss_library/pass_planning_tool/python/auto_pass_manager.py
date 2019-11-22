@@ -367,7 +367,7 @@ class PassManager:
         # note sure how to reverse sort one item but not the other
         for info in info_list:
             info.priority = -info.priority
-        info_list = sorted(info_list, key=attrgetter('start_jd_adjusted','priority'))
+        info_list = sorted(info_list, key=attrgetter('start_jd_adjusted', 'priority'))
         for info in info_list:
             info.priority = -info.priority
 
@@ -387,10 +387,10 @@ class PassManager:
                         # if the next is higher, set the previous to end before the next begins
                         info_list[active_sat].end_jd_adjusted = info_list[i].start_jd_adjusted - jd_utc_time.secs_to_jd(self.cfg.buffer_seconds_transition_high_priority)
                         info_list[active_sat].is_shortened = 1
-                        break;  # we're done evaluating this current satellite, since it has a defined start/end time now
+                        break  # we're done evaluating this current satellite, since it has a defined start/end time now
                     else:
                         if info_list[i].priority == info_list[active_sat].priority:
-                            print("WARNING: Satellites {0} and {1} have the same priority of {2}! Defaulting to prioritizing the first satellite to get a pass".format(info_list[i].sat_name,info_list[active_sat].sat_name,info_list[i].priority))
+                            print("WARNING: Satellites {0} and {1} have the same priority of {2}! Defaulting to prioritizing the first satellite to get a pass".format(info_list[i].sat_name,info_list[active_sat].sat_name, info_list[i].priority))
                         # if the next is lower (or equal), set the next to start when the previous finishes
                         info_list[i].start_jd_adjusted = info_list[active_sat].end_jd_adjusted
                         info_list[i].is_shortened = 1
