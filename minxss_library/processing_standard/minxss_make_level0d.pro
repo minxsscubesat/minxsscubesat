@@ -25,7 +25,8 @@
 ;                       If timeRange is not provided, then code will process all Level0C data. 
 ;
 ; KEYWORD PARAMETERS:
-;   VERBOSE: Set this to print processing messages
+;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
+;   VERBOSE:             Set this to print processing messages
 ;   
 ; OUTPUTS:
 ;   IDL .sav files in getenv('minxss_data')/level0d/idlsavesets/
@@ -51,7 +52,7 @@
 ;   4. Save interpolated, unified array of structures to disk
 ;+
 PRO minxss_make_level0d, fm = fm, dateRange = dateRange, $ 
-                         VERBOSE = VERBOSE
+                         DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE = VERBOSE
 
 ;;
 ; 0. Defaults and validity checks 
@@ -162,6 +163,14 @@ unifiedArrayofStructuresWithNewTags.sun_declination = declination           ; [ย
 
 ; Convert X123 detector temperature from K to ยบC
 unifiedArrayofStructuresWithNewTags.x123_detector_temperature-= 273.15
+
+
+; Overwrite flight model number by default.
+; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN. 
+; We know what level it is though, so just overwrite it unless user does not want this.
+IF NOT keyword_set(DO_NOT_OVERWRITE_FM) THEN BEGIN
+  unifiedArrayofStructuresWithNewTags.flight_model = fm
+ENDIF
 
 ;;
 ; 4. Save interpolated, unified array of structures to disk
