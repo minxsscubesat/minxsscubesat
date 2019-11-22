@@ -18,15 +18,24 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;    low_count=low_count, verbose=verbose, debug=debug
-;
+;   fm [integer]:                    Flight Model number 1 or 2 (default is 1)
+;   low_limit [float]:               Option to change limit on selecting low energy counts for good X123 spectra. Default for low_limit is 7.0
+;   directory_flight_model [string]: ??? ; FIXME: Fill in
+;   directory_input_file [string]:   ??? ; FIXME: Fill in
+;   directory_output_file [string]:  ??? ; FIXME: Fill in
+;   directory_calibration_file [string]: ??? ; FIXME: Fill in
+;   output_filename [string]:            ??? ; FIXME: Fill in
+;   directory_minxss_data [string]:      ??? ; FIXME: Fill in
+;               
 ; KEYWORD PARAMETERS:
-;   fm          Flight Model number 1 or 2 (default is 1)
-;   low_limit   Option to change  limit on selecting low energy counts for good X123 spectra
-;               Default for low_limit is 7.0
-;   VERBOSE     Set this to print processing messages
+;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
+;   VERBOSE: Set this to print processing messages
+;   DEBUG:   Set this to trigger breakpoints for debugging
 ;
 ; OUTPUTS:
+;   Saves .sav and .ncdf files to disk containing the level 1 data product
+;   
+; OPTIONAL OUTPUTS: 
 ;   None
 ;
 ; COMMON BLOCKS:
@@ -49,7 +58,8 @@
 ;   7. Save the Level 1 results (mission-length file)
 ;
 ;+
-PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, write_cdf_file=write_cdf_file, verbose=verbose, debug=debug
+PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, $
+                        DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, verbose=verbose, debug=debug
 
   ;seconds_per_day = 60.0*60.0*24.0
   seconds_per_day = 60.0*60.0*24.0
@@ -882,6 +892,16 @@ minxsslevel1_xp_meta = { $
   FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
   NUMBER_XP_DATUM: 'XP number of datum in the (1-6 possible)' $
 }
+
+; Overwrite flight model number by default. 
+; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN. Level 1 replaces this NaN with 0. 
+; We know what level it is though, so just overwrite it unless user does not want this. 
+IF NOT keyword_set(DO_NOT_OVERWRITE_FM) THEN BEGIN
+  minxsslevel1_x123.flight_model = fm
+  minxsslevel1_x123_dark.flight_model = fm
+  minxsslevel1_xp.flight_model = fm
+  minxsslevel1_xp_dark.flight_model = fm  
+ENDIF
 
 ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .netcdf files also
 ;
