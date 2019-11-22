@@ -366,7 +366,6 @@ endfor
     longitude: 0.0, $
     latitude: 0.0, $
     altitude: 0.0, $
-    spacecraft_in_saa: 0.0, $
     sun_right_ascension: 0.0, $
     sun_declination: 0.0, $
     earth_sun_distance: 0.0, $
@@ -396,7 +395,6 @@ endfor
     longitude: 0.0, $
     latitude: 0.0, $
     altitude: 0.0, $
-    spacecraft_in_saa: 0.0, $
     sun_right_ascension: 0.0, $
     sun_declination: 0.0, $
     earth_sun_distance: 0.0, $
@@ -511,7 +509,6 @@ num_xp_dark = num_dark
     minxsslevel1_x123[num_L1].longitude = minxsslevel0d[wsci[k]].longitude
     minxsslevel1_x123[num_L1].latitude = minxsslevel0d[wsci[k]].latitude
     minxsslevel1_x123[num_L1].altitude = minxsslevel0d[wsci[k]].altitude
-    minxsslevel1_x123[num_L1].spacecraft_in_saa = minxsslevel0d[wsci[k]].spacecraft_in_saa
     minxsslevel1_x123[num_L1].sun_right_ascension = minxsslevel0d[wsci[k]].sun_right_ascension
     minxsslevel1_x123[num_L1].sun_declination = minxsslevel0d[wsci[k]].sun_declination
     minxsslevel1_x123[num_L1].earth_sun_distance = minxsslevel0d[wsci[k]].earth_sun_distance
@@ -663,7 +660,6 @@ endfor
     minxsslevel1_x123_dark[num_L1_dark].longitude = minxsslevel0d[wdark[k]].longitude
     minxsslevel1_x123_dark[num_L1_dark].latitude = minxsslevel0d[wdark[k]].latitude
     minxsslevel1_x123_dark[num_L1_dark].altitude = minxsslevel0d[wdark[k]].altitude
-    minxsslevel1_x123_dark[num_L1_dark].spacecraft_in_saa = minxsslevel0d[wdark[k]].spacecraft_in_saa
     minxsslevel1_x123_dark[num_L1_dark].sun_right_ascension = minxsslevel0d[wdark[k]].sun_right_ascension
     minxsslevel1_x123_dark[num_L1_dark].sun_declination = minxsslevel0d[wdark[k]].sun_declination
     minxsslevel1_x123_dark[num_L1_dark].earth_sun_distance = minxsslevel0d[wdark[k]].earth_sun_distance
@@ -842,7 +838,6 @@ minxsslevel1_x123_meta = { $
   LONGITUDE: 'Earth Longitude for this measurement in units of degrees', $
   LATITUDE : 'Earth Latitude for this measurement in units of degrees', $
   ALTITUDE : 'Earth Altitude for this measurement in units of km from Earth center', $
-  SPACECRAFT_IN_SAA: 'South Atlantic Anomaly (SAA) Flag (1=In_SAA, 0=Out_of_SAA)', $
   SUN_RIGHT_ASCENSION: 'Sun Right Ascension from orbit location', $
   SUN_DECLINATION: 'Sun Declination from orbit location', $
   EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
