@@ -90,8 +90,6 @@ excludeCruciform5Indices = where(adcs3.time_jd LT jpmiso2jd('2017-01-04T08:08:05
 adcs3 = adcs3[excludeCruciform5Indices]
 excludeCruciform6Indices = where(adcs3.time_jd LT jpmiso2jd('2017-01-04T09:43:02Z') OR adcs3.time_jd GT jpmiso2jd('2017-01-04T10:43:02Z'))
 adcs3 = adcs3[excludeCruciform6Indices]
-STOP
-
 
 ; Determine jitter over 10-second period (MinXSS requirement)
 timeJd = !NULL
@@ -101,13 +99,17 @@ FOR i = 0, n_elements(adcs3) - 1 DO BEGIN
   
   IF numInBin EQ 1 THEN CONTINUE
   
-  minmax1 = minmax(-adcs3[within10SecondsIndices].attitude_error2 * !RADEG) ; MinXSS +X = XACT -Y
-  minmax2 = minmax(adcs3[within10SecondsIndices].attitude_error1 * !RADEG)  ; MinXSS +Y = XACT +X
-  minmax3 = minmax(adcs3[within10SecondsIndices].attitude_error3 * !RADEG)  ; MinXSS +Z = XACT +Z
-  
-  jitter1 = (jitter1 EQ !NULL) ? minmax1[1] - minmax1[0] : [jitter1, minmax1[1] - minmax1[0]]
-  jitter2 = (jitter2 EQ !NULL) ? minmax2[1] - minmax2[0] : [jitter2, minmax2[1] - minmax2[0]]
-  jitter3 = (jitter3 EQ !NULL) ? minmax3[1] - minmax3[0] : [jitter3, minmax3[1] - minmax3[0]]
+;  minmax1 = minmax(-adcs3[within10SecondsIndices].attitude_error2 * !RADEG) ; MinXSS +X = XACT -Y
+;  minmax2 = minmax(adcs3[within10SecondsIndices].attitude_error1 * !RADEG)  ; MinXSS +Y = XACT +X
+;  minmax3 = minmax(adcs3[within10SecondsIndices].attitude_error3 * !RADEG)  ; MinXSS +Z = XACT +Z
+;  
+;  jitter1 = (jitter1 EQ !NULL) ? minmax1[1] - minmax1[0] : [jitter1, minmax1[1] - minmax1[0]]
+;  jitter2 = (jitter2 EQ !NULL) ? minmax2[1] - minmax2[0] : [jitter2, minmax2[1] - minmax2[0]]
+;  jitter3 = (jitter3 EQ !NULL) ? minmax3[1] - minmax3[0] : [jitter3, minmax3[1] - minmax3[0]]
+
+  jitter1 = (jitter1 EQ !NULL) ? rms(-adcs3[within10SecondsIndices].attitude_error2 * !RADEG) : [jitter1, rms(-adcs3[within10SecondsIndices].attitude_error2 * !RADEG)]
+  jitter2 = (jitter2 EQ !NULL) ? rms(adcs3[within10SecondsIndices].attitude_error1 * !RADEG) : [jitter2, rms(adcs3[within10SecondsIndices].attitude_error1 * !RADEG)]
+  jitter3 = (jitter3 EQ !NULL) ? rms(adcs3[within10SecondsIndices].attitude_error3 * !RADEG) : [jitter3, rms(adcs3[within10SecondsIndices].attitude_error3 * !RADEG)]
   
   numPointsInBin = (numPointsINBin EQ !NULL) ? numInBin : [numPointsInBin, numInBin]
   
@@ -161,7 +163,7 @@ l1 = legend(POSITION = [0.26, 0.41], TARGET = [p1, p2, p3], FONT_SIZE = fontSize
 t1 = text(0.25, 0.87, '3$\sigma$ = ' + JPMPrintNumber(3 * xSigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'tomato', FONT_SIZE = fontSize - 2)
 t2 = text(0.25, 0.55, '3$\sigma$ = ' + JPMPrintNumber(3 * ySigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'lime green', FONT_SIZE = fontSize - 2)
 t3 = text(0.25, 0.21, '3$\sigma$ = ' + JPMPrintNumber(3 * zSigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'dodger blue', FONT_SIZE = fontSize - 2)
-
+STOP
 ; Save plot to disk
 p1.save, saveloc + 'Jitter Histogram.png'
 
