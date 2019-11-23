@@ -41,7 +41,7 @@ def main(script):  # This is what calls the minxss_monitor_pass_times code and s
             p.satpc_monitor()
 
         [minutes_before_pass, info_list] = p.get_next_pass_info()
-        if minutes_before_pass <= p.cfg.setup_minutes_before_pass or p.cfg.enable_rapidfire_test==1:
+        if minutes_before_pass <= p.cfg.setup_minutes_before_pass or p.cfg.enable_rapidfire_test == 1:
             # print a warning about ignored satellites
             if len(p.ignored_sats) > 0:
                 txt = "\r\nWARNING: Ignoring the following satellites since they do not have config ini files: "
@@ -71,7 +71,7 @@ class PassManagerTests:
     def __init__(self):
         self.testnum = 0
 
-    def test_add_pass_conflicts(self,pass_manager,info_list,idl_data_old):
+    def test_add_pass_conflicts(self, pass_manager, info_list, idl_data_old):
         # Priorities for test: MINXSS1=5, MINXSS2=4, QB50=3
 
         info = MyPassInfo()
@@ -85,39 +85,39 @@ class PassManagerTests:
 
         if self.testnum == 0:
             # test moving a pass backward enough that the order changes
-            idl_data.sat_names = ['MINXSS2','QB50','MINXSS1']
-            idl_data.start_jd = [float(2),float(3),float(5)]
-            idl_data.end_jd = [float(8),float(11),float(10)]
+            idl_data.sat_names = ['MINXSS2', 'QB50', 'MINXSS1']
+            idl_data.start_jd = [float(2), float(3), float(5)]
+            idl_data.end_jd = [float(8), float(11), float(10)]
             # PASS - v2.0.90
         elif self.testnum == 1 :
             # test the "move on if sorting doesn't change it
-            idl_data.sat_names = ['MINXSS2','QB50','MINXSS1']
-            idl_data.start_jd = [float(2),float(3),float(9)]
-            idl_data.end_jd = [float(8),float(11),float(15)]
+            idl_data.sat_names = ['MINXSS2', 'QB50', 'MINXSS1']
+            idl_data.start_jd = [float(2), float(3), float(9)]
+            idl_data.end_jd = [float(8), float(11), float(15)]
             # PASS - v2.0.90
         elif self.testnum == 2:
             # identical start times, and testing a zero-length pass
-            idl_data.sat_names = ['MINXSS2','QB50','MINXSS1']
-            idl_data.start_jd = [float(2),float(2),float(2)]
-            idl_data.end_jd = [float(6),float(5),float(4)]
+            idl_data.sat_names = ['MINXSS2', 'QB50', 'MINXSS1']
+            idl_data.start_jd = [float(2), float(2), float(2)]
+            idl_data.end_jd = [float(6), float(5), float(4)]
             # PASS - v2.0.90
         elif self.testnum == 3:
             # mix up the order
-            idl_data.sat_names = ['QB50','MINXSS1','MINXSS2']
-            idl_data.start_jd = [float(2),float(3),float(5)]
-            idl_data.end_jd = [float(8),float(11),float(10)]
+            idl_data.sat_names = ['QB50', 'MINXSS1', 'MINXSS2']
+            idl_data.start_jd = [float(2), float(3), float(5)]
+            idl_data.end_jd = [float(8), float(11), float(10)]
             # PASS - v2.0.90
         elif self.testnum == 4:
             # mix up the order
-            idl_data.sat_names = ['MINXSS1','QB50','MINXSS2']
-            idl_data.start_jd = [float(2),float(3),float(5)]
-            idl_data.end_jd = [float(8),float(11),float(10)]
+            idl_data.sat_names = ['MINXSS1', 'QB50', 'MINXSS2']
+            idl_data.start_jd = [float(2), float(3), float(5)]
+            idl_data.end_jd = [float(8), float(11), float(10)]
             # PASS - v2.0.90
         elif self.testnum == 5:
             # mix up the order
-            idl_data.sat_names = ['MINXSS1','MINXSS2','QB50']
-            idl_data.start_jd = [float(2),float(3),float(5)]
-            idl_data.end_jd = [float(8),float(11),float(10)]
+            idl_data.sat_names = ['MINXSS1', 'MINXSS2', 'QB50']
+            idl_data.start_jd = [float(2), float(3), float(5)]
+            idl_data.end_jd = [float(8), float(11), float(10)]
             # PASS - v2.0.90
         else:
             print("INVALID TEST NUMBER")
@@ -131,7 +131,7 @@ class PassManagerTests:
             idl_data.start_jd[i] += jd_utc_time.now_in_jd()
             idl_data.end_jd[i] = jd_utc_time.secs_to_jd(idl_data.end_jd[i]*10)
             idl_data.end_jd[i] += jd_utc_time.now_in_jd()
-        print("idl_data.start_jd",idl_data.start_jd)
+        print("idl_data.start_jd", idl_data.start_jd)
 
         info.priority = pass_manager.sat_cfgs[idl_data.sat_names[0]].priority
         info.sat_name = idl_data.sat_names[0]
@@ -197,7 +197,7 @@ class PassManager:
 
     def satpc_monitor(self):
         if self.cfg.use_satpc == 1:
-            if self.cfg.do_update_satpc_tle==1:
+            if self.cfg.do_update_satpc_tle == 1:
                 satpc_tle_file_dropbox = os.path.join(self.cfg.idl_tle_dir, self.cfg.station_name)
                 satpc_tle_file_dropbox = os.path.join(satpc_tle_file_dropbox, self.satpc_tle_name)
 
@@ -219,7 +219,7 @@ class PassManager:
             if self.cfg.disable_restart_programs == 0:
                 # Normally we only reset SATPC32 if there's a new TLE.
                 # However, if we think SATPC32 is not running, kill the process just in case it does exist so that we have a handle on it
-                if self.check_if_new_tle()==1 or self.satpc32_exe.is_running() == 0:
+                if self.check_if_new_tle() == 1 or self.satpc32_exe.is_running() == 0:
                     print("**************** New TLE info (or exe not running)!! Restarting SATPC ****************")
                     self.satpc32_exe.kill()
                     time.sleep(5)
@@ -241,7 +241,7 @@ class PassManager:
                 self.email("NoFile")
                 return 1  # if we don't have the file path we have to assume it updates every time
 
-            if self.tle_contents == None:
+            if self.tle_contents is None:
                 self.tle_contents = current_tle_data
                 return 1
             else:
@@ -321,16 +321,16 @@ class PassManager:
         info_list = []
         info_list.append(MyPassInfo())
         if test_pass_conflicts_enabled == 0:
-            [pass_index,minutes] = self.minutes_until_next_pass(idl_data.start_jd,idl_data.sat_names)
+            [pass_index, minutes] = self.minutes_until_next_pass(idl_data.start_jd, idl_data.sat_names)
         else:
             minutes = 0
             pass_index = 0
-            [idl_data,info_list] = self.tester.test_add_pass_conflicts(self,info_list,idl_data)
+            [idl_data, info_list] = self.tester.test_add_pass_conflicts(self, info_list, idl_data)
 
         if pass_index >= 0:
-                self.store_pass_info(info_list[0],idl_data,pass_index)
-                info_list = self.add_pass_conflicts(info_list, idl_data)
-                print_pass_info(info_list[0],minutes,1)
+            self.store_pass_info(info_list[0], idl_data, pass_index)
+            info_list = self.add_pass_conflicts(info_list, idl_data)
+            print_pass_info(info_list[0], minutes, 1)
 
         return [minutes, info_list]
 
@@ -343,7 +343,7 @@ class PassManager:
         endcompare = info_list[0].end_jd_adjusted
 
         # adjust for testing
-        if self.cfg.enable_rapidfire_test==1:
+        if self.cfg.enable_rapidfire_test == 1:
             starts[i] = starts[i-1] + .0001
             starts[i+1] = starts[i-1] + .0002
             starts[i+2] = starts[i-1] + .0003
@@ -378,12 +378,12 @@ class PassManager:
             # for this satellite, go through all following satellites
             i = active_sat+1
             j = 0
-            while j<len(info_list)+100:
+            while j < len(info_list)+100:
                 # check for overlap
                 if info_list[active_sat].end_jd_adjusted > info_list[i].start_jd_adjusted:
                     # check priorities
                     if info_list[i].priority > info_list[active_sat].priority:
-                        print("Next sat {0} is higher than {1}".format(i,active_sat))
+                        print("Next sat {0} is higher than {1}".format(i, active_sat))
                         # if the next is higher, set the previous to end before the next begins
                         info_list[active_sat].end_jd_adjusted = info_list[i].start_jd_adjusted - jd_utc_time.secs_to_jd(self.cfg.buffer_seconds_transition_high_priority)
                         info_list[active_sat].is_shortened = 1
@@ -414,7 +414,7 @@ class PassManager:
                     # if there was no overlap, we move on to the next satellite to have a pass start, looking for its overlaps.
                     break
                 j += 1
-                if j>=len(info_list)+100:
+                if j >= len(info_list) + 100:
                     print("CODING ERROR: Avoided infinite loop in function 'add_pass_conflicts'. Contact developer!")
 
         #debug prints
@@ -422,7 +422,7 @@ class PassManager:
         #    print("Sat {0}, priority {1} pass: {2}-{3}, adjusted to {4}-{5}".format(sat.sat_name, sat.priority, sat.start_jd, sat.end_jd, sat.start_jd_adjusted, sat.end_jd_adjusted))
 
         #============ Finally, print out a message on the console if there's a conflict ============#
-        if len(info_list)>1:
+        if len(info_list) > 1:
             warning_str = "WARNING: Upcoming conflict between sats: "
             for info in info_list:
                 warning_str += info.sat_name + ", "
@@ -447,17 +447,17 @@ class PassManager:
     # Takes a list of start times (in Julian date) and returns the number of minutes until the next one arrives
     # Assumes the list is sorted.
     # Ignores satellites that aren't in the list of used satellites (configurable by INI file)
-    def minutes_until_next_pass(self,start_times, sat_names):
+    def minutes_until_next_pass(self, start_times, sat_names):
         ind = 0
-        now_jd = jd_utc_time.now_in_jd() # in fractional days
+        now_jd = jd_utc_time.now_in_jd()  # in fractional days
         #print("current time",now_jd)
         #print("current time in UTC",datetime.datetime.utcnow())
         passfound = 0
         for start_time in start_times:
             # find the first time in the list that's in the future or recent past
             tdiff = start_time - now_jd
-            acceptable_minutes_from_pass_start = self.cfg.buffer_seconds_after_pass_end/60+1;  # if the pass 1 minute ago + our buffer period, we can probably start it
-            acceptable_minutes_from_pass_start = min(8,acceptable_minutes_from_pass_start)  # don't run passes older than ~8 minutes, otherwise we could could run the same pass twice!
+            acceptable_minutes_from_pass_start = self.cfg.buffer_seconds_after_pass_end / 60 + 1  # if the pass 1 minute ago + our buffer period, we can probably start it
+            acceptable_minutes_from_pass_start = min(8, acceptable_minutes_from_pass_start)  # don't run passes older than ~8 minutes, otherwise we could could run the same pass twice!
             if tdiff*24*60 > -acceptable_minutes_from_pass_start:
                 if sat_names[ind] in self.sat_cfgs:
                     passfound = 1
@@ -472,8 +472,8 @@ class PassManager:
             minutes = 99999  # Just a large value so that we don't do anything
             ind = -1  # indicates an error to the calling function
         else:
-            minutes = tdiff*24*60  # tdiff is in fractions of a julian day
-        return [ind,minutes]
+            minutes = tdiff * 24 * 60  # tdiff is in fractions of a julian day
+        return [ind, minutes]
 
 
 # creating a struct (not sure if this is "pythonic" or not)
@@ -505,13 +505,13 @@ class IdlDataClass:
 
 
 # prints out pass information - use "is_prepass" to define whether the pass has started or not
-def print_pass_info(info,minutes,is_prepass):
+def print_pass_info(info, minutes, is_prepass):
     txt = "v2.1 {0}: ".format(info.station_name)
-    if is_prepass==1:
-        txt += "Next Pass [{0}] in {1} min ".format(info.sat_name, round(minutes,2))
+    if is_prepass == 1:
+        txt += "Next Pass [{0}] in {1} min ".format(info.sat_name, round(minutes, 2))
     else:
-        txt += "ACTIVE PASS [{0}] {1} min left ".format(info.sat_name,round(minutes,2))
-    txt += "// El: {0} deg. // Len: {1} min. // Sun: {2}".format(round(info.elevation,2), round(info.length_minutes,2), info.sunlight)
+        txt += "ACTIVE PASS [{0}] {1} min left ".format(info.sat_name, round(minutes, 2))
+    txt += "// El: {0} deg. // Len: {1} min. // Sun: {2}".format(round(info.elevation, 2), round(info.length_minutes, 2), info.sunlight)
     print(txt)
 
 
@@ -555,13 +555,13 @@ class SatellitePassManager:
 
         # Figure out what the next Hydra script to run is
         if self.cfg.do_run_hydra_scripts == 1:
-            scriptnamelist = [f for f in os.listdir(self.hydra_script_src_folder) if os.path.isfile(os.path.join(self.hydra_script_src_folder,f))]
+            scriptnamelist = [f for f in os.listdir(self.hydra_script_src_folder) if os.path.isfile(os.path.join(self.hydra_script_src_folder, f))]
             scriptnamelist.sort()
-            while not(".prc" in scriptnamelist[0]) and len(scriptnamelist)>0:  # skip non .prc files
+            while not(".prc" in scriptnamelist[0]) and len(scriptnamelist) > 0:  # skip non .prc files
                 print("Ignoring file in scripts_to_run_automatically folder: " + scriptnamelist[0])
                 del scriptnamelist[0]
 
-            nextscriptfilename = scriptnamelist[0];
+            nextscriptfilename = scriptnamelist[0]
             if "default" in nextscriptfilename or "was_run" in nextscriptfilename:
                 self.email("NoPassScript")
                 hydra_script_src_file = os.path.join(self.hydra_script_src_folder, self.default_pass_script)
@@ -636,18 +636,18 @@ class SatellitePassManager:
             # check to see if pass has started yet
             if t < info.start_jd_adjusted:
                 minutes = (info.start_jd_adjusted-t)*24*60
-                print_pass_info(info,minutes,1)
+                print_pass_info(info, minutes, 1)
             # if it has started, we must not be done waiting yet
             else:
                 minutes = (info.end_jd_adjusted-t)*24*60
-                print_pass_info(info,minutes,0)
+                print_pass_info(info, minutes, 0)
 
             # print a message every 60 seconds, but check for pass completion every second
             for i in range(0,60):
                 time.sleep(1)
                 if jd_utc_time.now_in_jd() > info.end_jd_adjusted:
                     return
-                if self.global_cfg.enable_rapidfire_test==1:
+                if self.global_cfg.enable_rapidfire_test == 1:
                     time.sleep(10)
                     return
 
@@ -671,14 +671,14 @@ class SatellitePassManager:
         #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_07_44_55', os.path.basename(self.wasrun_scriptloc))
         #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_09_22_26', os.path.basename(self.wasrun_scriptloc))
 
-        results.Analyze(info,self.cfg)
+        results.Analyze(info, self.cfg)
 
-        self.email.PassResults(results,info)
+        self.email.PassResults(results, info)
 
 
 # Tracks executables that need to be launched and killed.
 # If the exe is not launchable, set is_launchable to 0. (Example: SATPC32's ServerSDX)
-class ExeManagement():
+class ExeManagement:
     def __init__(self, dir, name, is_launchable):
         self.process = None
         self.exec_dir = dir
