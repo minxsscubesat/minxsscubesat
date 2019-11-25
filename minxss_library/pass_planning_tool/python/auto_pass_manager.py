@@ -271,8 +271,6 @@ class PassManager:
         passes_idl_file = os.path.join(self.cfg.idl_tle_dir, self.cfg.station_name)
         passes_idl_file = os.path.join(passes_idl_file, 'passes_latest_' + self.cfg.station_name.upper() + '.sav')
 
-        # print("Reading from IDL file: ",passes_idl_file) #enable if needed for debugging
-
         try:
             idl_data_raw = readsav(passes_idl_file)
         except:
@@ -415,10 +413,6 @@ class PassManager:
                 if j >= len(info_list) + 100:
                     print("CODING ERROR: Avoided infinite loop in function 'add_pass_conflicts'. Contact developer!")
 
-        #debug prints
-        #for sat in info_list:
-        #    print("Sat {0}, priority {1} pass: {2}-{3}, adjusted to {4}-{5}".format(sat.sat_name, sat.priority, sat.start_jd, sat.end_jd, sat.start_jd_adjusted, sat.end_jd_adjusted))
-
         #============ Finally, print out a message on the console if there's a conflict ============#
         if len(info_list) > 1:
             warning_str = "WARNING: Upcoming conflict between sats: "
@@ -504,9 +498,9 @@ class IdlDataClass:
 
 # prints out pass information - use "is_prepass" to define whether the pass has started or not
 def print_pass_info(info, minutes, is_prepass):
-    txt = "{0} {1}: ".format(VERSION, info.station_name)
+    txt = "{}: ".format(info.station_name)
     if is_prepass == 1:
-        txt += "Next Pass [{0}] in {1} min ".format(info.sat_name, round(minutes, 2))
+        txt += "Next pass [{0}] in {1} min ".format(info.sat_name, round(minutes, 2))
     else:
         txt += "ACTIVE PASS [{0}] {1} min left ".format(info.sat_name, round(minutes, 2))
     txt += "// El: {0} deg. // Len: {1} min. // Sun: {2}".format(round(info.elevation, 2), round(info.length_minutes, 2), info.sunlight)
@@ -664,11 +658,6 @@ class SatellitePassManager:
 
         # populate the path in the analysis object
         results = rundir_analysis.Rundir(os.path.join(rundirs_dir, rundir_list[-1]), os.path.basename(self.wasrun_scriptloc))
-
-        #for debugging easily...
-        #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_07_44_55', os.path.basename(self.wasrun_scriptloc))
-        #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_09_22_26', os.path.basename(self.wasrun_scriptloc))
-
         results.Analyze(info, self.cfg)
 
         self.email.PassResults(results, info)
@@ -706,17 +695,14 @@ class ExeManagement:
             return 1
 
     def kill(self):
-        terminated = 0  # did we kill the process?
         if self.process is not None:
-            if self.process.poll() is None:  # Will be "None" if nothing has terminated the process
-                self.process.terminate()  # this is the nice way to terminate the process
-                terminated = 1
-        if terminated == 0:  # if the "nice" way didn't work, do it the sledgehammer way
             if os.name == 'posix':  # It's Unix (Linux or macOS)
-                if self.process is not None:
-                    os.killpg(self.process.pid, signal.SIGINT)
+                os.killpg(self.process.pid, signal.SIGINT)
             else:  # It's Windows
-                os.system(self.batch_kill_cmd)
+                if self.process.poll() is None:  # Will be "None" if nothing has terminated the process
+                    self.process.terminate()  # this is the nice way to terminate a Windows process
+                else:  # if the "nice" way didn't work, do it the sledgehammer way
+                    os.system(self.batch_kill_cmd)
 
             print("NOTE: 'SUCCESS' = we killed an exe we weren't tracking, 'ERROR' = it wasn't running or was closed normally.")
 
