@@ -208,12 +208,6 @@ class PassManager:
                 if os.path.exists(self.cfg.satpc_tle_dir) and os.path.exists(satpc_tle_file_dropbox):
                     satpc_tle_file_dest = os.path.join(self.cfg.satpc_tle_dir, self.satpc_tle_name)
                     copyfile(satpc_tle_file_dropbox, satpc_tle_file_dest)
-                    # print("\r\n=====================================")
-                    # print("Found new SATPC32 TLE! Copying from:")
-                    # print(satpc_tle_file_dropbox)
-                    # print("TO:")
-                    # print(self.cfg.satpc_tle_dir)
-                    # print("=====================================\r\n")
                 else:
                     print("One of these locations does not exist:")
                     print(satpc_tle_file_dropbox)
@@ -237,9 +231,9 @@ class PassManager:
             # get the file data
             satpc_tle_file_dest = os.path.join(self.cfg.satpc_tle_dir, self.satpc_tle_name)
             if os.path.exists(satpc_tle_file_dest):
-                fileHandle = open(satpc_tle_file_dest, 'r')
-                current_tle_data = fileHandle.read()
-                fileHandle.close()
+                file_handle = open(satpc_tle_file_dest, 'r')
+                current_tle_data = file_handle.read()
+                file_handle.close()
             else:
                 print("ERROR: No SATPC TLE file at {0}".format(satpc_tle_file_dest))
                 self.email("NoFile")
@@ -275,7 +269,7 @@ class PassManager:
         #   passes_latest_STATION2.sav
         # [etc]
         passes_idl_file = os.path.join(self.cfg.idl_tle_dir, self.cfg.station_name)
-        passes_idl_file = os.path.join(passes_idl_file,'passes_latest_' + self.cfg.station_name.upper() + '.sav')
+        passes_idl_file = os.path.join(passes_idl_file, 'passes_latest_' + self.cfg.station_name.upper() + '.sav')
 
         # print("Reading from IDL file: ",passes_idl_file) #enable if needed for debugging
 
@@ -665,7 +659,7 @@ class SatellitePassManager:
     # gets a path to the rundir for the current pass and then has it analyzed
     def pass_analysis(self, info):
         rundirs_dir = os.path.join(self.cfg.hydra_dir, 'Rundirs')
-        rundir_list = [f for f in os.listdir(rundirs_dir) if not(os.path.isfile(os.path.join(rundirs_dir,f)))]
+        rundir_list = [f for f in os.listdir(rundirs_dir) if not(os.path.isfile(os.path.join(rundirs_dir, f)))]
         rundir_list.sort()
 
         # populate the path in the analysis object
