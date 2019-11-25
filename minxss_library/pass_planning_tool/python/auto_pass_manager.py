@@ -29,9 +29,11 @@ if len(mydir) == 0:
 
 test_pass_conflicts_enabled = 0
 
+VERSION = 'v3.0.0'
+
 
 def main(script):  # This is what calls the minxss_monitor_pass_times code and sets it all up
-    print("\r\n\r\n **************** Initializing Automatic Pass Manager (v2.0) ***************\r\n\r\n")
+    print("\r\n\r\n **************** Initializing Automatic Pass Manager ({}) ***************\r\n\r\n".format(VERSION))
     p = PassManager()
     if p.cfg.use_satpc == 1:
         p.satpc_monitor()  # calling this twice because it creates a lot of junk in the console on startup
@@ -182,8 +184,10 @@ class PassManager:
             self.sat_cfgs[tmp_sat_cfg.sat_name] = tmp_sat_cfg
             self.sat_emails[tmp_sat_cfg.sat_name] = minxss_email.email(tmp_sat_cfg.email_list_info, tmp_sat_cfg.email_list_full, tmp_sat_cfg.sat_name, self.cfg)
             self.sat_pass_managers[tmp_sat_cfg.sat_name] = SatellitePassManager(tmp_sat_cfg, self.sat_emails[tmp_sat_cfg.sat_name], self.cfg)
+
             # make sure any instance of hydra that may have been left open is now closed
-            self.sat_pass_managers[tmp_sat_cfg.sat_name].kill_hydra()
+            if tmp_sat_cfg.do_monitor_hydra == 1:
+                self.sat_pass_managers[tmp_sat_cfg.sat_name].kill_hydra()
 
         # SATPC variables
         self.tle_contents = None
@@ -506,7 +510,7 @@ class IdlDataClass:
 
 # prints out pass information - use "is_prepass" to define whether the pass has started or not
 def print_pass_info(info, minutes, is_prepass):
-    txt = "v2.1 {0}: ".format(info.station_name)
+    txt = "{0} {1}: ".format(VERSION, info.station_name)
     if is_prepass == 1:
         txt += "Next Pass [{0}] in {1} min ".format(info.sat_name, round(minutes, 2))
     else:
@@ -665,7 +669,7 @@ class SatellitePassManager:
         rundir_list.sort()
 
         # populate the path in the analysis object
-        results = rundir_analysis.Rundir(os.path.join(rundirs_dir,rundir_list[-1]), os.path.basename(self.wasrun_scriptloc))
+        results = rundir_analysis.Rundir(os.path.join(rundirs_dir, rundir_list[-1]), os.path.basename(self.wasrun_scriptloc))
 
         #for debugging easily...
         #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_07_44_55', os.path.basename(self.wasrun_scriptloc))
@@ -715,7 +719,8 @@ class ExeManagement:
                 terminated = 1
         if terminated == 0:  # if the "nice" way didn't work, do it the sledgehammer way
             if os.name == 'posix':  # It's Unix (Linux or macOS)
-                os.killpg(self.process.pid, signal.SIGINT)
+                if self.process is not None:
+                    os.killpg(self.process.pid, signal.SIGINT)
             else:  # It's Windows
                 os.system(self.batch_kill_cmd)
 
