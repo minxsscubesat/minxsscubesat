@@ -9,6 +9,7 @@
 
 # Required to build, not to run
 import time
+from datetime import datetime
 from shutil import copyfile
 import os
 import sys
@@ -32,12 +33,16 @@ test_pass_conflicts_enabled = 0
 VERSION = 'v3.0.0'
 
 
+def timestamp():
+    return '{} (local)'.format(datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
+
+
 def main(script):  # This is what calls the minxss_monitor_pass_times code and sets it all up
     print("\r\n\r\n **************** Initializing Automatic Pass Manager ({}) ***************\r\n\r\n".format(VERSION))
     p = PassManager()
     if p.cfg.use_satpc == 1:
         p.satpc_monitor()  # calling this twice because it creates a lot of junk in the console on startup
-    print("\r\n\r\n **************** SETUP COMPLETED SUCCESSFULLY ***************\r\n\r\n")
+    print("\r\n\r\n **************** Setup completed successfully ***************\r\n\r\n")
     while 1:
         if p.cfg.use_satpc == 1:
             p.satpc_monitor()
@@ -498,7 +503,7 @@ class IdlDataClass:
 
 # prints out pass information - use "is_prepass" to define whether the pass has started or not
 def print_pass_info(info, minutes, is_prepass):
-    txt = "{}: ".format(info.station_name)
+    txt = "{0} {1}: ".format(timestamp(), info.station_name.capitalize())
     if is_prepass == 1:
         txt += "Next pass [{0}] in {1} min ".format(info.sat_name, round(minutes, 2))
     else:
@@ -541,7 +546,7 @@ class SatellitePassManager:
         self.wasrun_scriptloc = ""
 
     def run_pass(self, info, is_quick_exit):
-        print("\r\n\r\n======================== Prepping for a {0} pass! ========================\r\n".format(info.sat_name))
+        print("\r\n\r\n======================== {0} Prepping for a {1} pass! ========================\r\n".format(timestamp(), info.sat_name))
         if self.cfg.do_send_prepass_email == 1:
             self.email("PassAboutToOccur")
 
@@ -620,7 +625,7 @@ class SatellitePassManager:
 
         self.pass_analysis(info)
 
-        print("\r\n**********************  Done with {0} pass! **********************\r\n\r\n".format(info.sat_name))
+        print("\r\n********************** {0} Done with {1} pass! **********************\r\n\r\n".format(timestamp(), info.sat_name))
 
     def sleep_until_pass_is_done(self, info):
         while 1:
@@ -704,7 +709,7 @@ class ExeManagement:
                 else:  # if the "nice" way didn't work, do it the sledgehammer way
                     os.system(self.batch_kill_cmd)
 
-            print("NOTE: 'SUCCESS' = we killed an exe we weren't tracking, 'ERROR' = it wasn't running or was closed normally.")
+            print("{0} {1} process was terminated. Will restart before next pass.".format(timestamp(), self.exec_name))
 
 
 if __name__ == '__main__':

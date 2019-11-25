@@ -3,6 +3,7 @@ import sys
 import re #regex
 import csv
 
+
 class Rundir():
     def __init__(self,rundir_path,scriptname):
         self.rundir_path = rundir_path
@@ -19,7 +20,7 @@ class Rundir():
     def Analyze(self,info,cfg):
         print("")
         print("")
-        print("********************* Pass Results *********************")
+        print("Pass Results:")
         print("")
 
         files = os.listdir(self.rundir_path)
@@ -42,7 +43,7 @@ class Rundir():
         print("TLM filename:", self.tlm_filename, "-- Size: ", self.bytes_downlinked_data)
         print("")
         print("")
-        print("********************* END of Pass Results *********************")
+        print("End of Pass Results")
         print("")
 
     #store cmdTry and cmdSuccess counts in a CSV file, then returns the path to the csv file
