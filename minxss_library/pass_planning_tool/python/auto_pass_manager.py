@@ -16,6 +16,7 @@ import sys
 from scipy.io.idl import readsav
 from subprocess import Popen
 import signal
+import pyautogui
 
 import minxss_email
 import jd_utc_time
@@ -604,9 +605,11 @@ class SatellitePassManager:
             if self.cfg.do_run_pre_pass_script == 1:
                 self.script_exe.start()
             if self.cfg.do_monitor_sdr == 1:
-                self.sdr_exe.start()  # TODO: Need to make sure that this is done before Hydra opens up
+                self.sdr_exe.start()
+                time.sleep(15)  # Gives the SDR time to start up -- typically takes 8 seconds
+                self.engage_doppler_correction()
             if self.cfg.do_monitor_hydra == 1:
-                self.hydra_exe.start()
+                self.hydra_exe.start()  # TODO: Make sure Hydra script has a brief wait in startup script so that the SDR bridges can be sure to be up
 
         self.sleep_until_pass_is_done(info)
 
@@ -626,6 +629,14 @@ class SatellitePassManager:
         self.pass_analysis(info)
 
         print("\r\n********************** {0} Done with {1} pass! **********************\r\n\r\n".format(timestamp(), info.sat_name))
+
+    def engage_doppler_correction(self):
+        try:
+            x, y = pyautogui.locateCenterOnScreen(os.path.join(self.cfg.sdr_dir, 'engage_button.png'), grayscale=True, confidence=0.5)
+            pyautogui.click(x + 50, y)  # X-offset accounts for screenshot of button including neighboring UI for unique identification
+        except TypeError:
+            print('GPredict Radio Controller must be visible on screen! Click Engage if it is not already and leave the window visible to continue automation.')
+            self.email("DopplerEngage")
 
     def sleep_until_pass_is_done(self, info):
         while 1:

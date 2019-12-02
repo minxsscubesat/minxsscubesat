@@ -62,6 +62,13 @@ class email(object):
                 email_type = "critical_error"
                 emailtext = "Pass Automation could not find a file it expected to exist! Please debug!"
 
+        if texttype == "DopplerEngage":
+            tdiff = now_in_jd() - self.errNoFile_jd
+            if tdiff * 24 > num_hours_between_emails:
+                self.errNoFile_jd = now_in_jd()
+                email_type = "critical_error"
+                emailtext = "Pass Automation could not engage the Doppler correction. Make sure that the Gpredict Radio Controller window is visible on screen. Click Engage if it is not already. Leave the Radio Controller window visible to continue automation."
+
         if emailtext != None:
             print(emailtext)
             self.SendEmail(emailtext,email_type,"","")
