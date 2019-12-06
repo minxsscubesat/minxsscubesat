@@ -76,7 +76,6 @@ class GenericConfig:
 
     def error_check(self):
         iserr = 0
-        # check a couple of file paths
         if not(os.path.exists(self.idl_tle_dir)):
             print("\r\nERROR: Initial configuration failed!")
             print("[Environment Variables] idl_tle_dir File path does not exist! Listed as: ")
@@ -138,6 +137,12 @@ class SatelliteConfig(GenericConfig):
         self.elevation_to_expect_data = float(config['email_config']['elevation_to_expect_data'])
         self.min_expected_data = float(config['email_config']['min_expected_data'])
 
+        # [behavior]
+        self.do_monitor_hydra = int(config['behavior']['do_monitor_hydra'])
+        self.do_run_hydra_scripts = int(config['behavior']['do_run_hydra_scripts'])
+        self.do_monitor_sdr = int(config['behavior']['do_monitor_sdr'])
+        self.do_run_pre_pass_script = int(config['behavior']['do_run_pre_pass_script'])
+
         # [directories]
         self.hydra_dir = config['directories']['hydra_dir']
         self.script_dir = config['directories']['script_dir']
@@ -148,23 +153,33 @@ class SatelliteConfig(GenericConfig):
         self.pre_pass_script = config['pre_pass_script']['pre_pass_script']
         self.sdr_script_starter_name = config['executables']['sdr_script_starter_name']
 
-        # [behavior]
-        self.do_monitor_hydra = int(config['behavior']['do_monitor_hydra'])
-        self.do_run_hydra_scripts = int(config['behavior']['do_run_hydra_scripts'])
-        self.do_monitor_sdr = int(config['behavior']['do_monitor_sdr'])
-        self.do_run_pre_pass_script = int(config['behavior']['do_run_pre_pass_script'])
-
         self.error_check(ini_filename)
 
     def error_check(self, ini_filename):
         iserr = 0
-        # check a couple of file paths
-        if not(os.path.exists(self.hydra_dir)):
-            print("\r\nERROR: Initial configuration failed!")
-            print("[" + ini_filename + "] hydra_dir File path does not exist! Listed as: ")
-            print(self.hydra_dir)
-            print("Please update the 'hydra_dir' item in " + ini_filename + " to point to the correct location\r\n")
-            iserr = 1
+        if self.do_monitor_hydra:
+            if not(os.path.exists(self.hydra_dir)):
+                print("\r\nERROR: Initial configuration failed!")
+                print("[" + ini_filename + "] hydra_dir path does not exist! Listed as: ")
+                print(self.hydra_dir)
+                print("Either update the 'hydra_dir' item in " + ini_filename + " to point to the correct location or disable monitoring under [behavior]\r\n")
+                iserr = 1
 
-        if iserr==1:
+        if self.do_monitor_sdr:
+            if not os.path.exists(self.sdr_dir):
+                print("\r\nERROR: Initial configuration failed!")
+                print("[" + ini_filename + "] sdr_dir path does not exist! Listed as: ")
+                print(self.sdr_dir)
+                print("Either update the 'sdr_dir' item in " + ini_filename + " to point to the correct location or disable monitoring under [behavior]\r\n")
+                iserr = 1
+
+        if self.do_run_pre_pass_script:
+            if not os.path.exists(self.script_dir):
+                print("\r\nERROR: Initial configuration failed!")
+                print("[" + ini_filename + "] script_dir path does not exist! Listed as: ")
+                print(self.script_dir)
+                print("Either update the 'script_dir' item in " + ini_filename + " to point to the correct location or disable pre-pass script under [behavior]\r\n")
+                iserr = 1
+
+        if iserr == 1:
             self.error_handle()

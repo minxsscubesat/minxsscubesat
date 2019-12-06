@@ -25,13 +25,13 @@ import rundir_analysis
 
 from operator import attrgetter
 
+__version__ = 'v3.0.0'
+
 mydir = os.path.dirname(__file__)
 if len(mydir) == 0:
     mydir = os.getcwd()
 
 test_pass_conflicts_enabled = 0
-
-VERSION = 'v3.0.0'
 
 
 def timestamp():
@@ -39,7 +39,7 @@ def timestamp():
 
 
 def main(script):  # This is what calls the minxss_monitor_pass_times code and sets it all up
-    print("\r\n\r\n **************** Initializing Automatic Pass Manager ({}) ***************\r\n\r\n".format(VERSION))
+    print("\r\n\r\n **************** Initializing Automatic Pass Manager ({}) ***************\r\n\r\n".format(__version__))
     p = PassManager()
     if p.cfg.use_satpc == 1:
         p.satpc_monitor()  # calling this twice because it creates a lot of junk in the console on startup
@@ -522,29 +522,35 @@ class SatellitePassManager:
         self.email = email_module
         # store a variable for whether or not we're in a pass
         self.is_in_pass = 0
-        self.hydra_scripts = os.path.join(self.cfg.hydra_dir, 'Scripts')
-        if not os.path.exists(self.cfg.hydra_dir):
-            print("One of these locations does not exist (hydra exe):")
-            print(self.cfg.hydra_dir)
-            self.email("NoFile")
 
-        self.hydra_script_dest_file = os.path.join(self.hydra_scripts, 'script_to_run_automatically_on_hydra_boot.prc')
-        self.hydra_script_src_folder = os.path.join(self.hydra_scripts, 'scripts_to_run_automatically')
-        self.default_pass_script = "default_auto_script.prc"
-        if not os.path.exists(os.path.join(self.hydra_script_src_folder, self.default_pass_script)):
-            print("\r\nERROR: Initial configuration failed!")
-            print("You should have a 'scripts_to_run_automatically' folder in your Hydra/Scripts directory")
-            print("That directory should have a file 'default_auto_script.prc'")
-            print("This file is what will run if there are no scripts available to run.")
-            print("This is the file the program is looking for that doesn't exist:")
-            print(os.path.join(self.hydra_script_src_folder,self.default_pass_script))
-            print("\r\n")
-            sys.exit()
+        if self.cfg.do_monitor_hydra:
+            self.hydra_scripts = os.path.join(self.cfg.hydra_dir, 'Scripts')
+            if not os.path.exists(self.cfg.hydra_dir):
+                print("One of these locations does not exist (hydra exe):")
+                print(self.cfg.hydra_dir)
+                self.email("NoFile")
 
-        self.hydra_exe = ExeManagement(self.cfg.hydra_dir, self.cfg.hydra_exe_name, 1)
-        self.sdr_exe = ExeManagement(self.cfg.sdr_dir, self.cfg.sdr_script_starter_name, 1)
-        self.script_exe = ExeManagement(self.cfg.script_dir, self.cfg.pre_pass_script, 1)
-        self.wasrun_scriptloc = ""
+            self.hydra_script_dest_file = os.path.join(self.hydra_scripts, 'script_to_run_automatically_on_hydra_boot.prc')
+            self.hydra_script_src_folder = os.path.join(self.hydra_scripts, 'scripts_to_run_automatically')
+            self.default_pass_script = "default_auto_script.prc"
+            self.wasrun_scriptloc = ""
+            if not os.path.exists(os.path.join(self.hydra_script_src_folder, self.default_pass_script)):
+                print("\r\nERROR: Initial configuration failed!")
+                print("You should have a 'scripts_to_run_automatically' folder in your Hydra/Scripts directory")
+                print("That directory should have a file 'default_auto_script.prc'")
+                print("This file is what will run if there are no scripts available to run.")
+                print("This is the file the program is looking for that doesn't exist:")
+                print(os.path.join(self.hydra_script_src_folder,self.default_pass_script))
+                print("\r\n")
+                sys.exit()
+
+            self.hydra_exe = ExeManagement(self.cfg.hydra_dir, self.cfg.hydra_exe_name, 1)
+
+        if self.cfg.do_monitor_sdr:
+            self.sdr_exe = ExeManagement(self.cfg.sdr_dir, self.cfg.sdr_script_starter_name, 1)
+
+        if self.cfg.do_run_pre_pass_script:
+            self.script_exe = ExeManagement(self.cfg.script_dir, self.cfg.pre_pass_script, 1)
 
     def run_pass(self, info, is_quick_exit):
         print("\r\n\r\n======================== {0} Prepping for a {1} pass! ========================\r\n".format(timestamp(), info.sat_name))
@@ -632,7 +638,7 @@ class SatellitePassManager:
 
     def engage_doppler_correction(self):
         try:
-            x, y = pyautogui.locateCenterOnScreen(os.path.join(self.cfg.sdr_dir, 'engage_button.png'), grayscale=True, confidence=0.5)
+            x, y = pyautogui.locateCenterOnScreen(os.path.join(self.cfg.sdr_dir, 'engage_button.png'), grayscale=True, confidence=0.9)
             pyautogui.click(x + 50, y)  # X-offset accounts for screenshot of button including neighboring UI for unique identification
         except TypeError:
             print('GPredict Radio Controller must be visible on screen! Click Engage if it is not already and leave the window visible to continue automation.')
