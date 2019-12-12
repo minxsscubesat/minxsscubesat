@@ -5,7 +5,7 @@ import csv
 
 
 class Rundir():
-    def __init__(self,rundir_path,scriptname):
+    def __init__(self, rundir_path, scriptname):
         self.rundir_path = rundir_path
         self.scriptname = scriptname
         self.eventlog_filepath = ""
@@ -15,16 +15,14 @@ class Rundir():
         self.csv_filepath = ""
         self.bytes_downlinked_data = 0
         self.csv_cmd_attempts_filename = 'cmd_attempts.csv'
-        #self.csv_errors_filename = 'errors.csv' #NOTE: not used
 
-    def Analyze(self,info,cfg):
+    def analyze(self, info, cfg):
         print("")
         print("")
         print("Pass Results:")
         print("")
 
         files = os.listdir(self.rundir_path)
-        #print(files)
         #figure out the tlm and eventlog filenames
         for filename in files:
             if 'EventLog_' in filename:
@@ -131,7 +129,7 @@ class Rundir():
 def main(script):
     folder = 'C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_07_44_55'
     results = Rundir(folder)
-    results.Analyze()
+    results.analyze()
     print("")
     print(results.eventlog_filepath)
     print("")

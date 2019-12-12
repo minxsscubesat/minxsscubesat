@@ -632,7 +632,8 @@ class SatellitePassManager:
             if self.cfg.do_run_pre_pass_script == 1:
                 self.script_exe.kill()
 
-        self.pass_analysis(info)
+        if self.cfg.do_monitor_hydra:
+            self.pass_analysis(info)
 
         print("\r\n********************** {0} Done with {1} pass! **********************\r\n\r\n".format(timestamp(), info.sat_name))
 
@@ -680,7 +681,7 @@ class SatellitePassManager:
 
         # populate the path in the analysis object
         results = rundir_analysis.Rundir(os.path.join(rundirs_dir, rundir_list[-1]), os.path.basename(self.wasrun_scriptloc))
-        results.Analyze(info, self.cfg)
+        results.analyze(info, self.cfg)
 
         self.email.PassResults(results, info)
 
@@ -703,7 +704,10 @@ class ExeManagement:
                 sys.exit()
 
     def start(self):
-        self.process = Popen(self.exec_full_path, cwd=self.exec_dir, preexec_fn=os.setsid)
+        if os.name == 'posix':  # It's Unix (Linux or macOS)
+            self.process = Popen(self.exec_full_path, cwd=self.exec_dir, preexec_fn=os.setsid)
+        else:
+            self.process = Popen(self.exec_full_path, cwd=self.exec_dir)
 
     def is_running(self):
         # Check to see if the process identifier exists

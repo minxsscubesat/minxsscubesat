@@ -296,7 +296,7 @@ class monitor():
         #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_07_44_55', os.path.basename(self.wasrun_scriptloc))
         #results = rundir_analysis.Rundir('C:\\Users\\Colden\\Desktop\\CU Boulder\\MinXSS\\ground_station_files\\updated rundirs\\2016_317_09_22_26', os.path.basename(self.wasrun_scriptloc))
 
-        results.Analyze()
+        results.analyze()
 
         self.email.PassResults(results, self.cfg.computer_name)
 
