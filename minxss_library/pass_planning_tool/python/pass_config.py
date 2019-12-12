@@ -145,11 +145,13 @@ class SatelliteConfig(GenericConfig):
 
         # [directories]
         self.hydra_dir = config['directories']['hydra_dir']
+        self.hydra_exe_dir = config['directories']['hydra_exe_dir']
         self.script_dir = config['directories']['script_dir']
         self.sdr_dir = config['directories']['sdr_dir']
 
         # [executables]
         self.hydra_exe_name = config['executables']['hydra_exe_name']
+        self.hydra_options = config['executables']['hydra_options']
         self.pre_pass_script = config['pre_pass_script']['pre_pass_script']
         self.sdr_script_starter_name = config['executables']['sdr_script_starter_name']
 

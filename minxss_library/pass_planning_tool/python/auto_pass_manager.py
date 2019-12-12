@@ -514,7 +514,6 @@ def print_pass_info(info, minutes, is_prepass):
 
 
 class SatellitePassManager:
-    # is_mon_hydra, is_run_hydra_scripts, is_update_satpc_tle, computer_name
     def __init__(self, cfg, email_module, global_cfg):
         self.cfg = cfg
         self.global_cfg = global_cfg
@@ -544,7 +543,10 @@ class SatellitePassManager:
                 print("\r\n")
                 sys.exit()
 
-            self.hydra_exe = ExeManagement(self.cfg.hydra_dir, self.cfg.hydra_exe_name, 1)
+            self.hydra_exe = ExeManagement(self.cfg.hydra_exe_dir,
+                                           self.cfg.hydra_exe_name,
+                                           1,
+                                           hydra_options=self.cfg.hydra_options)
 
         if self.cfg.do_monitor_sdr:
             self.sdr_exe = ExeManagement(self.cfg.sdr_dir, self.cfg.sdr_script_starter_name, 1)
@@ -689,7 +691,7 @@ class SatellitePassManager:
 # Tracks executables that need to be launched and killed.
 # If the exe is not launchable, set is_launchable to 0. (Example: SATPC32's ServerSDX)
 class ExeManagement:
-    def __init__(self, dir, name, is_launchable):
+    def __init__(self, dir, name, is_launchable, hydra_options='None'):
         self.process = None
         self.exec_dir = dir
         self.exec_name = name
@@ -702,6 +704,9 @@ class ExeManagement:
                 print("Executable path does not exist! Check your .ini files. See:")
                 print(self.exec_full_path)
                 sys.exit()
+
+        if hydra_options is not 'None':
+            self.exec_full_path += ' /o {}'.format(hydra_options)
 
     def start(self):
         if os.name == 'posix':  # It's Unix (Linux or macOS)
