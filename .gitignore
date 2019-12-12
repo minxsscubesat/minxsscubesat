@@ -66,3 +66,4 @@ minxss_library/pass_planning_tool/python/dist/auto_pass_manager_v3.0.0.exe
 minxss_library/pass_planning_tool/python/__pycache__/minxss_email.cpython-37.pyc
 minxss_library/pass_planning_tool/python/__pycache__/pass_config.cpython-37.pyc
 minxss_library/pass_planning_tool/python/__pycache__/rundir_analysis.cpython-37.pyc
+*.pyc
