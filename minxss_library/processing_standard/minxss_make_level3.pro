@@ -23,7 +23,7 @@
 ;   fm [integer]:			     Flight Model number 1 or 2 (default is 1)
 ;
 ; OPTIONAL INPUTS:
-;	  NONE
+;	  None
 ;
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set this to print processing messages
