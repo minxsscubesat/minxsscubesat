@@ -67,3 +67,4 @@ minxss_library/pass_planning_tool/python/__pycache__/minxss_email.cpython-37.pyc
 minxss_library/pass_planning_tool/python/__pycache__/pass_config.cpython-37.pyc
 minxss_library/pass_planning_tool/python/__pycache__/rundir_analysis.cpython-37.pyc
 *.pyc
+minxss_library/pass_planning_tool/python/dist/*
