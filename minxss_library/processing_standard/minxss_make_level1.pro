@@ -488,7 +488,7 @@ num_xp_dark = num_dark
     minxsslevel1_x123[num_L1].spectrum_cps = x123_cps_mean_count_rate
     minxsslevel1_x123[num_L1].spectrum_cps_accuracy = x123_cps_mean_count_rate_uncertainty_accuracy
     minxsslevel1_x123[num_L1].spectrum_cps_precision = x123_cps_mean_count_rate_uncertainty_precision
-;    minxsslevel1_x123[num_L1].spectrum_cps_stddev = 0.0  ; FIXME: JPM 2019-11-14: This being commented out or set to 0 means this variable remains un-implemented
+    minxsslevel1_x123[num_L1].spectrum_cps_stddev = !VALUES.F_NAN
     minxsslevel1_x123[num_L1].deadtime_correction_factor = x123_deadtime_correction_scale_factor_array
     minxsslevel1_x123[num_L1].spectrum_total_counts = X123_total_counts
     minxsslevel1_x123[num_L1].spectrum_total_counts_accuracy = X123_total_counts_uncertainty_accuracy
@@ -591,7 +591,7 @@ num_xp_dark = num_dark
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-;      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = 0.0
+      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
       minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time
       minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
       minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -642,7 +642,7 @@ endfor
     minxsslevel1_x123_dark[num_L1_dark].spectrum_cps = x123_cps_mean_count_rate
     minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_accuracy = x123_cps_mean_count_rate_uncertainty_accuracy
     minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_precision = x123_cps_mean_count_rate_uncertainty_precision
-;    minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_stddev = 0.0  ; JPM 2019-11-14: This being commented out or set to 0 means this variable remains un-implemented
+    minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_stddev = !VALUES.F_NAN
     minxsslevel1_x123_dark[num_L1_dark].spectrum_total_counts = X123_total_counts
     minxsslevel1_x123_dark[num_L1_dark].spectrum_total_counts_accuracy = X123_total_counts_uncertainty_accuracy
     minxsslevel1_x123_dark[num_L1_dark].spectrum_total_counts_precision = X123_total_counts_uncertainty_precision
@@ -748,7 +748,7 @@ endfor
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-;    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = 0.0
+    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
     minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[k]].sps_xp_integration_time
     minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -818,7 +818,7 @@ minxsslevel1_x123_meta = { $
   SPECTRUM_CPS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
   SPECTRUM_CPS_ACCURACY: 'X123 Deadtime corrected spectrum uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
   SPECTRUM_CPS_PRECISION: 'X123 Deadtime corrected spectrum uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
-  SPECTRUM_CPS_STDDEV: 'X123 Deadtime corrected spectrum standard deviation of the, float array[1024]', $  ;  FIXME: JPM 2019-11-14: This description is incomplete. I don't know what it should be. Need input from Tom, Chris, and/or Amir. 
+  SPECTRUM_CPS_STDDEV: 'X123 If averaging multiple spectra, this is their standard deviation, float array[1024]; else single NaN', $
   DEADTIME_CORRECTION_FACTOR: 'X123 first order deadtime correction factor, double', $
   VALID_FLAG: 'X123 Valid Flag for Irradiance conversion (1=TRUE, 0=FALSE), float array[1024]', $
   SPECTRUM_TOTAL_COUNTS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
