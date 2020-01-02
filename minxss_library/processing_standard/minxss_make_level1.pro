@@ -436,7 +436,7 @@ num_xp_dark = num_dark
   num_10percent = long(num_sp/10.)
 
 
-  ; loop over only the time indecies that are known to have minxss data within the x-minute for the current index
+  ; loop over only the time indices that are known to have minxss data within the x-minute for the current index
  
   for k = 0, num_sp - 1 do begin  
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -471,6 +471,8 @@ num_xp_dark = num_dark
       x123_count_rate = x123_cps_count_rate, $
       uncertainty_x123_measured_count_rate_array=x123_cps_count_rate_uncertainty_precision, $
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_precision)
+      
+    
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;  6.  Calculate the MinXSS X123 irradiance
@@ -518,7 +520,7 @@ num_xp_dark = num_dark
     ; increment k and num_L1
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1 += 1
-endfor
+  endfor ; k loop to num_sp
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
