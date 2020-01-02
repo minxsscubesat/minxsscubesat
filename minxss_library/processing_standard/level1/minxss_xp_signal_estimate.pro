@@ -47,7 +47,7 @@
 ;Calculate the XP signal in DN (or fC) for any arbritrary input photon flux
 ;-
 ;-
-function minxss_xp_signal_estimate,  input_photon_energies_kev, input_photon_flux, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, output_minxss_xp_signal_fC=output_minxss_xp_signal_fC, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, verbose=verbose
+function minxss_xp_signal_estimate, input_photon_energies_kev, input_photon_flux, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, output_minxss_xp_signal_fC=output_minxss_xp_signal_fC, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, verbose=verbose
 
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
