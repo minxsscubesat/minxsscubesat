@@ -565,7 +565,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxsslevel1_x123[num_L1].spectrum_cps = x123_cps_mean_count_rate
     minxsslevel1_x123[num_L1].spectrum_cps_accuracy = x123_cps_mean_count_rate_uncertainty_accuracy
     minxsslevel1_x123[num_L1].spectrum_cps_precision = x123_cps_mean_count_rate_uncertainty_precision
-    minxsslevel1_x123[num_L1].spectrum_cps_stddev = 0.0
+    minxsslevel1_x123[num_L1].spectrum_cps_stddev = !VALUES.F_NAN
     minxsslevel1_x123[num_L1].deadtime_correction_factor = x123_deadtime_correction_scale_factor_array[0]
     minxsslevel1_x123[num_L1].spectrum_total_counts = X123_total_counts
     minxsslevel1_x123[num_L1].spectrum_total_counts_accuracy = X123_total_counts_uncertainty_accuracy
@@ -706,7 +706,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = 0.0
+      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
       minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci[index_x_minute_average_loop_xp[0]]].sps_xp_integration_time
       minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
       minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -776,7 +776,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxsslevel1_x123_dark[num_L1_dark].spectrum_cps = x123_cps_mean_count_rate
     minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_accuracy = x123_cps_mean_count_rate_uncertainty_accuracy
     minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_precision = x123_cps_mean_count_rate_uncertainty_precision
-    minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_stddev = 0.0
+    minxsslevel1_x123_dark[num_L1_dark].spectrum_cps_stddev = !VALUES.F_NAN
     minxsslevel1_x123_dark[num_L1_dark].spectrum_total_counts = X123_total_counts
     minxsslevel1_x123_dark[num_L1_dark].spectrum_total_counts_accuracy = X123_total_counts_uncertainty_accuracy
     minxsslevel1_x123_dark[num_L1_dark].spectrum_total_counts_precision = X123_total_counts_uncertainty_precision
@@ -904,7 +904,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = 0.0
+    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
     minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[index_x_minute_average_loop_xp_dark[0]]].sps_xp_integration_time
     minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
