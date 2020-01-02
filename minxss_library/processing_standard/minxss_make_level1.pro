@@ -218,8 +218,7 @@ endfor
   ;    and (minxsslevel0d.adcs_mode eq 1) and (lowcnts lt 7.0) $
   ;    and (fast_count lt fast_limit) and (slow_count gt slow_count_min), num_sp1 )
 
-  ; Version 2 also requires that peakcnts > lowcnts and peakcnts > 0
-;  wsci = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
+; Version 2 also requires that peakcnts > lowcnts and peakcnts > 0
 ; REPLACEMENT FOR LINE 164:  ( change “lt” to “le”  for the x123_radio_flag check) suggested by Tom Woods on 11/11/2018
   wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
 ;  ****   I think we should also store the x123_radio_flag in Level 1  (which is near Line 303 to define it and near Line 459 to store it). suggested by Tom Woods on 11/11/2018
@@ -227,7 +226,6 @@ endfor
     and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
     and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
     and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
- ;   and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), num_sp )
     and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
     and (ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux), num_sp )
 
@@ -437,7 +435,6 @@ num_xp_dark = num_dark
 
 
   ; loop over only the time indices that are known to have minxss data within the x-minute for the current index
- 
   for k = 0, num_sp - 1 do begin  
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;   4. Deadtime correction
