@@ -273,7 +273,7 @@ function minxss_X123_be_photoelectron_si_escape_count_correction, x123_energy_bi
 
   corected_count_contribution = DBLARR(n_positive_x123_energy_bins_kev)
 
-  ;Start withthe original counts
+  ;Start with the original counts
   temp_modified_x123_measured_counts_positive_array = x123_measured_counts_positive
 
 
