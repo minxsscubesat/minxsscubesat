@@ -1,5 +1,3 @@
-
-
 ;+
 ; NAME:
 ;   minxss_xp_signal_estimate
