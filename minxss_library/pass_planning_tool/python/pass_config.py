@@ -152,6 +152,7 @@ class SatelliteConfig(GenericConfig):
         # [executables]
         self.hydra_exe_name = config['executables']['hydra_exe_name']
         self.hydra_options = config['executables']['hydra_options']
+        self.hydra_output_filename_prefix = config['executables']['hydra_output_filename_prefix']
         self.pre_pass_script = config['pre_pass_script']['pre_pass_script']
         self.sdr_script_starter_name = config['executables']['sdr_script_starter_name']
 

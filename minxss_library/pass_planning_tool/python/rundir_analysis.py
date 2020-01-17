@@ -30,7 +30,7 @@ class Rundir():
                 self.csv_filepath = self.StoreInCSV(self.eventlog_filepath)
                 self.errors_array = self.FindErrorLines(self.eventlog_filepath)
                 #self.cmdTrySucceed_arr = self.FindcmdTrySucceed(self.eventlog_filepath)
-            if 'tlm_packets_' in filename:
+            if cfg.hydra_output_filename_prefix in filename:
                 self.tlm_filepath = os.path.join(self.rundir_path, filename)
                 self.tlm_filename = filename
                 self.bytes_downlinked_data = os.stat(self.tlm_filepath).st_size
