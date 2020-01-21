@@ -11,7 +11,7 @@
 ; OPTIONAL INPUTS:
 ;   start_date [long or string]: First date of data to process in either yyyydoy long format (e.g., 2016137L) or yyyymmdd string format (e.g., '20160516'). 
 ;                                Defaults to 5 days ago. 
-;   end_date [long or string]:   Same as start_date but for the end date to process. 
+;   end_date [long or string]:   Same as start_date but for the end date to process (e.g., 20170507). 
 ;                                Defaults to today. 
 ;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
 ;
