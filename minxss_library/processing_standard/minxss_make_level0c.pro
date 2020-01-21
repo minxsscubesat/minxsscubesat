@@ -85,7 +85,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   CASE (fm) OF
     1: BEGIN
       start_yd = 2016137L
-      stop_yd = long(JPMjd2yyyydoy(systime(/JULIAN)+1.5))
+      stop_yd = 2017127L
     END
     2: BEGIN
       start_yd = 2018337
