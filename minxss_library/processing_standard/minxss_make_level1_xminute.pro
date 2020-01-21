@@ -18,11 +18,11 @@
 ;   NONE
 ;
 ; OPTIONAL INPUTS:
-;   x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array,  end_time_cd_array=end_time_cd_array,  low_count=low_count, verbose=verbose, debug=debug
+;   fm        Flight Model number 1 or 2 (default is 1)
+;   x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array,  end_time_cd_array=end_time_cd_array,  low_limit=low_limit, verbose=verbose, debug=debug
 ;
 ; KEYWORD PARAMETERS:
-;     fm        Flight Model number 1 or 2 (default is 1)
-;   low_limit   Option to change  limit on selecting low energy counts for good X123 spectra
+;   low_limit   Option to change limit on selecting low energy counts for good X123 spectra
 ;               Default for low_limit is 7.0
 ;   VERBOSE     Set this to print processing messages
 ;
@@ -49,7 +49,7 @@
 ;   7. Save the Level 1 results (mission-length file)
 ;
 ;+
-PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array,  end_time_cd_array=end_time_cd_array,  low_count=low_count, verbose=verbose, debug=debug
+PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array,  end_time_cd_array=end_time_cd_array,  low_limit=low_limit, verbose=verbose, debug=debug
 
   ;seconds_per_day = 60.0*60.0*24.0
   seconds_per_day = 60.0*60.0*24.0
