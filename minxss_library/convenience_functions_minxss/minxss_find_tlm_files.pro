@@ -76,7 +76,7 @@ count = 0
 IF fm EQ 1 THEN BEGIN
   ; Add telemetry from Boulder FM-1 if available
   IF getenv('hydra_data_boulder_minxss1') NE '' THEN BEGIN
-    filesTmp = file_search(getenv('hydra_data_fairbanks_minxss2'), search_name, count = countTmp)
+    filesTmp = file_search(getenv('hydra_data_boulder_minxss1'), search_name, count = countTmp)
     IF countTmp NE 0 THEN BEGIN
       file_list = [file_list, filesTmp]
       count = count + countTmp
