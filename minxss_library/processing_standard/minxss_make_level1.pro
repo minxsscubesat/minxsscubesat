@@ -406,9 +406,9 @@ endfor
     signal_fc_precision: 0.0, $
     signal_fc_stddev: 0.0, $
     integration_time: 0.0, $
-    x123_estimated_xp_fc: 0.0, $
-    x123_estimated_xp_fc_uncertainty: 0.0, $
-    fractional_difference_x123_estimated_xp_fc: 0.0, $
+    ; x123_estimated_xp_fc: 0.0, $ ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
+    ; x123_estimated_xp_fc_uncertainty: 0.0, $
+    ; fractional_difference_x123_estimated_xp_fc: 0.0, $
     number_xp_samples: 0L}
 
 
@@ -593,9 +593,9 @@ num_xp_dark = num_dark
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
       minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
       minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time
-      minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
-      minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
+      ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
+      ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
+      ;minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
       minxsslevel1_xp[num_L1_xp].number_xp_samples = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time ; Time and number here are equivalent because each sample is 1 second
 
       ; increment k and num_L1
@@ -750,9 +750,9 @@ endfor
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
     minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
     minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[k]].sps_xp_integration_time
-    minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
-    minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
-    minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
+    ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
+    ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
+    ; minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = minxsslevel0d[wdark[k]].sps_xp_integration_time ; time and number are equivalent here because each sample is 1 second
 
 
