@@ -18,16 +18,18 @@
 ;   NONE
 ;
 ; OPTIONAL INPUTS:
-;   fm        Flight Model number 1 or 2 (default is 1)
-;   x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array,  end_time_cd_array=end_time_cd_array,  low_limit=low_limit, verbose=verbose, debug=debug
+;   fm [integer]:               Flight Model number 1 or 2 (default is 1)
+;   low_limit [float]:          Option to change limit on selecting low energy counts for good X123 spectra. Default is 7.0
+;   x_minute_average [integer]: Set to the number of minutes you want to average. Default is 1. 
+;   start_time_cd_array [??]:   Not sure what this is for
+;   end_time_cd_array [??]:     Not sure what this is for
 ;
 ; KEYWORD PARAMETERS:
-;   low_limit   Option to change limit on selecting low energy counts for good X123 spectra
-;               Default for low_limit is 7.0
-;   VERBOSE     Set this to print processing messages
+;   VERBOSE: Set this to print processing messages
+;   DEBUG:   Set this to trigger stop points for debugging
 ;
 ; OUTPUTS:
-;     NONE
+;   NONE
 ;
 ; COMMON BLOCKS:
 ;   None
