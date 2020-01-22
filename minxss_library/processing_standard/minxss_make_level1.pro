@@ -588,10 +588,10 @@ num_xp_dark = num_dark
       ; fill the variables in the level1_xp structure
       minxsslevel1_xp[num_L1_xp].time = minxsslevel0d[wsci_xp[k]].time
       minxsslevel1_xp[num_L1_xp].flight_model = minxsslevel0d[wsci_xp[k]].flight_model
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
+      minxsslevel1_xp[num_L1_xp].signal_fc = xp_data_mean_background_subtracted_fC_rate
+      minxsslevel1_xp[num_L1_xp].signal_fc_accuracy = XP_fc_accuracy
+      minxsslevel1_xp[num_L1_xp].signal_fc_precision = XP_fc_precision
+      minxsslevel1_xp[num_L1_xp].signal_fc_stddev = !VALUES.F_NAN
       minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -745,10 +745,10 @@ endfor
     ; fill the variables in the level1_xp structure
     minxsslevel1_xp_dark[num_L1_xp_dark].time = minxsslevel0d[wdark[k]].time
     minxsslevel1_xp_dark[num_L1_xp_dark].flight_model = minxsslevel0d[wdark[k]].flight_model
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc = xp_data_mean_background_subtracted_fC_rate
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_accuracy = XP_fc_accuracy
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_precision = XP_fc_precision
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = !VALUES.F_NAN
     minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[k]].sps_xp_integration_time
     ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
     ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -875,14 +875,14 @@ minxsslevel1_xp_meta = { $
   INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
   INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
   FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
-  XP_FC_BACKGROUND_SUBTRACTED: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
-  XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_ACCURACY: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
-  XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_PRECISION: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
-  XP_FC_BACKGROUND_SUBTRACTED_STDDEV: 'XP signal standard deviation of the float array[1024]', $
+  SIGNAL_FC: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
+  signal_fc_accuracy: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
+  signal_fc_precision: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
+  signal_fc_stddev: 'XP signal standard deviation of the float array[1024]', $
   INTEGRATION_TIME: 'X123 Integration Time accumulated over the', $
-  XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
-  XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
-  FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
+  ;XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
+  ;XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
+  ;FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
   NUMBER_XP_SAMPLES: 'XP number of samples' $
 }
 
