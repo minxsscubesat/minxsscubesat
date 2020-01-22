@@ -545,7 +545,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;  6.  Calculate the MinXSS X123 irradiance
-    minxss_x123_irradiance_wrapper_cm, x123_cps_mean_count_rate, x123_cps_mean_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, fm=fm
+    minxss_x123_irradiance_wrapper, x123_cps_mean_count_rate, x123_cps_mean_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, fm=fm
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; 8. Put data into structures
@@ -960,7 +960,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     Data_product_revision: REVISION, $
     Product_format_version: FORM_VER, $
     Software_version: SOFT_VER, $
-    Software_name: 'IDL save.pro called from minxss_make_level1_xminute_cm.pro', $
+    Software_name: 'IDL save.pro called from minxss_make_level1_xminute.pro', $
     Calibration_version: CAL_VER, $
     Description: 'Calibrated MinXSS X123 science data averaged over a minute and corrected to 1-AU', $
     History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
@@ -1026,7 +1026,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     Data_product_revision: REVISION, $
     Product_format_version: FORM_VER, $
     Software_version: SOFT_VER, $
-    Software_name: 'IDL save.pro called from minxss_make_level1_xminute_cm.pro', $
+    Software_name: 'IDL save.pro called from minxss_make_level1_xminute.pro', $
     Calibration_version: CAL_VER, $
     Description: 'Calibrated MinXSS X123 science data averaged over a minute and corrected to 1-AU', $
     History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
@@ -1064,10 +1064,9 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .fits files also
   ;
   ;create the file name extension that changes with the minute average chossen as a variable
-  ;  outdir = fmdir + 'level1' + x_minute_average_string +'minute' + path_sep()
   outdir = fmdir + 'level1' + path_sep()
 
-  if keyword_set(verbose) then print, '   Saving Level 1 save set in ', outdir+outfile
+  if keyword_set(verbose) then print, 'Saving Level 1 save set in ', outdir+outfile
   save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
     minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
 
