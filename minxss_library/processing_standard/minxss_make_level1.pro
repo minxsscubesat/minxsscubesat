@@ -73,7 +73,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
   fm_str = strtrim(fm,2)
   if keyword_set(verbose) then begin
     print, "minxss_make_level1 is processing data for FM " + fm_str
-    print, '   START at ', systime()
+    print, '   START at ', JPMsystime()
   endif
 
   if fm eq 1 then LOW_LIMIT_DEFAULT = 7.0 $
@@ -796,7 +796,7 @@ minxsslevel1_x123_meta = { $
   '2016-07-25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017-06-23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data', $
   '2019-11-12: James Paul Mason: Bug fixes and variable renaming.'], $
   Filename: outfile, $
-  Date_generated: systime(), $
+  Date_generated: JPMsystime(), $
   TIME_struct: 'Time structure for different date/time formats', $
   TIME_struct_ISO: 'Time in ISO text format', $
   TIME_struct_HUMAN: 'Time in Human-readable text format', $
@@ -859,7 +859,7 @@ minxsslevel1_xp_meta = { $
   History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
   '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, XP data'], $
   Filename: outfile, $
-  Date_generated: systime(), $
+  Date_generated: JPMsystime(), $
   TIME_struct: 'Time structure for different date/time formats', $
   TIME_struct_ISO: 'Time in ISO text format', $
   TIME_struct_HUMAN: 'Time in Human-readable text format', $
@@ -921,7 +921,7 @@ minxsslevel1 = {x123:minxsslevel1_x123, $ ; FIXME: time structure needs to be el
 save, /compress, minxsslevel1, file=outdir+outfile
 minxss_make_netcdf, '1', fm = fm, verbose = verbose
 
-if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
+if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', JPMsystime()
 
 if keyword_set(debug) then stop, 'DEBUG at end of minxss_make_level1.pro ...'
 
