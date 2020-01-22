@@ -37,10 +37,6 @@
 ;   4. Select the Median X123 Slow Counts and select 2-sigma from this for averaging over day
 ;   5. Save the L1 averaged data into the L3 structure
 ;	  6. Save the daily averaged Level 3 product
-;
-; MODIFICATION HISTORY:
-;	  2017-02-03: Tom Woods: Original code
-;	  2017-03-22: James Paul Mason: Made FM a formal optional input
 ;+
 PRO minxss_merge_level3, fm = fm, result=result, verbose=verbose, debug=debug
 
@@ -82,10 +78,10 @@ restore, dir_fm + 'level1' + slash + file1   ; restores minxsslevel1 and minxssl
 ;
 ;	2. Make MinXSS Level 3 data structure
 ;
-year1 = long(min(minxsslevel1.time.yyyydoy)/1000.)
-year2 = long(max(minxsslevel1.time.yyyydoy)/1000.)
-jd1 = long(min(minxsslevel1.time.jd))-0.5
-jd2 = long(max(minxsslevel1.time.jd))-0.5
+year1 = long(min(minxsslevel1.x123.time.yyyydoy)/1000.)
+year2 = long(max(minxsslevel1.x123.time.yyyydoy)/1000.)
+jd1 = long(min(minxsslevel1.x123.time.jd))-0.5
+jd2 = long(max(minxsslevel1.x123.time.jd))-0.5
 ;  this will skip processing last day because GOES XRS data might not be available yet
 num_days = long(jd2 - jd1)
 
