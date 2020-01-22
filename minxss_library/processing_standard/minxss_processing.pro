@@ -107,7 +107,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   IF keyword_set(COPY_GOES) THEN BEGIN
     file_copy, '/timed/analysis/goes/goes_1mdata_widx_20*.sav', getenv('minxss_data') + 'ancillary/goes/', /OVERWRITE
   ENDIF
-  minxss_merge_level3, fm = fm, /VERBOSE ; TODO: This should really be minxss_make_level3 but that can't yet handle the mission_length level1 file
+  minxss_make_level3, fm=fm, /VERBOSE
 ENDIF
 
 if keyword_set(debug) THEN stop, 'DEBUG minxss_processing at end...'
