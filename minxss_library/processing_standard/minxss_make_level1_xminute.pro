@@ -500,7 +500,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   num_10percent = long(num_L1_fill/10.)
 
 
-  ; loop over only the time indecies that are known to have minxss data within the x-minute for the current index
+  ; loop over only the time indices that are known to have minxss data within the x-minute for the current index
   for k=1, num_L1_fill do begin
     ;loop for the X123 science data
     index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1]), n_valid)
@@ -608,19 +608,15 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       minxsslevel1_x123[num_L1].sun_declination = mean(minxsslevel0d[wsci[index_x_minute_average_loop]].sun_declination, /double, /nan)
       minxsslevel1_x123[num_L1].earth_sun_distance = mean(minxsslevel0d[wsci[index_x_minute_average_loop]].earth_sun_distance, /double, /nan)
     endif
-
-
+    
     ; increment k and num_L1
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1 += 1
-    ;    endif
-    ;endfor
+  endfor
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-    ;  find data within x-minute of current index
-    ;  for k=1, num_L1_fill_xp do begin
-    ;      index_x_minute_average_loop_xp = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1]) and (((minxsslevel0d[wsci].XPS_DATA_SCI/minxsslevel0d[wsci].sps_xp_integration_time) - (minxsslevel0d[wsci].SPS_DARK_DATA_SCI/minxsslevel0d[wsci].sps_xp_integration_time)) gt 0), n_valid_xp)
-    ;      if n_valid_xp gt 0 then begin
+  ;  find data within x-minute of current index
+  for k=1, num_L1_fill_xp do begin
     index_x_minute_average_loop_xp = where((((minxsslevel0d[wsci[index_x_minute_average_loop]].XPS_DATA_SCI/minxsslevel0d[wsci[index_x_minute_average_loop]].sps_xp_integration_time) - (minxsslevel0d[wsci[index_x_minute_average_loop]].SPS_DARK_DATA_SCI/minxsslevel0d[wsci[index_x_minute_average_loop]].sps_xp_integration_time)) gt 0), n_valid_xp)
     if n_valid_xp gt 0 then begin
 
