@@ -391,10 +391,10 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     interval_start_time_human: strtrim((start_fill_year), 1)+ '-' +strtrim((start_fill_month), 1)+ '-' +strtrim((start_fill_day), 1)+ ' ' +strtrim((start_fill_hour), 1)+ ':' +strtrim((start_fill_minute), 1)+ ':' +strmid(strtrim((start_fill_second), 1), 0, 4), $
     interval_end_time_human: strtrim((end_fill_year), 1)+ '-' +strtrim((end_fill_month), 1)+ '-' +strtrim((end_fill_day), 1)+ ' ' +strtrim((end_fill_hour), 1)+ ':' +strtrim((end_fill_minute), 1)+ ':' +strmid(strtrim((end_fill_second), 1), 0, 4), $
     flight_model: 0, $
-    xp_fc_background_subtracted: 0.0, $
-    xp_fc_background_subtracted_uncertainty_accuracy: 0.0, $
-    xp_fc_background_subtracted_uncertainty_precision: 0.0, $
-    xp_fc_background_subtracted_stddev: 0.0, $
+    signal_fc: 0.0, $
+    signal_fc_accuracy: 0.0, $
+    signal_fc_precision: 0.0, $
+    signal_fc_stddev: 0.0, $
     integration_time: 0.0, $
     ;x123_estimated_xp_fc: 0.0, $
     ;x123_estimated_xp_fc_uncertainty: 0.0, $
@@ -409,10 +409,10 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     interval_start_time_human: strtrim((start_fill_year), 1)+ '-' +strtrim((start_fill_month), 1)+ '-' +strtrim((start_fill_day), 1)+ ' ' +strtrim((start_fill_hour), 1)+ ':' +strtrim((start_fill_minute), 1)+ ':' +strmid(strtrim((start_fill_second), 1), 0, 4), $
     interval_end_time_human: strtrim((end_fill_year), 1)+ '-' +strtrim((end_fill_month), 1)+ '-' +strtrim((end_fill_day), 1)+ ' ' +strtrim((end_fill_hour), 1)+ ':' +strtrim((end_fill_minute), 1)+ ':' +strmid(strtrim((end_fill_second), 1), 0, 4), $
     flight_model: 0, $
-    xp_fc_background_subtracted: 0.0, $
-    xp_fc_background_subtracted_uncertainty_accuracy: 0.0, $
-    xp_fc_background_subtracted_uncertainty_precision: 0.0, $
-    xp_fc_background_subtracted_stddev: 0.0, $
+    signal_fc: 0.0, $
+    signal_fc_accuracy: 0.0, $
+    signal_fc_precision: 0.0, $
+    signal_fc_stddev: 0.0, $
     integration_time: 0.0, $
     ;x123_estimated_xp_fc: 0.0, $
     ;x123_estimated_xp_fc_uncertainty: 0.0, $
@@ -700,10 +700,10 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       minxsslevel1_xp[num_L1_xp].interval_start_time_human = strtrim((start_valid_year), 1)+ '-' +strtrim((start_valid_month), 1)+ '-' +strtrim((start_valid_day), 1)+ ' ' +strtrim((start_valid_hour), 1)+ ':' +strtrim((start_valid_minute), 1)+ ':' +strmid(strtrim((start_valid_second), 1), 0, 4)
       minxsslevel1_xp[num_L1_xp].interval_end_time_human = strtrim((end_valid_year), 1)+ '-' +strtrim((end_valid_month), 1)+ '-' +strtrim((end_valid_day), 1)+ ' ' +strtrim((end_valid_hour), 1)+ ':' +strtrim((end_valid_minute), 1)+ ':' +strmid(strtrim((end_valid_second), 1), 0, 4)
       minxsslevel1_xp[num_L1_xp].flight_model = minxsslevel0d[wsci[index_x_minute_average_loop_xp[0]]].flight_model
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-      minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
+      minxsslevel1_xp[num_L1_xp].signal_fc = xp_data_mean_background_subtracted_fC_rate
+      minxsslevel1_xp[num_L1_xp].signal_fc_accuracy = XP_fc_accuracy
+      minxsslevel1_xp[num_L1_xp].signal_fc_precision = XP_fc_precision
+      minxsslevel1_xp[num_L1_xp].signal_fc_stddev = !VALUES.F_NAN
       minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci[index_x_minute_average_loop_xp[0]]].sps_xp_integration_time
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -711,7 +711,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       minxsslevel1_xp[num_L1_xp].number_xp_datum = n_valid_xp
 
       if n_valid_xp gt 1 then begin
-        minxsslevel1_xp[num_L1_xp].xp_fc_background_subtracted_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
+        minxsslevel1_xp[num_L1_xp].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
         minxsslevel1_xp[num_L1_xp].integration_time = total(minxsslevel0d[wsci[index_x_minute_average_loop_xp]].sps_xp_integration_time, /double, /nan)
       endif
 
@@ -898,10 +898,10 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxsslevel1_xp_dark[num_L1_xp_dark].interval_start_time_human = strtrim((start_valid_year), 1)+ '-' +strtrim((start_valid_month), 1)+ '-' +strtrim((start_valid_day), 1)+ ' ' +strtrim((start_valid_hour), 1)+ ':' +strtrim((start_valid_minute), 1)+ ':' +strmid(strtrim((start_valid_second), 1), 0, 4)
     minxsslevel1_xp_dark[num_L1_xp_dark].interval_end_time_human = strtrim((end_valid_year), 1)+ '-' +strtrim((end_valid_month), 1)+ '-' +strtrim((end_valid_day), 1)+ ' ' +strtrim((end_valid_hour), 1)+ ':' +strtrim((end_valid_minute), 1)+ ':' +strmid(strtrim((end_valid_second), 1), 0, 4)
     minxsslevel1_xp_dark[num_L1_xp_dark].flight_model = minxsslevel0d[wdark[index_x_minute_average_loop_xp_dark[0]]].flight_model
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted = xp_data_mean_background_subtracted_fC_rate
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_accuracy = XP_fc_accuracy
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_uncertainty_precision = XP_fc_precision
-    minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = !VALUES.F_NAN
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc = xp_data_mean_background_subtracted_fC_rate
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_accuracy = XP_fc_accuracy
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_precision = XP_fc_precision
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = !VALUES.F_NAN
     minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[index_x_minute_average_loop_xp_dark[0]]].sps_xp_integration_time
     ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
     ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
@@ -909,7 +909,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_datum = n_valid_xp_dark
 
     if n_valid_xp_dark gt 1 then begin
-      minxsslevel1_xp_dark[num_L1_xp_dark].xp_fc_background_subtracted_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
+      minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
       minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = total(minxsslevel0d[wdark[index_x_minute_average_loop_xp_dark]].sps_xp_integration_time, /double, /nan)
     endif
 
@@ -1044,10 +1044,10 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
     INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
     FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
-    XP_FC_BACKGROUND_SUBTRACTED: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
-    XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_ACCURACY: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
-    XP_FC_BACKGROUND_SUBTRACTED_UNCERTAINTY_PRECISION: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
-    XP_FC_BACKGROUND_SUBTRACTED_STDDEV: 'XP signal standard deviation of the ' + x_minute_average_string +'-minute average, float array[1024]', $
+    signal_fc: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
+    signal_fc_accuracy: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
+    signal_fc_precision: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
+    signal_fc_STDDEV: 'XP signal standard deviation of the ' + x_minute_average_string +'-minute average, float array[1024]', $
     INTEGRATION_TIME: 'X123 Integration Time accumulated over the ' + x_minute_average_string +'-minute average', $
     ;XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
     ;XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
