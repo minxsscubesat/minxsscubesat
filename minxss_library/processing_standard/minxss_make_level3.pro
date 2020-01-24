@@ -54,9 +54,14 @@ minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1440
 ; Move the generated files to the Level 3 folder
 level1Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/'
 level3Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level3/'
-file_move, level1Folder + '*1_minute_mission_length.sav', level3Folder + 'minxss1_l3_1_minute_average_mission_length.sav'
-file_move, level1Folder + '*60_minute_mission_length.sav', level3Folder + 'minxss1_l3_1_hour_average_mission_length.sav'
-file_move, level1Folder + '*1440_minute_mission_length.sav', level3Folder + 'minxss1_l3_1_day_average_mission_length.sav'
+file_move, level1Folder + '*1_minute_mission_length.sav', level3Folder + 'minxss1_l3_1minute_average_mission_length.sav'
+file_move, level1Folder + '*60_minute_mission_length.sav', level3Folder + 'minxss1_l3_1hour_average_mission_length.sav'
+file_move, level1Folder + '*1440_minute_mission_length.sav', level3Folder + 'minxss1_l3_1day_average_mission_length.sav'
+
+; Rename the structures in the files from minxsslevel1* to minxsslevel3*
+minxss_rename_level3_structure, level3Folder + 'minxss1_l3_1minute_average_mission_length.sav'
+minxss_rename_level3_structure, level3Folder + 'minxss1_l3_1hour_average_mission_length.sav'
+minxss_rename_level3_structure, level3Folder + 'minxss1_l3_1day_average_mission_length.sav'
 
 message, /INFO, JPMsystime() + " All done!"
 END
