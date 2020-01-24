@@ -129,29 +129,13 @@ case level_name of
 			write_netcdf, minxsslevel0d, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
-	'1':	begin   
-	   ; Flatten the level 1 structure so that read_netcdf will work
-	   x123_time = minxsslevel1.x123.time
-	   x123 = rem_tag(minxsslevel1.x123, 'time')
-	   
-	   x123_dark_time = minxsslevel1.x123_dark.time
-	   x123_dark = rem_tag(minxsslevel1.x123_dark, 'time')
-	   
-	   xp_time = minxsslevel1.xp.time
-	   xp = rem_tag(minxsslevel1.xp, 'time')
-	   
-	   xp_dark_time = minxsslevel1.xp_dark.time
-	   xp_dark = rem_tag(minxsslevel1.xp_dark, 'time') 
-	   
-	   minxsslevel1 = create_struct('x123', x123, 'x123_time', x123_time, $
-	                                'x123_dark', x123_dark, 'x123_dark_time', x123_dark_time, $
-	                                'xp', xp, 'xp_time', xp_time, $
-	                                'xp_dark', xp_dark, 'xp_dark_time', xp_dark_time)
-	 
+	'1': begin   
+	   minxsslevel1 = minxss_flatten_structure_for_netcdf(minxsslevel1)
 			write_netcdf, minxsslevel1, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
-	'3':	begin
+	'3': begin
+	    minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
 			write_netcdf, minxsslevel3, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
@@ -163,5 +147,5 @@ endcase
 
 if keyword_set(VERBOSE) then message, /INFO, 'Completed the NetCDF file write.'
 if keyword_set(debug) then stop, 'DEBUG: at end of minxss_make_netcdf.pro ...'
-return
+
 end
