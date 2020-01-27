@@ -399,7 +399,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ;x123_estimated_xp_fc: 0.0, $
     ;x123_estimated_xp_fc_uncertainty: 0.0, $
     ;fractional_difference_x123_estimated_xp_fc: 0.0, $
-    number_xp_datum: 0}
+    number_xp_samples: 0}
 
 
   ;minxss-1 xp dark data structure
@@ -417,7 +417,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ;x123_estimated_xp_fc: 0.0, $
     ;x123_estimated_xp_fc_uncertainty: 0.0, $
     ;fractional_difference_x123_estimated_xp_fc: 0.0, $
-    number_xp_datum: 0}
+    number_xp_samples: 0}
 
 
 
@@ -504,7 +504,6 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   for k=1, num_L1_fill do begin
     ;loop for the X123 science data
     index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1]), n_valid)
-    ;    if n_valid gt 0 then begin
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; start x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;convert jd back to calendar date for clarity
     caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
@@ -617,12 +616,13 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
   ;  find data within x-minute of current index
   for k=1, num_L1_fill_xp do begin
+    index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1]), n_valid)
     index_x_minute_average_loop_xp = where((((minxsslevel0d[wsci[index_x_minute_average_loop]].XPS_DATA_SCI/minxsslevel0d[wsci[index_x_minute_average_loop]].sps_xp_integration_time) - (minxsslevel0d[wsci[index_x_minute_average_loop]].SPS_DARK_DATA_SCI/minxsslevel0d[wsci[index_x_minute_average_loop]].sps_xp_integration_time)) gt 0), n_valid_xp)
     if n_valid_xp gt 0 then begin
 
       ;convert jd back to calendar date for clarity
-      caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
-      caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1], end_valid_month, end_valid_day, end_valid_year, end_valid_hour, end_valid_minute, end_valid_second
+      caldat, x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
+      caldat, x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1], end_valid_month, end_valid_day, end_valid_year, end_valid_hour, end_valid_minute, end_valid_second
 
       ; 7. Include background (from the dark diode) subtracted XP data
       ;incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
@@ -708,9 +708,11 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
       ;minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      minxsslevel1_xp[num_L1_xp].number_xp_datum = n_valid_xp
+      minxsslevel1_xp[num_L1_xp].number_xp_samples = n_valid_xp
 
       if n_valid_xp gt 1 then begin
+        ;save, filename='debug_restore_point.sav'
+        ;STOP
         minxsslevel1_xp[num_L1_xp].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
         minxsslevel1_xp[num_L1_xp].integration_time = total(minxsslevel0d[wsci[index_x_minute_average_loop_xp]].sps_xp_integration_time, /double, /nan)
       endif
@@ -906,7 +908,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
     ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
     ;minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
-    minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_datum = n_valid_xp_dark
+    minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = n_valid_xp_dark
 
     if n_valid_xp_dark gt 1 then begin
       minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
@@ -1052,7 +1054,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ;XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
     ;XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
     ;FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
-    NUMBER_XP_DATUM: 'XP number of datum in the ' + x_minute_average_string +'-minute average (1-6 possible)' $
+    NUMBER_XP_SAMPLES: 'XP number of samples' $
   }
 
 
