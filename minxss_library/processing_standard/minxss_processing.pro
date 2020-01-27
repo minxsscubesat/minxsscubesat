@@ -101,6 +101,14 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, ' '
   print, '***************************************************************'
   print, ' '
+  print, 'Processing ' + MinXSS_name + ' L2 for full mission'
+  print, ' '
+  print, '***************************************************************'
+  minxss_make_level2, fm=fm, /VERBOSE
+  
+  print, ' '
+  print, '***************************************************************'
+  print, ' '
   print, 'Processing ' + MinXSS_name + ' L3 for full mission'
   print, ' '
   print, '***************************************************************'
@@ -108,6 +116,14 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
     file_copy, '/timed/analysis/goes/goes_1mdata_widx_20*.sav', getenv('minxss_data') + 'ancillary/goes/', /OVERWRITE
   ENDIF
   minxss_make_level3, fm=fm, /VERBOSE
+  
+  print, ' '
+  print, '***************************************************************'
+  print, ' '
+  print, 'Processing ' + MinXSS_name + ' L4 for full mission'
+  print, ' '
+  print, '***************************************************************'
+  minxss_make_level4, fm=fm, /VERBOSE
 ENDIF
 
 if keyword_set(debug) THEN stop, 'DEBUG minxss_processing at end...'
