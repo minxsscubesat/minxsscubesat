@@ -88,13 +88,19 @@ case level_name of
 			outfile = 'minxss'+fm_str+'_solarSXR_level0D_2016-05-16-mission_V'+ver_str+'.ncdf'
 			attfile = 'minxss'+fm_str+'_solarSXR_level0D_metadata.att'
 			end
-	'1':	begin
-			indir = dir_data + 'level1' + slash
-			infile = 'minxss'+fm_str+'_l1_mission_length.sav'
-			outfile = 'minxss'+fm_str+'_solarSXR_level1_2016-05-16-mission_V'+ver_str+'.ncdf'
-			attfile = 'minxss'+fm_str+'_solarSXR_level1_metadata.att'
-			end
-	'3':	begin
+	'1': begin
+		 indir = dir_data + 'level1' + slash
+		 infile = 'minxss'+fm_str+'_l1_mission_length.sav'
+		 outfile = 'minxss'+fm_str+'_solarSXR_level1_2016-05-16-mission_V'+ver_str+'.ncdf'
+		 attfile = 'minxss'+fm_str+'_solarSXR_level1_metadata.att'
+		 end
+	'2': begin
+		 indir = dir_data + 'level2' + slash
+		 infile = 'minxss'+fm_str+'_l2_mission_length.sav'
+		 outfile = 'minxss'+fm_str+'_solarSXR_level2_2016-05-16-mission_V'+ver_str+'.ncdf'
+		 attfile = 'minxss'+fm_str+'_solarSXR_level2_metadata.att'
+		 end
+	'3': begin
 			indir = dir_data + 'level3' + slash
 			infile = 'minxss'+fm_str+'_l3_mission_length.sav'
 			outfile = 'minxss'+fm_str+'_solarSXR_level3_2016-05-16-mission_V'+ver_str+'.ncdf'
@@ -129,10 +135,15 @@ case level_name of
 			write_netcdf, minxsslevel0d, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
-	'1': begin   
+  '1': begin   
 	   minxsslevel1 = minxss_flatten_structure_for_netcdf(minxsslevel1)
-			write_netcdf, minxsslevel1, indir + outfile, status, $
-				            path=dir_metadata, att_file=attfile, /clobber
+		 write_netcdf, minxsslevel1, indir + outfile, status, $
+				           path=dir_metadata, att_file=attfile, /clobber
+			end
+  '2': begin
+		 minxsslevel2 = minxss_flatten_structure_for_netcdf(minxsslevel2)
+		 write_netcdf, minxsslevel2, indir + outfile, status, $
+			             path=dir_metadata, att_file=attfile, /clobber
 			end
 	'3': begin
 	    minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
