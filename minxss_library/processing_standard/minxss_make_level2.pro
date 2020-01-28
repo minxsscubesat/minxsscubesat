@@ -53,8 +53,8 @@ minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=60
 ; Move the generated files to the Level 3 folder
 level1Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/'
 level2Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level2/'
-file_move, level1Folder + '*1_minute_mission_length.sav', level2Folder + 'minxss1_l3_1minute_average_mission_length.sav', /OVERWRITE
-file_move, level1Folder + '*60_minute_mission_length.sav', level2Folder + 'minxss1_l3_1hour_average_mission_length.sav', /OVERWRITE
+file_move, level1Folder + '*1_minute_mission_length.sav', level2Folder + 'minxss1_l2_1minute_average_mission_length.sav', /OVERWRITE
+file_move, level1Folder + '*60_minute_mission_length.sav', level2Folder + 'minxss1_l2_1hour_average_mission_length.sav', /OVERWRITE
 
 ; Rename the structures in the files from minxsslevel1* to minxsslevel3*
 minxss_rename_level_structure, level2Folder + 'minxss1_l2_1minute_average_mission_length.sav', newlevel = 2
