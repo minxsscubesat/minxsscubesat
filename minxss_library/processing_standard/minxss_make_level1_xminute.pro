@@ -674,14 +674,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       energy_bins_offset_zero = 0.0
       if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
 
-      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ ; input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, $
-        ;  output_uncertainty_XP_DN_signal_estimate_ARRAY=output_model_uncertainty_XP_DN_signal_estimate, $
-        ;  output_XP_fC_signal_estimate_ARRAY=output_model_XP_fC_signal_estimate, $
-        ;  output_uncertainty_XP_fC_signal_estimate_ARRAY=output_model_uncertainty_XP_fC_signal_estimate, $
-        ;  output_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_DN_signal_estimate_be_si_photopeak_only, $
-        ;  output_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only, $
-        ;  output_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_fC_signal_estimate_be_si_photopeak_only, $
-        ;  output_uncertainty_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_fC_signal_estimate_be_si_photopeak_only, $
+      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $
         output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
         output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
@@ -711,12 +704,9 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       minxsslevel1_xp[num_L1_xp].number_xp_samples = n_valid_xp
 
       if n_valid_xp gt 1 then begin
-        ;save, filename='debug_restore_point.sav'
-        ;STOP
         minxsslevel1_xp[num_L1_xp].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
         minxsslevel1_xp[num_L1_xp].integration_time = total(minxsslevel0d[wsci[index_x_minute_average_loop_xp]].sps_xp_integration_time, /double, /nan)
       endif
-
 
       ; increment k and num_L1
       if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
