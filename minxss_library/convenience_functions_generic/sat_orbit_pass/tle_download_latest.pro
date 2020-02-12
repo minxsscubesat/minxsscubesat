@@ -233,8 +233,8 @@ if keyword_set(output) then begin
 			if not(eof(lun)) then readf, lun, tle1
 			if not(eof(lun)) then readf, lun, tle2
 		endwhile
-		last_tle_time = float( strmid(tle1, 19, 14) )
-		now_tle_time = float( strmid(tle[1], 19, 14) )
+		last_tle_time = float( strmid(tle1, 18, 14) )
+		now_tle_time = float( strmid(tle[1], 18, 14) )
 		if (now_tle_time gt last_tle_time) then doWrite = 1
 	endif else begin
 		openw, lun, out_file, /get_lun
