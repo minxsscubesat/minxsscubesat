@@ -55,20 +55,22 @@ declare ephVelZ double64
 ;	IDL> spacecraft_location, time, location, sunlight, eci_pv=pv
 ;	IDL> print, 'Position X-Y-Z (km)     = ', pv[0:2]
 ;	IDL> print, 'Velocity X-Y-Z (km/sec) = ', pv[3:5]
+; Then you can sanity check those numbers by entering them into the ECEF row of https://www.oc.nps.edu/oc2902w/coord/llhxyz.htm
+; And you should get a latitude/longitude/height corresponding to Boulder and the expected altitude of your spacecraft. 
 ;
 ;	*****  Lines 50-61 MUST be edited as Time During Pass when you will click GO button *****
-set ephYear = 19
+set ephYear = 20
 set ephMonth = 2
-set ephDay = 14
-set ephHour = 5
-set ephMinute = 16
-set ephSecond = 21
-set ephPosX =  -3355.1082
-set ephPosY = 5351.4346
-set ephPosZ = -2919.2298
-set ephVelX = -0.69564259
-set ephVelY = 3.2542241
-set ephVelZ = 6.8001930
+set ephDay = 21
+set ephHour = 4
+set ephMinute = 34
+set ephSecond = 58
+set ephPosX =  -2791.5570
+set ephPosY = 4854.4163
+set ephPosZ = 4143.9877
+set ephVelX = 3.3210023
+set ephVelY = -3.2116013
+set ephVelZ = 5.9836073
 
 SET_EPHEMERIS:
 
