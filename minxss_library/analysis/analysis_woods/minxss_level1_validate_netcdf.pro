@@ -5,7 +5,7 @@
 ;	Tom Woods
 ;	Aug 2019
 ;
-;	.run minxss_validate_level1_netcdf.pro
+;	.run minxss_level1_validate_netcdf.pro
 ;
 ;	Displays MetaData and Min-Max of each variable
 ;
@@ -27,9 +27,12 @@ read, 'Size your terminal window to be at least 262 characters wide then hit RET
 n_attr = n_elements( m1attr )
 print, ' '
 print, '***************************   META DATA (ATTRIBUTES)    ***************************'
-for k=0,n_attr-1 do print,k,' ',m1attr[k],format='(I4,A2,A256)'
+for k=0,n_attr-1 do begin
+	print,k,' ',m1attr[k],format='(I4,A2,A)'
+	if (k gt 0) and ((k mod 100) eq 0) then stop, 'STOPPED to VERIFY 100 MetaData lines, Enter .C to continue.'
+endfor
 
-stop, 'STOPPED TO VERIFY META DATA (Attributes in NetCDF file) (enter .C to continue)'
+stop, 'STOPPED TO VERIFY META DATA (Attributes in NetCDF file). Enter .C to continue.'
 
 ;	Examine the Min-Median-Max values of each variable in X123
 ntags = n_tags(m1.x123)
