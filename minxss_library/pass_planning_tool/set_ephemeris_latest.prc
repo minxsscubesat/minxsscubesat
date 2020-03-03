@@ -61,16 +61,16 @@ declare ephVelZ double64
 ;	*****  Lines 50-61 MUST be edited as Time During Pass when you will click GO button *****
 set ephYear = 20
 set ephMonth = 2
-set ephDay = 21
+set ephDay = 28
 set ephHour = 4
-set ephMinute = 34
-set ephSecond = 58
-set ephPosX =  -2791.5570
-set ephPosY = 4854.4163
-set ephPosZ = 4143.9877
-set ephVelX = 3.3210023
-set ephVelY = -3.2116013
-set ephVelZ = 5.9836073
+set ephMinute = 42
+set ephSecond = 18
+set ephPosX =  -2247.8799
+set ephPosY = 1126.4719
+set ephPosZ = -6497.7813
+set ephVelX = -4.5646767
+set ephVelY = 5.4669057
+set ephVelZ = 2.5153402
 
 SET_EPHEMERIS:
 
