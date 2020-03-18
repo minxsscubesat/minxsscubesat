@@ -5,7 +5,9 @@
 ;	Tom Woods
 ;	Aug 2019
 ;
-;	.run minxss_level1_validate_netcdf.pro
+;	$ minxss_idl
+;	$ idl
+;   IDL> .run minxss_level1_validate_netcdf.pro
 ;
 ;	Displays MetaData and Min-Max of each variable
 ;
@@ -34,11 +36,16 @@ endfor
 
 stop, 'STOPPED TO VERIFY META DATA (Attributes in NetCDF file). Enter .C to continue.'
 
+print, ' '
+help, m1,/str
+print, ' '
+
 ;	Examine the Min-Median-Max values of each variable in X123
 ntags = n_tags(m1.x123)
 name_tags = tag_names(m1.x123)
 print, ' '
 print, '***************************   X123 Structure Variables    ***************************'
+print, '***** Number of Spectra = ',n_elements(m1.x123.flight_model)
 print, ' Index                        Tag_Name              Min_Value  Median_Value     Max_Value'
 for k=0,ntags-1 do print,k,strmid(name_tags[k],0,40),min(m1.x123.(k)),median(m1.x123.(k)),max(m1.x123.(k)),format='(I5,A42,3E14.3)'
 
@@ -59,6 +66,7 @@ ntags = n_tags(m1.x123_dark)
 name_tags = tag_names(m1.x123_dark)
 print, ' '
 print, '***************************   X123_DARK Structure Variables    ***************************'
+print, '***** Number of Spectra = ',n_elements(m1.x123_dark.flight_model)
 print, ' Index                        Tag_Name              Min_Value  Median_Value     Max_Value'
 for k=0,ntags-1 do print,k,strmid(name_tags[k],0,40),min(m1.x123_dark.(k)),median(m1.x123_dark.(k)),max(m1.x123_dark.(k)),format='(I5,A42,3E14.3)'
 
@@ -79,6 +87,7 @@ ntags = n_tags(m1.xp)
 name_tags = tag_names(m1.xp)
 print, ' '
 print, '***************************   XP Structure Variables    ***************************'
+print, '***** Number of Measurements = ',n_elements(m1.xp.flight_model)
 print, ' Index                        Tag_Name              Min_Value  Median_Value     Max_Value'
 for k=0,ntags-1 do print,k,strmid(name_tags[k],0,40),min(m1.xp.(k)),median(m1.xp.(k)),max(m1.xp.(k)),format='(I5,A42,3E14.3)'
 
@@ -99,6 +108,7 @@ ntags = n_tags(m1.xp_dark)
 name_tags = tag_names(m1.xp_dark)
 print, ' '
 print, '***************************   XP_DARK Structure Variables    ***************************'
+print, '***** Number of Measurements = ',n_elements(m1.xp_dark.flight_model)
 print, ' Index                        Tag_Name              Min_Value  Median_Value     Max_Value'
 for k=0,ntags-1 do print,k,strmid(name_tags[k],0,40),min(m1.xp_dark.(k)),median(m1.xp_dark.(k)),max(m1.xp_dark.(k)),format='(I5,A42,3E14.3)'
 
