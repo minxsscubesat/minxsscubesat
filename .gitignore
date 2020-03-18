@@ -68,3 +68,16 @@ minxss_library/pass_planning_tool/python/__pycache__/pass_config.cpython-37.pyc
 minxss_library/pass_planning_tool/python/__pycache__/rundir_analysis.cpython-37.pyc
 *.pyc
 minxss_library/pass_planning_tool/python/dist/*
+minxss_library/pass_planning_tool/python/auto_pass_manager_v3.1.0.spec
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/Analysis-00.toc
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/auto_pass_manager_v3.1.0.exe.manifest
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/base_library.zip
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/EXE-00.toc
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/PKG-00.pkg
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/PKG-00.toc
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/PYZ-00.pyz
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/PYZ-00.toc
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/Tree-00.toc
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/Tree-01.toc
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/warn-auto_pass_manager_v3.1.0.txt
+minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/xref-auto_pass_manager_v3.1.0.html

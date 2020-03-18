@@ -142,6 +142,7 @@ class SatelliteConfig(GenericConfig):
         self.do_run_hydra_scripts = int(config['behavior']['do_run_hydra_scripts'])
         self.do_monitor_sdr = int(config['behavior']['do_monitor_sdr'])
         self.do_run_pre_pass_script = int(config['behavior']['do_run_pre_pass_script'])
+        self.do_run_post_pass_script = int(config['behavior']['do_run_post_pass_script'])
 
         # [directories]
         self.hydra_dir = config['directories']['hydra_dir']
@@ -153,7 +154,8 @@ class SatelliteConfig(GenericConfig):
         self.hydra_exe_name = config['executables']['hydra_exe_name']
         self.hydra_options = config['executables']['hydra_options']
         self.hydra_output_filename_prefix = config['executables']['hydra_output_filename_prefix']
-        self.pre_pass_script = config['pre_pass_script']['pre_pass_script']
+        self.pre_pass_script = config['external_scripts']['pre_pass_script']
+        self.post_pass_script = config['external_scripts']['post_pass_script']
         self.sdr_script_starter_name = config['executables']['sdr_script_starter_name']
 
         self.error_check(ini_filename)
@@ -177,6 +179,14 @@ class SatelliteConfig(GenericConfig):
                 iserr = 1
 
         if self.do_run_pre_pass_script:
+            if not os.path.exists(self.script_dir):
+                print("\r\nERROR: Initial configuration failed!")
+                print("[" + ini_filename + "] script_dir path does not exist! Listed as: ")
+                print(self.script_dir)
+                print("Either update the 'script_dir' item in " + ini_filename + " to point to the correct location or disable pre-pass script under [behavior]\r\n")
+                iserr = 1
+
+        if self.do_run_post_pass_script:
             if not os.path.exists(self.script_dir):
                 print("\r\nERROR: Initial configuration failed!")
                 print("[" + ini_filename + "] script_dir path does not exist! Listed as: ")

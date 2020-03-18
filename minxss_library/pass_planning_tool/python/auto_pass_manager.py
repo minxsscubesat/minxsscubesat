@@ -552,7 +552,10 @@ class SatellitePassManager:
             self.sdr_exe = ExeManagement(self.cfg.sdr_dir, self.cfg.sdr_script_starter_name, 1)
 
         if self.cfg.do_run_pre_pass_script:
-            self.script_exe = ExeManagement(self.cfg.script_dir, self.cfg.pre_pass_script, 1)
+            self.pre_pass_script_exe = ExeManagement(self.cfg.script_dir, self.cfg.pre_pass_script, 1)
+
+        if self.cfg.do_run_post_pass_script:
+            self.post_pass_script_exe = ExeManagement(self.cfg.script_dir, self.cfg.post_pass_script, 1)
 
     def run_pass(self, info, is_quick_exit):
         print("\r\n\r\n======================== {0} Prepping for a {1} pass! ========================\r\n".format(timestamp(), info.sat_name))
@@ -611,7 +614,7 @@ class SatellitePassManager:
 
         if self.global_cfg.disable_restart_programs == 0:
             if self.cfg.do_run_pre_pass_script == 1:
-                self.script_exe.start()
+                self.pre_pass_script_exe.start()
             if self.cfg.do_monitor_sdr == 1:
                 self.sdr_exe.start()
                 time.sleep(15)  # Gives the SDR time to start up -- typically takes 8 seconds
@@ -632,10 +635,14 @@ class SatellitePassManager:
                 self.sdr_exe.kill()
                 time.sleep(10)  # give the SDR and ruby bridges time to shut down
             if self.cfg.do_run_pre_pass_script == 1:
-                self.script_exe.kill()
+                self.pre_pass_script_exe.kill()
 
         if self.cfg.do_monitor_hydra:
             self.pass_analysis(info)
+
+        if self.cfg.do_run_post_pass_script:
+            print('Starting post pass script: {0} {1}'.format(self.cfg.script_dir, self.cfg.post_pass_script))
+            self.post_pass_script_exe.start()
 
         print("\r\n********************** {0} Done with {1} pass! **********************\r\n\r\n".format(timestamp(), info.sat_name))
 
