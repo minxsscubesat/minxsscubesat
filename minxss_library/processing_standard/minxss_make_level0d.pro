@@ -122,13 +122,13 @@ timeArray = minxss_create_uniform_packet_times(adcs1, adcs2, adcs3, adcs4, hk, s
 ;;
 
 ; Prepare to add new tags to interpolatedUnifiedPacket for sps computed position in science packet
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(interpolatedUnifiedPacket, 'LONGITUDE', 'float', insertIndex = 31)
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'LATITUDE', 'float', insertIndex = 32)
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'ALTITUDE', 'float', insertIndex = 33)
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SUN_RIGHT_ASCENSION', 'float', insertIndex = 34)
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SUN_DECLINATION', 'float', insertIndex = 35)
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'EARTH_SUN_DISTANCE', 'float', insertIndex = 36)
-unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SPACECRAFT_IN_SAA', 'float', insertIndex = 37)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(interpolatedUnifiedPacket, 'LONGITUDE', 'float', insertIndex = 32)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'LATITUDE', 'float', insertIndex = 33)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'ALTITUDE', 'float', insertIndex = 34)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SUN_RIGHT_ASCENSION', 'float', insertIndex = 35)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SUN_DECLINATION', 'float', insertIndex = 36)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'EARTH_SUN_DISTANCE', 'float', insertIndex = 37)
+unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SPACECRAFT_IN_SAA', 'float', insertIndex = 38)
 
 ; Get spacecraft location (lon, lat, alt)
 IF fm EQ 1 THEN id_satellite = 41474L ELSE $ 
