@@ -424,7 +424,7 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                            adcs1Interpolated[timeIndex].orbit_position_ECI1, adcs1Interpolated[timeIndex].orbit_position_ECI2, adcs1Interpolated[timeIndex].orbit_position_ECI3, $
                            adcs1Interpolated[timeIndex].orbit_position_ECEF1, adcs1Interpolated[timeIndex].orbit_position_ECEF2, adcs1Interpolated[timeIndex].orbit_position_ECEF3, $
                            hkInterpolated[timeIndex].sps_xps_temp, hkInterpolated[timeIndex].dark_data, sciInterpolated[timeIndex].dark_data, $
-                           hkInterpolated[timeIndex].sps_sum, sciInterpolated[timeIndex].sps_xp_integration_time, hkInterpolated[timeIndex].sps_x, hkInterpolated[timeIndex].sps_y, sciInterpolated[timeIndex].sps_data, $
+                           hkInterpolated[timeIndex].sps_sum, sciInterpolated[timeIndex].sps_xp_integration_time, (hkInterpolated[timeIndex].sps_x / 1000. * 3.0), (hkInterpolated[timeIndex].sps_y / 1000. * 3.0), sciInterpolated[timeIndex].sps_data, $
                            hkInterpolated[timeIndex].xps_data, sciInterpolated[timeIndex].xps_data, $
                            sciInterpolated[timeIndex].x123_brd_temp, sciInterpolated[timeIndex].x123_det_temp, $
                            sciInterpolated[timeIndex].x123_accum_time, sciInterpolated[timeIndex].x123_live_time, sciInterpolated[timeIndex].x123_real_time, $
