@@ -31,7 +31,7 @@ print, ' '
 print, '***************************   META DATA (ATTRIBUTES)    ***************************'
 for k=0,n_attr-1 do begin
 	print,k,' ',m1attr[k],format='(I4,A2,A)'
-	if (k gt 0) and ((k mod 100) eq 0) then stop, 'STOPPED to VERIFY 100 MetaData lines, Enter .C to continue.'
+	if (k gt 0) and ((k mod 50) eq 0) then stop, 'STOPPED to VERIFY 100 MetaData lines, Enter .C to continue.'
 endfor
 
 stop, 'STOPPED TO VERIFY META DATA (Attributes in NetCDF file). Enter .C to continue.'
