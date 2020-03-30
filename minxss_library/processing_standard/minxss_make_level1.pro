@@ -132,14 +132,11 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
   ; Note that Version 1 used x123_live_time instead of x123_accum_time
 ;  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (minxsslevel0d[ii].x123_accum_time/1000.)
 
-;  PROPOSED NEW LEVEL 1 CODE by Tom Woods on 11/11/2018
-; *****************************************
-; REPLACEMENT FOR LINE 124  ( add code to adjust x123_accum_time to be 263 millisec shorter if x123_radio_flag EQ 1 )
-;  Adjust  X123 integration time to account for shorter integration time when X123_RADIO_FLAG is 1 263 millisec shorter effective integration)
-;  The x123_accum_time is adjusted in-line in minxsslevel0d because it is used several times in this procedure
+; Adjust x123_accum_time to be 263 millisec shorter if x123_radio_flag EQ 1
+; The x123_accum_time is adjusted in-line in minxsslevel0d because it is used several times in this procedure
   wradio1 = where(minxsslevel0d.x123_radio_flag eq 1, num_radio1)
-  if (num_radio1 gt 0) then minxsslevel0d[wradio1].x123_accum_time -= minxsslevel0d[wradio1].x123_radio_flag * 263L  ; note the “-“ before the “="
-  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (minxsslevel0d[ii].x123_accum_time/1000.)   ;  This line is same as in original Line 124
+  if (num_radio1 gt 0) then minxsslevel0d[wradio1].x123_accum_time -= minxsslevel0d[wradio1].x123_radio_flag * 263L
+  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (minxsslevel0d[ii].x123_accum_time/1000.)
 
   fast_count = minxsslevel0d.x123_fast_count / (minxsslevel0d.x123_accum_time/1000.)
   fast_limit = 3.E4  ; New version 2 value.  Version 1 values was 1.E5 for FM-1
@@ -171,9 +168,9 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Add a new check using the initial estimated MinXSS X123 irradiance
-  ;Pass in the level 0D counts in the integration spectrum. We will be taking a ratio of counts in particular energy bins so the units will not matter
-  ;put in the actual spectrum for the uncert
-  ;  add path for the calibration file
+  ; Pass in the level 0D counts in the integration spectrum. We will be taking a ratio of counts in particular energy bins so the units will not matter
+  ; put in the actual spectrum for the uncert
+  ; add path for the calibration file
   if keyword_set(directory_calibration_file) then begin
     cal_dir = directory_calibration_file
   endif else begin
@@ -190,7 +187,7 @@ for k = 0, n_times_nominal - 1 do begin
   initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
 endfor
   
-  ;find where the ratio of counts is less than a critical ratio (minimal slope)
+  ; find where the ratio of counts is less than a critical ratio (minimal slope)
   dimension = 1
   e_low_band_1 = 1.3
   e_high_band_1 = 1.4
@@ -219,7 +216,6 @@ endfor
   ;    and (fast_count lt fast_limit) and (slow_count gt slow_count_min), num_sp1 )
 
 ; Version 2 also requires that peakcnts > lowcnts and peakcnts > 0
-; REPLACEMENT FOR LINE 164:  ( change “lt” to “le”  for the x123_radio_flag check) suggested by Tom Woods on 11/11/2018
   wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
 ;  ****   I think we should also store the x123_radio_flag in Level 1  (which is near Line 303 to define it and near Line 459 to store it). suggested by Tom Woods on 11/11/2018
     and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
