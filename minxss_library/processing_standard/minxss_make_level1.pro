@@ -210,7 +210,7 @@ endfor
                and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
                and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
                and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
-               and (ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux), $
+               and (ratio_initial_x123_irradiance_structure_spectrum_photon_flux_index_range_band_2 le limit_value_photon_flux), $
                num_sp)
 
   wsci_comparison = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
