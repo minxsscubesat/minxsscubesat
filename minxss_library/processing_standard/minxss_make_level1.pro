@@ -199,52 +199,42 @@ endfor
   initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = total(initial_x123_irradiance[index_range_band_2,*], dimension, /double, /nan)
 
   ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2/initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1
-  limit_value_Photon_Flux = 5.0E1
-;  index_ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = where(ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux, n_index_ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2)
+  limit_value_Photon_Flux = 5.0E1  
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
-  ; Version 1 logic used (lowcnts lt low_limit).  Version 2 uses ((lowcnts-new_low_limit) lt 0)
-  ; wsci1 = Version 1 selection (when low_limit = 7.0)
-  ; make sure the spacecraft is not in the South Atlantic Anomally (SAA)
-
-  ;  wsci1 = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
-  ;    and (minxsslevel0d.adcs_mode eq 1) and (lowcnts lt 7.0) $
-  ;    and (fast_count lt fast_limit) and (slow_count gt slow_count_min), num_sp1 )
-
-; Version 2 also requires that peakcnts > lowcnts and peakcnts > 0
   wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
-;  ****   I think we should also store the x123_radio_flag in Level 1  (which is near Line 303 to define it and near Line 459 to store it). suggested by Tom Woods on 11/11/2018
-    and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
-    and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
-    and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
-    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
-    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
-    and (ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux), num_sp )
+               and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
+               and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
+               and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
+               and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
+               and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
+               and (ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 le limit_value_Photon_Flux), $
+               num_sp)
 
-  wsci_comparison = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
-    and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
-    and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
-    and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
-    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
-    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), num_sp_comparison )
+  wsci_comparison = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
+                          and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
+                          and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
+                          and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
+                          and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
+                          and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), $
+                          num_sp_comparison)
 
-  wsci_xp = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
-    and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
-    and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
-    and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
-    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
-    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
-    and (((minxsslevel0d.XPS_DATA_SCI/minxsslevel0d.sps_xp_integration_time) - (minxsslevel0d.SPS_DARK_DATA_SCI/minxsslevel0d.sps_xp_integration_time)) gt 0), num_sp_xp )
+  wsci_xp = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
+                  and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
+                  and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
+                  and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
+                  and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
+                  and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
+                  and (((minxsslevel0d.XPS_DATA_SCI/minxsslevel0d.sps_xp_integration_time) - (minxsslevel0d.SPS_DARK_DATA_SCI/minxsslevel0d.sps_xp_integration_time)) gt 0), $
+                  num_sp_xp )
 
-
-  wdark = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum lt (sps_sum_sun_min/10.)) $
-    and ((lowcnts-new_low_limit) lt 0) and (fast_count lt fast_limit) $
-    and (slow_count lt slow_count_max) and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) $
-    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse gt 0.0), num_dark )
+  wdark = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum lt (sps_sum_sun_min/10.)) $
+                and ((lowcnts-new_low_limit) lt 0) and (fast_count lt fast_limit) $
+                and (slow_count lt slow_count_max) and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) $
+                and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse gt 0.0), $
+                num_dark)
 
   if keyword_set(verbose) then print, 'Number of good L0D science packets = ',strtrim(num_sp,2), $
     ' out of ', strtrim(n_elements(minxsslevel0d),2)
