@@ -37,6 +37,7 @@ ans = ' '
 read, 'Size your terminal window to be at least 262 characters wide then hit RETURN key: ', ans
 
 print, ' '
+print, 'HELP STRUCTURE for m0d ...'
 help, m0d,/str
 print, ' '
 
