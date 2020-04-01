@@ -399,7 +399,7 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
       level0dTags = [level0dTags, 'x123_board_temperature', 'x123_detector_temperature', $
                      'x123_accum_time', 'x123_live_time', 'x123_real_time', $
                      'x123_cmp_info', 'x123_flags', 'x123_read_errors', 'x123_write_errors', $
-                     'x123_gp_count', 'x123_group_count', $
+                     'x123_gp_count', $
                      'x123_high_voltage', $
                      'x123_radio_flag', $
                      'x123_spect_len', $ 
@@ -429,7 +429,7 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                            sciInterpolated[timeIndex].x123_brd_temp, sciInterpolated[timeIndex].x123_det_temp, $
                            sciInterpolated[timeIndex].x123_accum_time, sciInterpolated[timeIndex].x123_live_time, sciInterpolated[timeIndex].x123_real_time, $
                            sciInterpolated[timeIndex].x123_cmp_info, sciInterpolated[timeIndex].x123_flags, sciInterpolated[timeIndex].x123_read_errors, sciInterpolated[timeIndex].x123_write_errors, $
-                           sciInterpolated[timeIndex].x123_gp_count, sciInterpolated[timeIndex].x123_group_count, $
+                           sciInterpolated[timeIndex].x123_gp_count, $
                            sciInterpolated[timeIndex].x123_hv, $
                            sciInterpolated[timeIndex].x123_radio_flag - 1, $
                            sciInterpolated[timeIndex].x123_spect_len, $
