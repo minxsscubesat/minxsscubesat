@@ -50,7 +50,7 @@ ENDIF
 IF keyword_set(MISSION) THEN BEGIN
   IF fm EQ 1 THEN BEGIN
     start_date = 2016137L
-    stop_date = 2017127L
+    end_date = 2017127L
   ENDIF ELSE IF fm EQ 2 THEN BEGIN
     start_date = 2018337L
     end_date = 2019008L
