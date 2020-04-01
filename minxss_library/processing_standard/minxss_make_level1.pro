@@ -212,7 +212,7 @@ endfor
                and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
                and (ratio_initial_x123_irradiance_structure_spectrum_photon_flux_index_range_band_2 le limit_value_photon_flux) $
                and minxsslevel0d.x123_read_errors le 5 and minxsslevel0d.x123_write_errors le 5 $
-               and minxssleel0d.x123_spectrrum[200] LE 40, $
+               and minxssleel0d.x123_spectrum[200] LE 40, $
                num_sp)
 
   wsci_comparison = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
