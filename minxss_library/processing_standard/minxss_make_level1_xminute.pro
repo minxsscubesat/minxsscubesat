@@ -140,26 +140,22 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
 
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
-  ; Version 1 logic used (lowcnts lt low_limit).  Version 2 uses ((lowcnts-new_low_limit) lt 0)
-  ; wsci1 = Version 1 selection (when low_limit = 7.0)
-  ;make sure the spacecraft is not in the Aouth Atlantic Anomally (SAA)
+  wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
+               and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
+               and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
+               and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
+               and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
+               and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
+               and (ratio_initial_x123_irradiance_structure_spectrum_photon_flux_index_range_band_2 le limit_value_photon_flux) $
+               and minxsslevel0d.x123_read_errors le 5 and minxsslevel0d.x123_write_errors le 5 $
+               and minxssleel0d.x123_spectrrum[200] LE 40, $
+               num_sp)
 
-  ;  wsci1 = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
-  ;    and (minxsslevel0d.adcs_mode eq 1) and (lowcnts lt 7.0) $
-  ;    and (fast_count lt fast_limit) and (slow_count gt slow_count_min), num_sp1 )
-
-  ; Version 2 also requires that peakcnts > lowcnts and peakcnts > 0
-  wsci = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum gt sps_sum_sun_min) $
-    and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
-    and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
-    and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
-    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
-    and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX), num_sp )
-
-  wdark = where( (minxsslevel0d.x123_radio_flag lt 1) and (sps_sum lt (sps_sum_sun_min/10.)) $
-    and ((lowcnts-new_low_limit) lt 0) and (fast_count lt fast_limit) $
-    and (slow_count lt slow_count_max) and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) $
-    and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse gt 0.0), num_dark )
+  wdark = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum lt (sps_sum_sun_min/10.)) $
+                and ((lowcnts-new_low_limit) lt 0) and (fast_count lt fast_limit) $
+                and (slow_count lt slow_count_max) and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) $
+                and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse gt 0.0), $
+                num_dark )
 
   if keyword_set(verbose) then print, 'Number of good L0D science packets = ',strtrim(num_sp,2), $
     ' out of ', strtrim(n_elements(minxsslevel0d),2)
