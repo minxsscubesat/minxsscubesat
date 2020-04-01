@@ -91,7 +91,8 @@ IF fm EQ 1 THEN BEGIN
       count = count + countTmp
     ENDIF
   ENDIF
-ENDIF ; FM-1
+ENDIF 
+; End FM-1
 
 ; FM-2 Data
 IF fm EQ 2 THEN BEGIN
@@ -121,7 +122,8 @@ IF fm EQ 2 THEN BEGIN
       count = count + countTmp
     ENDIF
   ENDIF
-ENDIF ; FM-2 data
+ENDIF 
+; End FM-2 data
 
 ; Flatsat data (FM3)
 IF fm EQ 3 THEN BEGIN
@@ -143,6 +145,7 @@ IF fm EQ 3 THEN BEGIN
     ENDIF
   ENDIF
 ENDIF
+; End FM-3
 
 IF NOT keyword_set(NOHAM) THEN BEGIN
   ; Add telemetry from HAM operators
