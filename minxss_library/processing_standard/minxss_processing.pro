@@ -16,8 +16,10 @@
 ;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
 ;
 ; KEYWORD PARAMETERS:
-;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
+;   MISSION:    Set this to ignore the start_date and end_date optional inputs and process the entire known dates for the corresponding fm mission.
 ;   TO_0C_ONLY: Set this to process up to level 0C only. Defaults to processing all the way to level 1. 
+;   COPY_GOES:  Set this to copy GOES data from a LASP server to the MinXSS Dropbox
+;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
 ;
 ; OUTPUTS:
 ;   None directly, but each level of processing generates IDL savesets on disk
@@ -33,7 +35,7 @@
 ;
 ;-
 PRO minxss_processing, start_date = start_date, end_date = end_date, fm = fm, $
-                       DEBUG = DEBUG, TO_0C_ONLY = TO_0C_ONLY, COPY_GOES = COPY_GOES
+                       MISSION = MISSION, TO_0C_ONLY = TO_0C_ONLY, COPY_GOES = COPY_GOES, DEBUG = DEBUG
 
 TIC
 
@@ -41,9 +43,18 @@ TIC
 IF start_date EQ !NULL THEN start_date = jd2yd(systime(/JULIAN) - 5.)
 IF end_date EQ !NULL THEN end_date = jd2yd(systime(/JULIAN) + 1.)
 IF fm EQ !NULL THEN fm = 2
-IF fm GT 3 THEN BEGIN
-  message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS. You have some wishful thinking.' 
+IF fm GE 3 THEN BEGIN
+  message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS.' 
   return
+ENDIF
+IF keyword_set(MISSION) THEN BEGIN
+  IF fm EQ 1 THEN BEGIN
+    start_date = 2016137L
+    stop_date = 2017127L
+  ENDIF ELSE IF fm EQ 2 THEN BEGIN
+    start_date = 2018337L
+    end_date = 2019008L
+  ENDIF
 ENDIF
 
 ; Deal with time input 
