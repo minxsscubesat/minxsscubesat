@@ -208,8 +208,8 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     battery_HeaterSetpoint: 0, instrument_HeaterSetpoint: 0, $
     cdh_batt_v: 0.0, cdh_batt_v2: 0.0, cdh_5v: 0.0, cdh_3v: 0.0, cdh_temp: 0.0, $
     cdh_enables: 0U, $
-    enable_comm: 0B, enable_adcs: 0B, enable_sps_xps: 0B, enable_x123: 0B, enable_batt_heater: 0B, $
-    enable_ant_deploy: 0B, enable_sa_deploy: 0B, enable_inst_heater: 0B, enable_spare: 0B, enable_sdcard: 0B,  $
+    enable_comm: 0.0, enable_adcs: 0.0, enable_sps_xps: 0.0, enable_x123: 0.0, enable_batt_heater: 0.0, $
+    enable_ant_deploy: 0.0, enable_sa_deploy: 0.0, enable_inst_heater: 0.0, enable_spare: 0.0, enable_sdcard: 0.0,  $
     cdh_i2c_err: 0L, cdh_rtc_err: 0L, cdh_spi_sd_err: 0L, $
     cdh_uart1_err: 0L, cdh_uart2_err: 0L, cdh_uart3_err: 0L, cdh_uart4_err: 0L, $
     radio_counter: 0L, radio_temp: 0.0, radio_time: 0.0D0, radio_rssi: 0,  $
@@ -356,7 +356,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     wheel_control_mode1: 0B, wheel_control_mode2: 0B, wheel_control_mode3: 0B, $
     wheel_motor_fault1: 0B, wheel_motor_fault2: 0B, wheel_motor_fault3: 0B, $
     motor_hall_state1: 0B, motor_hall_state2: 0B, motor_hall_state3: 0B, $
-    wheel_pwm_enable1: 0B, wheel_pwm_enable2: 0B, wheel_pwm_enable3: 0B, $
+    wheel_pwm_enable1: 0.0, wheel_pwm_enable2: 0.0, wheel_pwm_enable3: 0.0, $
     wheel_pwm_direction1: 0B, wheel_pwm_direction2: 0B, wheel_pwm_direction3: 0B, $
     wheel_pwm_commanded_direction1: 0B, wheel_pwm_commanded_direction2: 0B, wheel_pwm_commanded_direction3: 0B $
     }
@@ -384,11 +384,11 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
     tracker_pixel_amplitude_threshold: 0.0, tracker_amplitude_offset: 0B, tracker_current_tint: 0UL, $
     tracker_maximum_residual_id: 0.0, tracker_max_residual_id_first_pass: 0.0, tracker_max_background_level: 0.0, $
     tracker_num_pixel_groups: 0B, tracker_star_id_tolerance: 0B, tracker_num_attitude_loops: 0B, $
-    num_stars_used_in_attitude: 0B, num_stars_high_residual: 0B, tracker_auto_black_enable: 0B, $
+    num_stars_used_in_attitude: 0B, num_stars_high_residual: 0B, tracker_auto_black_enable: 0.0, $
     tracker_black_level: 0B, num_stars_on_fov: 0B, tracker_num_track_blocks_issued: 0B, num_tracked_stars: 0B, $
     num_id_stars: 0B, tracker_fsw_counter: 0B, auto_track_from_star_id: 0B, $
     tracker_auto_integration_adjust: 0B, tracker_auto_gain_adjust: 0B, tracker_test_mode: 0B, $
-    tracker_fpga_detector_timeout: 0B, tracker_tec_enabled: 0B, tracker_store_sequential_images: 0B, $
+    tracker_fpga_detector_timeout: 0B, tracker_tec_enabled: 0.0, tracker_store_sequential_images: 0B, $
     tracker_track_ref_available: 0B, num_bright_stars: 0B, $
     attitude_error1: 0.0, attitude_error2: 0.0, attitude_error3: 0.0, $
     rate_error1: 0.0, rate_error2: 0.0, rate_error3: 0.0, $
@@ -412,11 +412,11 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
    cdh_info: 0B, adcs_info: 0B, adcs_group: 0U, checkbytes: 0U, SyncWord: 0U, $
   tr2_duty_cycle: 0B, tr3_duty_cycle: 0B, tr_torqueX: 0.0, tr_torqueY: 0.0, tr_torqueZ: 0.0, $
   tr1_ctrlmode: 0B, tr2_ctrlmode: 0B, tr3_ctrlmode: 0B, $
-  mag_sourcesetting: 0B, mag_source: 0B, mom_vectorvalid: 0B, mom_vectorenabled: 0B, $
-  tr1_enable: 0B, tr2_enable: 0B, tr3_enable: 0B, tr1_dir: 0B, tr2_dir: 0B, tr3_dir: 0B, $
+  mag_sourcesetting: 0B, mag_source: 0B, mom_vectorvalid: 0B, mom_vectorenabled: 0.0, $
+  tr1_enable: 0.0, tr2_enable: 0.0, tr3_enable: 0.0, tr1_dir: 0B, tr2_dir: 0B, tr3_dir: 0B, $
   sunbody_X: 0.0, sunbody_Y: 0.0, sunbody_Z: 0.0, sunbody_status: 0B, $
   sunsensor_used: 0, sunsensor_data1: 0U, sunsensor_data2: 0U, sunsensor_data3: 0U, sunsensor_data4: 0U, $
-  sunvector_enabled: 0B, mag_bodyX: 0.0, mag_bodyY: 0.0, mag_bodyZ: 0.0,  mag_compTemp: 0.0, $
+  sunvector_enabled: 0.0, mag_bodyX: 0.0, mag_bodyY: 0.0, mag_bodyZ: 0.0,  mag_compTemp: 0.0, $
   mag_data1: 0, mag_data2: 0, mag_data3: 0, mag_valid: 0B, temp_used: 0, $
   imu_rate1: 0.0, imu_rate2: 0.0, imu_rate3: 0.0, $
   imu_body_rate1: 0.0, imu_body_rate2: 0.0, imu_body_rate3: 0.0, $
@@ -429,7 +429,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
   volt_5p0: 0.0, volt_3p3: 0.0, volt_2p5: 0.0, volt_1p8: 0.0, volt_1p0: 0.0, $
   rw1_temp: 0.0, rw2_temp: 0.0, rw3_temp: 0.0, volt_12v_bus: 0.0, $
   data_checksum: 0U, table_length: 0U, table_offset: 0U, table_upload_status: 0B, which_table: 0B, $
-  st_valid: 0B, st_use_enable: 0B, st_exceed_max_background: 0B, st_exceed_max_rotation: 0B, $
+  st_valid: 0B, st_use_enable: 0.0, st_exceed_max_background: 0B, st_exceed_max_rotation: 0B, $
   st_exceed_min_sun: 0B, st_exceed_min_earth: 0B, st_exceed_min_moon: 0B $
    }
 
@@ -644,16 +644,16 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           hk_struct1.cdh_3v = (long(data[pindex+84]) + ishft(long(data[pindex+85]),8)) *6.71/4096.  ;Volts
           hk_struct1.cdh_temp = ((FIX(data[pindex+86])) + ishft(FIX(data[pindex+87]),8)) /256.  ;deg C
           hk_struct1.cdh_enables = (long(data[pindex+88]) + ishft(long(data[pindex+89]),8))  ; none
-          hk_struct1.enable_sps_xps = ISHFT(hk_struct1.cdh_enables AND '0001'X, 0) ;extract the power state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_x123 = ISHFT(hk_struct1.cdh_enables AND '0002'X, -1) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_adcs = ISHFT(hk_struct1.cdh_enables AND '0004'X, -2) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_comm = ISHFT(hk_struct1.cdh_enables AND '0008'X, -3) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_sdcard = ISHFT(hk_struct1.cdh_enables AND '0010'X, -4) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_ant_deploy = ISHFT(hk_struct1.cdh_enables AND '0020'X, -5) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_sa_deploy = ISHFT(hk_struct1.cdh_enables AND '0040'X, -6) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_batt_heater = ISHFT(hk_struct1.cdh_enables AND '0080'X, -7) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_spare = ISHFT(hk_struct1.cdh_enables AND '0100'X, -8) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
-          hk_struct1.enable_inst_heater = ISHFT(hk_struct1.cdh_enables AND '0200'X, -9) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_sps_xps = float(ISHFT(hk_struct1.cdh_enables AND '0001'X, 0)) ;extract the power state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_x123 = float(ISHFT(hk_struct1.cdh_enables AND '0002'X, -1)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_adcs = float(ISHFT(hk_struct1.cdh_enables AND '0004'X, -2)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_comm = float(ISHFT(hk_struct1.cdh_enables AND '0008'X, -3)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_sdcard = float(ISHFT(hk_struct1.cdh_enables AND '0010'X, -4)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_ant_deploy = float(ISHFT(hk_struct1.cdh_enables AND '0020'X, -5)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_sa_deploy = float(ISHFT(hk_struct1.cdh_enables AND '0040'X, -6)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_batt_heater = float(ISHFT(hk_struct1.cdh_enables AND '0080'X, -7)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_spare = float(ISHFT(hk_struct1.cdh_enables AND '0100'X, -8)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
+          hk_struct1.enable_inst_heater = float(ISHFT(hk_struct1.cdh_enables AND '0200'X, -9)) ;extract the power switch state, BOOLEAN, either on(1) or off(0)
 
 
           hk_struct1.cdh_i2c_err = (long(data[pindex+90]) + ishft(long(data[pindex+91]),8))  ;none
@@ -1305,7 +1305,6 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.cal_cycle_timer1 = ishft(uint(data[pindex1+182]),8) + uint(data[pindex1+183]) ; [RWcycles]
           adcs2_struct1.cal_cycle_timer2 = ishft(uint(data[pindex1+184]),8) + uint(data[pindex1+185]) ; [RWcycles]
           adcs2_struct1.cal_cycle_timer3 = ishft(uint(data[pindex1+186]),8) + uint(data[pindex1+187]) ; [RWcycles]
-          ;  ERROR for Operation Mode 1 offset (TW 8/26/2015): offset all below by -3
           adcs2_struct1.wheel_operating_mode1 = data[pindex1+188] ; 0=idle, 1=internal, 2=external
           adcs2_struct1.wheel_operating_mode2 = data[pindex1+189] ; 0=idle, 1=internal, 2=external
           adcs2_struct1.wheel_operating_mode3 = data[pindex1+190] ; 0=idle, 1=internal, 2=external
@@ -1318,9 +1317,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.motor_hall_state1 =  data[pindex1+197]     ; [none]
           adcs2_struct1.motor_hall_state2 =  data[pindex1+198]     ; [none]
           adcs2_struct1.motor_hall_state3 =  data[pindex1+199]     ; [none]
-          adcs2_struct1.wheel_pwm_enable1 =  data[pindex1+200]     ; 1=yes, 0=no
-          adcs2_struct1.wheel_pwm_enable2 =  data[pindex1+201]     ; 1=yes, 0=no
-          adcs2_struct1.wheel_pwm_enable3 =  data[pindex1+202]     ; 1=yes, 0=no
+          adcs2_struct1.wheel_pwm_enable1 =  float(data[pindex1+200])     ; 1=yes, 0=no
+          adcs2_struct1.wheel_pwm_enable2 =  float(data[pindex1+201])     ; 1=yes, 0=no
+          adcs2_struct1.wheel_pwm_enable3 =  float(data[pindex1+202])     ; 1=yes, 0=no
           adcs2_struct1.wheel_pwm_direction1 = data[pindex1+203]  ; 0=pos, 1=neg
           adcs2_struct1.wheel_pwm_direction2 = data[pindex1+204]  ; 0=pos, 1=neg
           adcs2_struct1.wheel_pwm_direction3 = data[pindex1+205]  ; 0=pos, 1=neg
@@ -1430,7 +1429,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.tracker_num_attitude_loops = data[pindex1+109]
           adcs3_struct1.num_stars_used_in_attitude = data[pindex1+110]
           adcs3_struct1.num_stars_high_residual = data[pindex1+111]
-          adcs3_struct1.tracker_auto_black_enable = data[pindex1+112]
+          adcs3_struct1.tracker_auto_black_enable = float(data[pindex1+112])
           adcs3_struct1.tracker_black_level = data[pindex1+113]
           adcs3_struct1.num_stars_on_fov = data[pindex1+114]
           adcs3_struct1.tracker_num_track_blocks_issued = data[pindex1+115]
@@ -1442,7 +1441,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.tracker_auto_gain_adjust = data[pindex1+121]
           adcs3_struct1.tracker_test_mode = data[pindex1+122]
           adcs3_struct1.tracker_fpga_detector_timeout = data[pindex1+123]
-          adcs3_struct1.tracker_tec_enabled = data[pindex1+124]
+          adcs3_struct1.tracker_tec_enabled = float(data[pindex1+124])
           adcs3_struct1.tracker_store_sequential_images = data[pindex1+125]
           adcs3_struct1.tracker_track_ref_available = data[pindex1+126]
           adcs3_struct1.num_bright_stars = data[pindex1+127]
@@ -1538,10 +1537,10 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.mag_sourcesetting = data[pindex+27]
           adcs4_struct1.mag_source = data[pindex+28]
           adcs4_struct1.mom_vectorvalid = data[pindex+29]
-          adcs4_struct1.mom_vectorenabled = data[pindex+30]
-          adcs4_struct1.tr1_enable = data[pindex+31]
-          adcs4_struct1.tr2_enable = data[pindex+32]
-          adcs4_struct1.tr3_enable = data[pindex+33]
+          adcs4_struct1.mom_vectorenabled = float(data[pindex+30])
+          adcs4_struct1.tr1_enable = float(data[pindex+31])
+          adcs4_struct1.tr2_enable = float(data[pindex+32])
+          adcs4_struct1.tr3_enable = float(data[pindex+33])
           adcs4_struct1.tr1_dir = data[pindex+34]
           adcs4_struct1.tr2_dir = data[pindex+35]
           adcs4_struct1.tr3_dir = data[pindex+36]
@@ -1560,7 +1559,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.sunsensor_data2 = ( ishft(uint(data[pindex1+47]),8) + uint(data[pindex1+48]) )
           adcs4_struct1.sunsensor_data3 = ( ishft(uint(data[pindex1+49]),8) + uint(data[pindex1+50]) )
           adcs4_struct1.sunsensor_data4 = ( ishft(uint(data[pindex1+51]),8) + uint(data[pindex1+52]) )
-          adcs4_struct1.sunvector_enabled = data[pindex1+53]
+          adcs4_struct1.sunvector_enabled = float(data[pindex1+53])
 
 ; 8 Dec 2018: Amir Caspi + Tom Woods: Adding extra 1-byte offset to work around FSW bug for FM1 (2/6)
 ;          pindex1 += 1
@@ -1645,7 +1644,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.table_upload_status = data[pindex1+151]
           adcs4_struct1.which_table = data[pindex1+152]
           adcs4_struct1.st_valid = data[pindex1+153]
-          adcs4_struct1.st_use_enable = data[pindex1+154]
+          adcs4_struct1.st_use_enable = float(data[pindex1+154])
           adcs4_struct1.st_exceed_max_background = data[pindex1+155]
           adcs4_struct1.st_exceed_max_rotation = data[pindex1+156]
           adcs4_struct1.st_exceed_min_sun = data[pindex1+157]
