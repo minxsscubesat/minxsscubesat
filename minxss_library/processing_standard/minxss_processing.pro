@@ -75,6 +75,7 @@ print, ' '
 if keyword_set(debug) then stop, 'DEBUG minxss_processing at start...'
 
 for jd=start_jd, end_jd, 1.0 do begin
+    message, /INFO, JPMsystime() + ' Processing Level 0B for date: ' + jpmjd2iso(jd)
     yd = long(jd2yd(jd))
     minxss_make_level0b, fm=fm, yyyydoy=yd, /VERBOSE
     wait, 1
