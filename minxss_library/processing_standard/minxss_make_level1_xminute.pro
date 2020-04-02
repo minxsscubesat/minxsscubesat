@@ -137,7 +137,41 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   ;  get Counts for the Fe XXV emission line
   fe_cnts = total( sp[210:250,*], 1 )
   FE_CNTS_MAX = 200.
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Add a new check using the initial estimated MinXSS X123 irradiance
+  ; Pass in the level 0D counts in the integration spectrum. We will be taking a ratio of counts in particular energy bins so the units will not matter
+  ; put in the actual spectrum for the uncert
+  ; add path for the calibration file
+  if keyword_set(directory_calibration_file) then begin
+    cal_dir = directory_calibration_file
+  endif else begin
+    cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
+  endelse
 
+
+n_spectra = n_elements(sp[*,0])
+n_times_nominal = n_elements(sp[0,*])
+initial_x123_irradiance = dblarr(n_spectra, n_times_nominal)
+
+for k = 0, n_times_nominal - 1 do begin
+  minxss_x123_irradiance_wrapper, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
+  initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
+endfor
+  
+  ; find where the ratio of counts is less than a critical ratio (minimal slope)
+  dimension = 1
+  e_low_band_1 = 1.3
+  e_high_band_1 = 1.4
+  index_range_band_1 = where((initial_x123_irradiance_structure[0].energy_bins ge e_low_band_1) and (initial_x123_irradiance_structure[0].energy_bins le e_high_band_1))
+  initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1 = total(initial_x123_irradiance[index_range_band_1,*], dimension, /double, /nan)
+  e_low_band_2 = 1.0
+  e_high_band_2 = 1.1
+  index_range_band_2 = where((initial_x123_irradiance_structure[0].energy_bins ge e_low_band_2) and (initial_x123_irradiance_structure[0].energy_bins le e_high_band_2))
+  initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = total(initial_x123_irradiance[index_range_band_2,*], dimension, /double, /nan)
+
+  ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2/initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1
+  limit_value_Photon_Flux = 5.0E1  
 
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
   wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
