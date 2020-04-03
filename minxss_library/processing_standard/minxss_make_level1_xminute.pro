@@ -526,6 +526,8 @@ endfor
   for k=1, num_L1_fill do begin
     ;loop for the X123 science data
     index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1]), n_valid)
+    IF n_valid EQ 0 THEN CONTINUE
+    
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; start x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;convert jd back to calendar date for clarity
     caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
