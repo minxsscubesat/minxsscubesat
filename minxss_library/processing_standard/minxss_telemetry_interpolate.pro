@@ -153,7 +153,7 @@ FOR tagIndex = 0, n_tags(packetToProcess) - 1 DO BEGIN
       IF isa(interpolatedPacketSingleTag, 'byte') THEN badDataFlag = byte(-1) ELSE badDataFlag = !VALUES.F_NAN
       
       ; Check conditions and store appropriate data into array
-      IF strmatch(tagNames[tagIndex], 'switch*', /FOLD_CASE) THEN interpolatedPacketSingleTag[timeIndex] = badDataFlag ELSE $
+      IF strmatch(tagNames[tagIndex], 'switch*', /FOLD_CASE) THEN interpolatedPacketSingleTag[timeIndex] = packetSingleTag[nearestInputTimeLowerIndex] ELSE $
       IF nearestInputTimeUpperIndex EQ -1 OR nearestInputTimeLowerIndex EQ -1 THEN interpolatedPacketSingleTag[timeIndex] = badDataFlag ELSE $
       IF t1 GT timeThresholdSeconds OR t2 GT timeThresholdSeconds             THEN interpolatedPacketSingleTag[timeIndex] = badDataFlag ELSE $
         interpolatedPacketSingleTag[timeIndex] = interpol([packetSingleTag[nearestInputTimeLowerIndex], packetSingleTag[nearestInputTimeUpperIndex]], $
