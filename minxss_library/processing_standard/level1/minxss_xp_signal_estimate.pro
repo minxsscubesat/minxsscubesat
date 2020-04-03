@@ -90,7 +90,6 @@ function minxss_xp_signal_estimate, input_photon_energies_kev, input_photon_flux
   ;
   ;
   ;
-  if keyword_set(verbose) then print, ';;;;;;;;;;;;;;;; Creating MinXSS XP response signal ;;;;;;;;;;;;;;'
 
   ;
   minxss_xp_response_energy_bins_kev =  minxss_detector_response.photon_energy
