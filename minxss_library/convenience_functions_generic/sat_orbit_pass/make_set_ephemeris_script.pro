@@ -122,7 +122,7 @@ verbose = 1
   ; MINXSS2_SAT_ID = 43807L  ; 12/10/18 solution (might change!)
   ;MINXSS2_SAT_ID = 43817L  ; 12/27/18 solution (might change!) OPTIONS are 43807, 43817, 43818
   MINXSS2_SAT_ID = 43758L  ; 1/10/19 solution (might change!)
-  spacecraft_location, id_satellite=MINXSS2_SAT_ID, jd_start, location, sunlight, eci_pv = pv, /J2000, verbose=verbose
+  spacecraft_location, id_satellite=MINXSS2_SAT_ID, jd_start, location, sunlight, ecef_pv = pv, /J2000, verbose=verbose
 ;  pv = [123.456, 456.789, -789.000, 321.123, -654.456, 987.789] ; TESTING PURPOSES
 
   filledscript = string(scriptbytes)
