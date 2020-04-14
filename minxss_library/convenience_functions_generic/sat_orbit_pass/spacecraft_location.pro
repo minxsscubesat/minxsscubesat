@@ -8,14 +8,14 @@
 ;		/id_satellite	Option to specify the satellite ID, else use ISS ID of 25544
 ;		/tle_path		Option to specify path for TLE, else use $TLE_dir
 ;		/current_time	Option to use current time instead of input time array
-;		/j2000			Option to return ecef_pv data in J2000 epoch instead of current time epoch
+;		/j2000			Option to return ECI_PV data in J2000 epoch instead of current time epoch
 ;		/verbose		Option to print debug messages
 ;		/keepNAN    Option to keep NAN data values (else removes invalid location vectors)
 ;
 ;	OUTPUT
 ;		location	3 x n_elements(time) Array of Longitude, Latitude, Altitude
 ;		sunlight	Flag for if the satellite is in sunlight or not
-;		ecef_pv		ECEF coordinates of the Position and Velocity (optional output)
+;		eci_pv		ECI coordinates of the Position and Velocity (optional output)
 ;		sun_dot_pos	Sun_vector dot_product position_vector (optional output for Beta angle)
 ;
 ;	LIBRARY
@@ -28,7 +28,7 @@
 ;		2017-01-07  T. Wooods Updated with optional input /keepNAN for data processing algorithm
 ;
 pro spacecraft_location, time, location, sunlight, id_satellite=id_satellite, $
-					tle_path=tle_path, current_time=current_time, ecef_pv=ecef_pv, $
+					tle_path=tle_path, current_time=current_time, eci_pv=eci_pv, $
 					j2000=j2000, sun_dot_pos=sun_dot_pos, verbose=verbose, debug=debug, keepNAN=keepNAN
 
 	;
@@ -142,12 +142,12 @@ pro spacecraft_location, time, location, sunlight, id_satellite=id_satellite, $
 		return		; invalid PV array
 	endelse
 
-	ecef_pv = pv
+	eci_pv = pv
 	if keyword_set(j2000) then begin
 		;
 		; convert PV data from current time epoch to J2000 epoch
 		;
-		ecef_pv = pv_to_j2000( t[0], ecef_pv, verbose=verbose )
+		eci_pv = pv_to_j2000( t[0], eci_pv, verbose=verbose )
 	endif
 
 	if keyword_set(verbose) or keyword_set(debug) then begin
