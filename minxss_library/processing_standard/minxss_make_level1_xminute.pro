@@ -8,14 +8,11 @@
 ;   This will process L0D raw counts from X123 into irradiance units and in x-minute averages.
 ;   It also calculates the XP background subtracted data
 ;
-; CATEGORY:
-;    MinXSS Level 1
-;
-; CALLING SEQUENCE:
-;   minxss_make_level1_xminute, fm=fm
-;
 ; INPUTS:
-;   NONE
+;   minxsslevel1_x123_time_structure [structure]:      The time array from minxsslevel1.x123.time
+;   minxsslevel1_x123_dark_time_structure [structure]: The time array from minxsslevel1.x123_dark.time
+;   minxsslevel1_xp_time_structure [structure]:        The time array from minxsslevel1.xp.time
+;   minxsslevel1_xp_dark_time_structure [structure]:   The time array from minxsslevel1.xp_dark.time
 ;
 ; OPTIONAL INPUTS:
 ;   fm [integer]:               Flight Model number 1 or 2 (default is 1)
@@ -29,7 +26,10 @@
 ;   DEBUG:   Set this to trigger stop points for debugging
 ;
 ; OUTPUTS:
-;   NONE
+;   IDL saveset to disk 
+;   
+; OPTIONAL OUTPUTS:
+;   None
 ;
 ; COMMON BLOCKS:
 ;   None
@@ -51,7 +51,9 @@
 ;   7. Save the Level 1 results (mission-length file)
 ;
 ;+
-PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array,  end_time_cd_array=end_time_cd_array,  low_limit=low_limit, verbose=verbose, debug=debug
+PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array, end_time_cd_array=end_time_cd_array, low_limit=low_limit, $
+                                minxsslevel1_x123_time_structure=minxsslevel1_x123_time_structure, minxsslevel1_x123_dark_time_structure=minxsslevel1_x123_dark_time_structure, minxsslevel1_xp_time_structure=minxsslevel1_xp_time_structure, minxsslevel1_xp_dark_time_structure=minxsslevel1_xp_dark_time_structure, $
+                                VERBOSE=VERBOSE, DEBUG=DEBUG
 
   seconds_per_day = 60.0*60.0*24.0
   ; check for valid input parameters
@@ -72,12 +74,12 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   if not keyword_set(low_limit) then low_limit = LOW_LIMIT_DEFAULT
   if keyword_set(verbose) then print, '     low_limit = ', low_limit
   ;
-  ;   1. Read the MinXSS Level 0D mission-length file
+  ; 1. Read the MinXSS Level 0D mission-length file
   ;
   ddir = getenv('minxss_data')
   if strlen(ddir) lt 1 then begin
     print, '*** ERROR finding MinXSS data, you need to define $minxss_data environment variable.'
-      return
+    return
   endif
   fmdir = ddir + path_sep() + 'fm' + fm_str + path_sep()
   indir = fmdir + 'level0d' +  path_sep()
@@ -88,12 +90,9 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;for testing purposes just run the ~ 1,000 entries
-  ;  minxsslevel0d_old = minxsslevel0d
+  ; minxsslevel0d_old = minxsslevel0d
   ; minxsslevel0d = minxsslevel0d[4E3:5E3]
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-  ; STOP, 'DEBUG the Level 0D data ...'
 
   ;
   ; 2. Select (filter) the data for good (valid) data
@@ -101,9 +100,9 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   ;   low energy counts are below the low_limit, and ADCS mode is Fine-Ref(1)
   ;
   sp_sec = (minxsslevel0d.time.jd - yd2jd(2016001.D0))*24.D0*3600.  ; seconds since Jan 1, 2016
-  ;sp = count rate
+  ; sp = count rate
   sp = float(minxsslevel0d.x123_spectrum)
-  ;raw total counts in the integration time
+  ; raw total counts in the integration time
   sp_counts = sp
   num_sci = n_elements(minxsslevel0d)
   ; convert to counts per sec (cps) with smallest time
@@ -128,76 +127,52 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   slow_count_min = lowlimit
   slow_count_max = fast_limit
 
-  ;X123_swith on flag, 1 = on and 0 is off
+  ; X123_swith on flag, 1 = on and 0 is off
   x123_switch_flag = 0.0
 
-  ;Science mode check, science_mode_flag = 4.0
+  ; Science mode check, science_mode_flag = 4.0
   science_mode_flag_threshold = 3.0
 
-  ;  get Counts for the Fe XXV emission line
+  ; get Counts for the Fe XXV emission line
   fe_cnts = total( sp[210:250,*], 1 )
   FE_CNTS_MAX = 200.
-  
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ; Add a new check using the initial estimated MinXSS X123 irradiance
-  ; Pass in the level 0D counts in the integration spectrum. We will be taking a ratio of counts in particular energy bins so the units will not matter
-  ; put in the actual spectrum for the uncert
-  ; add path for the calibration file
-  if keyword_set(directory_calibration_file) then begin
-    cal_dir = directory_calibration_file
-  endif else begin
-    cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
-  endelse
 
+  ; Use the input time structures from that already have filtering applied for each instrument and find where the level0d are the same
+  num_sp = n_elements(minxsslevel1_x123_time_structure.JD)
+  wsci = lonarr(num_sp)
 
-n_spectra = n_elements(sp[*,0])
-n_times_nominal = n_elements(sp[0,*])
-initial_x123_irradiance = dblarr(n_spectra, n_times_nominal)
+  for t = 0, num_sp - 1 do begin
+    wsci[t] = where(minxsslevel0d.time.JD eq minxsslevel1_x123_time_structure[t].JD)
+  endfor
 
-for k = 0, n_times_nominal - 1 do begin
-  minxss_x123_irradiance_wrapper, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
-  initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
-endfor
-  
-  ; find where the ratio of counts is less than a critical ratio (minimal slope)
-  dimension = 1
-  e_low_band_1 = 1.3
-  e_high_band_1 = 1.4
-  index_range_band_1 = where((initial_x123_irradiance_structure[0].energy_bins ge e_low_band_1) and (initial_x123_irradiance_structure[0].energy_bins le e_high_band_1))
-  initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1 = total(initial_x123_irradiance[index_range_band_1,*], dimension, /double, /nan)
-  e_low_band_2 = 1.0
-  e_high_band_2 = 1.1
-  index_range_band_2 = where((initial_x123_irradiance_structure[0].energy_bins ge e_low_band_2) and (initial_x123_irradiance_structure[0].energy_bins le e_high_band_2))
-  initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = total(initial_x123_irradiance[index_range_band_2,*], dimension, /double, /nan)
+  num_dark = n_elements(minxsslevel1_x123_dark_time_structure.JD)
+  wdark = lonarr(num_dark)
 
-  ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2/initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1
-  limit_value_Photon_Flux = 5.0E1  
-
-  ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
-  wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
-               and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) lt 0) $
-               and ((peakcnts-lowcnts) ge PEAK_SLOPE_DEFAULT) and (peakcnts gt 0) $
-               and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
-               and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse lt 1.0) $
-               and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) and (fe_cnts lt FE_CNTS_MAX) $
-               and (ratio_initial_x123_irradiance_structure_spectrum_photon_flux_index_range_band_2 le limit_value_photon_flux) $
-               and minxsslevel0d.x123_read_errors le 5 and minxsslevel0d.x123_write_errors le 5 $
-               and minxsslevel0d.x123_spectrum[200] LE 40, $
-               num_sp)
-
-  wdark = where((minxsslevel0d.x123_radio_flag lt 1) and (sps_sum lt (sps_sum_sun_min/10.)) $
-                and ((lowcnts-new_low_limit) lt 0) and (fast_count lt fast_limit) $
-                and (slow_count lt slow_count_max) and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) $
-                and (minxsslevel0d.spacecraft_in_saa lt 1.0) and (minxsslevel0d.eclipse gt 0.0), $
-                num_dark )
+  for t = 0, num_dark - 1 do begin
+    wdark[t] = where(minxsslevel0d.time.JD eq minxsslevel1_x123_dark_time_structure[t].JD)
+  endfor
 
   if keyword_set(verbose) then print, 'Number of good L0D science packets = ',strtrim(num_sp,2), $
-    ' out of ', strtrim(n_elements(minxsslevel0d),2)
+                                      ' out of ', strtrim(n_elements(minxsslevel0d),2)
   if (num_sp le 1) then begin
     print, '*** ERROR finding any X123 solar data'
     if keyword_set(verbose) then stop, 'DEBUG ...'
     return
   endif
+
+  num_sp_xp = n_elements(minxsslevel1_xp_time_structure.JD)
+  wsci_xp = lonarr(num_sp_xp)
+
+  for t = 0, num_sp_xp - 1 do begin
+    wsci_xp[t] = where(minxsslevel0d.time.JD eq minxsslevel1_xp_time_structure[t].JD)
+  endfor
+
+  num_sp_xp_dark = n_elements(minxsslevel1_xp_dark_time_structure.JD)
+  wsci_xp_dark = lonarr(num_sp_xp_dark)
+
+  for t = 0, num_sp_xp_dark - 1 do begin
+    wsci_xp_dark[t] = where(minxsslevel0d.time.JD eq minxsslevel1_xp_dark_time_structure[t].JD)
+  endfor
 
   ;
   ; make SPS pointing information using SCI SPS data (versus lower quality HK SPS data)
@@ -249,7 +224,7 @@ endfor
     if keyword_set(debug) then stop, 'DEBUG at start of irradiance conversion processing ...'
   endif
 
-  ;  add path for the calibration file
+  ; add path for the calibration file
   cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
 
   if fm eq 1 then begin
@@ -271,10 +246,9 @@ endfor
   ;  save energy bins for the return
   energy_bins_kev = nominal_x123_energy_bins_kev + energy_bins_offset
 
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;3. Choose the timeframe of the data to be considered
+  ; 3. Choose the timeframe of the data to be considered
 
-  ;  this could be keyword variable for minxss_make_level1.pro
+  ; this could be keyword variable for minxss_make_level1.pro
   time_average_sec = 1.0 * 60.  ; 1-minute average is the default
   if keyword_set(x_minute_average) then begin
     x_minute_average = float(x_minute_average)
@@ -284,33 +258,33 @@ endfor
 
 
   ; set the start and end times in jd for the MinXSS-1 mission
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;choose the time frame if interest to plot
-  ;define the index positions
+  ; choose the time frame if interest to plot
+  ; define the index positions
   index_month = 1
   index_day = 2
   index_year = 0
   index_hour = 3
   index_minute = 4
   index_second = 5
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;choose the time frame if interest to plot
-  ;;result = julday(month, day, year, hour, minute, second)
-  ;; start time = june 9, 2016, 00:00:00 ut
-  ;start_date
+  ; choose the time frame if interest to plot
+  ; result = julday(month, day, year, hour, minute, second)
+  ; start time = june 9, 2016, 00:00:00 ut
+  ; start_date
   start_date_month = 06
-  start_date_day = 9
+  start_date_day = 09
   start_date_year = 2016
   start_date_hour = 00
   start_date_minute = 00
   start_date_second = 00
   start_time_jd = julday(start_date_month, start_date_day, start_date_year, start_date_hour, start_date_minute, start_date_second)
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end time = april 25, 2017, 23:59:59 ut
+ ; end time = april 25, 2017, 23:59:59 ut
   if keyword_set(start_time_cd_array) then begin
     start_time_jd_nominal = start_time_jd
     start_time_jd = julday(start_time_cd_array[index_month], start_time_cd_array[index_day], start_time_cd_array[index_year], start_time_cd_array[index_hour], start_time_cd_array[index_minute], start_time_cd_array[index_second])
     if start_time_jd lt start_time_jd_nominal then print, '!!Warning - start time is earlier than any MinXSS data!!!
   endif
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end time = april 25, 2017, 23:59:59 ut
-  ;end_date
+  ; end time = april 25, 2017, 23:59:59 ut
+  ; end_date
   end_date_month = 04
   end_date_day = 25
   end_date_year = 2017
@@ -318,29 +292,27 @@ endfor
   end_date_minute = 59
   end_date_second = 59
   end_time_jd = julday(end_date_month, end_date_day, end_date_year, end_date_hour, end_date_minute, end_date_second)
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
   if keyword_set(end_time_cd_array) then begin
     end_time_jd_nominal = end_time_jd
     end_time_jd = julday(end_time_cd_array[index_month], end_time_cd_array[index_day], end_time_cd_array[index_year], end_time_cd_array[index_hour], end_time_cd_array[index_minute], end_time_cd_array[index_second])
     if end_time_jd lt end_time_jd_nominal then print, '!!Warning - end time is later than any MinXSS data!!!
   endif
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  if start_time_jd gt end_time_jd then print, '!! ERROR !! start time is later than end time!!!'
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ;Calculate the number of total frames based on the defined start_time, end_time and x_minute_average chossen
+  if start_time_jd gt end_time_jd then print, '!! ERROR !! start time is later than end time!!!'
+
+  ; Calculate the number of total frames based on the defined start_time, end_time and x_minute_average chossen
   n_time_frames = (end_time_jd - start_time_jd)/time_average_day
   n_time_frames_long = long(n_time_frames) + 1
   x_minute_jd_time_array = (time_average_day*dindgen(n_time_frames_long)) + start_time_jd
 
-  ;create the date to make the structure
+  ; create the date to make the structure
   caldat, x_minute_jd_time_array[0], start_fill_month, start_fill_day, start_fill_year, start_fill_hour, start_fill_minute, start_fill_second
   caldat, x_minute_jd_time_array[1], end_fill_month, end_fill_day, end_fill_year, end_fill_hour, end_fill_minute, end_fill_second
 
 
   ; Define the data structures that will be filled in later
-  ;minxss-1 x123 science structure
+  ; minxss-1 x123 science structure
   level1_x123 = { time: minxsslevel0d[0].time, $
     interval_start_time_jd: x_minute_jd_time_array[0], $
     interval_end_time_jd: x_minute_jd_time_array[1], $
@@ -362,7 +334,7 @@ endfor
     spectrum_total_counts_accuracy: fltarr(1024), $
     spectrum_total_counts_precision: fltarr(1024),$
     integration_time: 0.0, $
-    number_spectra: 0, $
+    number_spectra: 0L, $
     x123_fast_count: 0.0, $
     x123_slow_count: 0.0, $
     sps_on: 0, $
@@ -380,7 +352,7 @@ endfor
     earth_sun_distance: 0.0, $
     correct_au: 0.0}
 
-  ;minxss-1 x123 dark data structure
+  ; minxss-1 x123 dark data structure
   level1_x123_dark = { time: minxsslevel0d[0].time, $
     interval_start_time_jd: x_minute_jd_time_array[0], $
     interval_end_time_jd: x_minute_jd_time_array[1], $
@@ -396,7 +368,7 @@ endfor
     spectrum_total_counts_accuracy: fltarr(1024), $
     spectrum_total_counts_precision: fltarr(1024),$
     integration_time: 0.0, $
-    number_spectra: 0, $
+    number_spectra: 0L, $
     x123_fast_count: 0.0, $
     x123_slow_count: 0.0, $
     sps_on: 0, $
@@ -414,7 +386,7 @@ endfor
     earth_sun_distance: 0.0, $
     correct_au: 0.0}
 
-  ;minxss-1 xp data structure
+  ; minxss-1 xp data structure
   level1_xp = { time: minxsslevel0d[0].time, $
     interval_start_time_jd: x_minute_jd_time_array[0], $
     interval_end_time_jd: x_minute_jd_time_array[1], $
@@ -432,7 +404,7 @@ endfor
     number_xp_samples: 0}
 
 
-  ;minxss-1 xp dark data structure
+  ; minxss-1 xp dark data structure
   level1_xp_dark = { time: minxsslevel0d[0].time, $
     interval_start_time_jd: x_minute_jd_time_array[0], $
     interval_end_time_jd: x_minute_jd_time_array[1], $
@@ -449,32 +421,29 @@ endfor
     ;fractional_difference_x123_estimated_xp_fc: 0.0, $
     number_xp_samples: 0}
 
-
-
-  ;set the initial number of times to initiate the forloop below
+  ; set the initial number of times to initiate the forloop below
   num_L1_fill = 0L
   num_L1_fill_dark = 0L
   num_L1_fill_xp = 0L
-  num_L1_fill_xp_dark = 0L
+  num_xp_fill_dark = 0L
 
-  ;set the initial structure to replicate in the for loop below
-  ;x123 science
-  start_index_x123_x_minute_jd_time_array_original = {structure:0}
-  start_index_x123_x_minute_jd_time_array = {structure:0}
-  ;x123 dark
-  start_index_x123_dark_x_minute_jd_time_array_original = {structure:0}
-  start_index_x123_dark_x_minute_jd_time_array = {structure:0}
-  ;xp science
-  start_index_xp_x_minute_jd_time_array_original = {structure:0}
-  start_index_xp_x_minute_jd_time_array = {structure:0}
-  ;xp dark
-  start_index_xp_dark_x_minute_jd_time_array_original = {structure:0}
-  start_index_xp_dark_x_minute_jd_time_array = {structure:0}
+  ; set the initial structure to replicate in the for loop below
+  ; x123 science
+  start_index_x123_x_minute_jd_time_array_original = {structure:0L}
+  start_index_x123_x_minute_jd_time_array = {structure:0L}
+  ; x123 dark
+  start_index_x123_dark_x_minute_jd_time_array_original = {structure:0L}
+  start_index_x123_dark_x_minute_jd_time_array = {structure:0L}
+  ; xp science
+  start_index_xp_x_minute_jd_time_array_original = {structure:0L}
+  start_index_xp_x_minute_jd_time_array = {structure:0L}
+  ; xp dark
+  start_index_xp_dark_x_minute_jd_time_array_original = {structure:0L}
+  start_index_xp_dark_x_minute_jd_time_array = {structure:0L}
 
-
-  ;  find how many pre-set time intervals have the desired MinXSS data to fill in with data later
+  ; find how many pre-set time intervals have the desired MinXSS data to fill in with data later
   for k=0L, n_time_frames_long-2 do begin
-    ;loop for the X123 science data
+    ; loop for the X123 science data
     index_x_minute_average_loop_fill = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[k]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[k+1]), n_valid)
     if n_valid gt 0 then begin
       num_L1_fill = num_L1_fill + 1
@@ -484,8 +453,8 @@ endfor
       start_index_x123_x_minute_jd_time_array[num_L1_fill].structure = k
     endif
 
-    ;xp science data
-    good_xp_indices = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[k]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[k+1]) and (((minxsslevel0d[wsci].XPS_DATA_SCI/minxsslevel0d[wsci].sps_xp_integration_time) - (minxsslevel0d[wsci].SPS_DARK_DATA_SCI/minxsslevel0d[wsci].sps_xp_integration_time)) gt 0), n_valid_xp)
+    ; xp science data
+    index_x_minute_average_loop_fill_xp = where((minxsslevel0d[wsci_xp].time.jd ge x_minute_jd_time_array[k]) and (minxsslevel0d[wsci_xp].time.jd le x_minute_jd_time_array[k+1]) and (((minxsslevel0d[wsci_xp].XPS_DATA_SCI/minxsslevel0d[wsci_xp].sps_xp_integration_time) - (minxsslevel0d[wsci_xp].SPS_DARK_DATA_SCI/minxsslevel0d[wsci_xp].sps_xp_integration_time)) gt 0), n_valid_xp)
     if n_valid_xp gt 0 then begin
       num_L1_fill_xp = num_L1_fill_xp + 1
       start_index_xp_x_minute_jd_time_array_old = start_index_xp_x_minute_jd_time_array
@@ -494,7 +463,7 @@ endfor
       start_index_xp_x_minute_jd_time_array[num_L1_fill_xp].structure = k
     endif
 
-    ;x123 dark data
+    ; x123 dark data
     index_x_minute_average_loop_fill_dark = where((minxsslevel0d[wdark].time.jd ge x_minute_jd_time_array[k]) and (minxsslevel0d[wdark].time.jd le x_minute_jd_time_array[k+1]), n_valid_dark)
     if n_valid_dark gt 0 then begin
       num_L1_fill_dark = num_L1_fill_dark + 1
@@ -503,19 +472,29 @@ endfor
       start_index_x123_dark_x_minute_jd_time_array[0:num_L1_fill_dark-1].structure = start_index_x123_dark_x_minute_jd_time_array_old.structure
       start_index_x123_dark_x_minute_jd_time_array[num_L1_fill_dark].structure = k
     endif
+
+    ; xp dark data
+    index_x_minute_average_loop_fill_xp_dark = where((minxsslevel0d[wsci_xp_dark].time.jd ge x_minute_jd_time_array[k]) and (minxsslevel0d[wsci_xp_dark].time.jd le x_minute_jd_time_array[k+1]), n_valid_xp_dark)
+    if n_valid_xp_dark gt 0 then begin
+      num_xp_fill_dark = num_xp_fill_dark + 1
+      start_index_xp_dark_x_minute_jd_time_array_old = start_index_xp_dark_x_minute_jd_time_array
+      start_index_xp_dark_x_minute_jd_time_array = replicate(start_index_xp_dark_x_minute_jd_time_array_original, num_xp_fill_dark+1)
+      start_index_xp_dark_x_minute_jd_time_array[0:num_xp_fill_dark-1].structure = start_index_xp_dark_x_minute_jd_time_array_old.structure
+      start_index_xp_dark_x_minute_jd_time_array[num_xp_fill_dark].structure = k
+    endif
   endfor
 
-  ;fill in the xp_dark data
-  num_L1_fill_xp_dark = num_L1_fill_dark
+  ; fill in the xp_dark data
+  num_xp_fill_dark = num_L1_fill_dark
   start_index_xp_dark_x_minute_jd_time_array = start_index_x123_dark_x_minute_jd_time_array
 
-  ;replicate the structure to the actual number of MinXSS-1 spectra that is valid in the time interval
+  ; replicate the structure to the actual number of MinXSS-1 spectra that is valid in the time interval
   minxsslevel1_x123 = replicate(level1_x123, num_L1_fill)
   minxsslevel1_x123_dark = replicate(level1_x123_dark, num_L1_fill_dark)
   minxsslevel1_xp = replicate(level1_xp, num_L1_fill_xp)
-  minxsslevel1_xp_dark = replicate(level1_xp_dark, num_L1_fill_xp_dark)
+  minxsslevel1_xp_dark = replicate(level1_xp_dark, num_xp_fill_dark)
 
-  ;calculate parameters and fill in the structures
+  ; calculate parameters and fill in the structures
   num_L1 = 0L
   num_L1_dark = 0L
   num_L1_xp = 0L
@@ -524,30 +503,28 @@ endfor
 
   ; loop over only the time indices that are known to have minxss data within the x-minute for the current index
   for k=1, num_L1_fill do begin
-    ;loop for the X123 science data
+    ; loop for the X123 science data
     index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1]), n_valid)
     IF n_valid EQ 0 THEN CONTINUE
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; start x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;convert jd back to calendar date for clarity
+    ; convert jd back to calendar date for clarity
     caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
     caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1], end_valid_month, end_valid_day, end_valid_year, end_valid_hour, end_valid_minute, end_valid_second
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;   4. Deadtime correction
+    ; 4. Deadtime correction
     if keyword_set(verbose) then verbose_deadtime=verbose
     x123_counts_deadtime_corrected = minxss_x123_correct_deadtime(float(minxsslevel0d[wsci[index_x_minute_average_loop]].x123_spectrum), minxsslevel0d[wsci[index_x_minute_average_loop]].x123_accum_time, x123_energy_bin_centers_kev=energy_bins_kev, minxss_instrument_structure_data_file=minxss_calibration_file_path, flight_model_number=1, verbose=verbose_deadtime, $ low_energy_limit=low_energy_limit,  $
       deadtime_correction_scale_factor=x123_deadtime_correction_scale_factor_array)
-    ;deadtime corrected slow counts
+    ; deadtime corrected slow counts
     x123_slow_count_deadtime_corrected = (total(x123_counts_deadtime_corrected, 1, /double, /nan))/(minxsslevel0d[wsci[index_x_minute_average_loop]].x123_accum_time/1000.)
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; 5.  Calculate the uncertainties
-    ;incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
-    ;pre-flight cal uncertainty (SURF) is ~10%
+    ; incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
+    ; pre-flight cal uncertainty (SURF) is ~10%
     pre_flight_cal_uncertainty = 0.1
 
-    ;accuracy, calculation from Tom Woods
+    ; accuracy, calculation from Tom Woods
     x123_cps_mean_count_rate_uncertainty_accuracy = minxss_X123_mean_count_rate_uncertainty(x123_counts_deadtime_corrected, x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wsci[index_x_minute_average_loop]].x123_accum_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
       x123_mean_count_rate = x123_cps_mean_count_rate, $
       relative_uncertainty_x123_mean_count_rate = x123_cps_mean_count_rate_relative_uncertainty_accuracy, $
@@ -560,20 +537,17 @@ endfor
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_accuracy, $
       X123_Summed_Integration_time_seconds=X123_total_integration_time)
 
-    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(x123_counts_deadtime_corrected, x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wsci[index_x_minute_average_loop]].x123_accum_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
+    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(x123_counts_deadtime_corrected, x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wsci[index_x_minute_average_loop]].x123_accum_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
       x123_mean_count_rate = x123_cps_mean_count_rate, $
       x123_count_rate = x123_cps_count_rate, $
       uncertainty_x123_measured_count_rate_array=x123_cps_count_rate_uncertainty_precision, $
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_precision)
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;  6.  Calculate the MinXSS X123 irradiance
+    ; 6.  Calculate the MinXSS X123 irradiance
     minxss_x123_irradiance_wrapper, x123_cps_mean_count_rate, x123_cps_mean_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, fm=fm
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; 8. Put data into structures
     ; fill the variables in the level1_x123 structure
-    ;
     correct_1AU = (minxsslevel0d[wsci[index_x_minute_average_loop[0]]].earth_sun_distance)^2.
     minxsslevel1_x123[num_L1].time = minxsslevel0d[wsci[index_x_minute_average_loop[0]]].time
     minxsslevel1_x123[num_L1].interval_start_time_jd = x_minute_jd_time_array[k]
@@ -638,22 +612,20 @@ endfor
   endfor
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ;  find data within x-minute of current index
+  ; find data within x-minute of current index
   for k=1, num_L1_fill_xp do begin
-    index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1]), n_valid)
-    good_xp_indices = where((((minxsslevel0d[wsci[index_x_minute_average_loop]].XPS_DATA_SCI/minxsslevel0d[wsci[index_x_minute_average_loop]].sps_xp_integration_time) - (minxsslevel0d[wsci[index_x_minute_average_loop]].SPS_DARK_DATA_SCI/minxsslevel0d[wsci[index_x_minute_average_loop]].sps_xp_integration_time)) gt 0), n_valid_xp)
-    good_xp_in_time_indices = index_x_minute_average_loop[good_xp_indices]
-    if n_valid_xp gt 0 then begin
+    index_x_minute_average_loop_xp = where((minxsslevel0d[wsci_xp].time.jd ge x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci_xp].time.jd le x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1]) and (((minxsslevel0d[wsci_xp].XPS_DATA_SCI/minxsslevel0d[wsci_xp].sps_xp_integration_time) - (minxsslevel0d[wsci_xp].SPS_DARK_DATA_SCI/minxsslevel0d[wsci_xp].sps_xp_integration_time)) gt 0), n_valid_xp)
+    if n_valid_xp EQ 0 then CONTINUE
 
-      ;convert jd back to calendar date for clarity
-      caldat, x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
-      caldat, x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1], end_valid_month, end_valid_day, end_valid_year, end_valid_hour, end_valid_minute, end_valid_second
+    ;convert jd back to calendar date for clarity
+    caldat, x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
+    caldat, x_minute_jd_time_array[start_index_xp_x_minute_jd_time_array[k].structure + 1], end_valid_month, end_valid_day, end_valid_year, end_valid_hour, end_valid_minute, end_valid_second
 
-      ; 7. Include background (from the dark diode) subtracted XP data
-      ;incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
-      pre_flight_cal_uncertainty = 0.1
+    ; 7. Include background (from the dark diode) subtracted XP data
+    ; incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
+    pre_flight_cal_uncertainty = 0.1
 
-      XP_data_Uncertainty_mean_DN_rate_accuracy = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci[good_xp_in_time_indices]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci[good_xp_in_time_indices]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci[good_xp_in_time_indices]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci[good_xp_in_time_indices]].sps_xp_integration_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
+    XP_data_Uncertainty_mean_DN_rate_accuracy = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
         XP_mean_count_rate=XP_data_mean_DN_rate, $
         relative_uncertainty_XP_mean_count_rate=xp_data_relative_Uncertainty_mean_DN_rate, $
         uncertainty_XP_measured_count_array=xp_data_uncertainty_measured_DN_array, $
@@ -670,91 +642,80 @@ endfor
         out_uncertainty_XP_measured_dark_count_array = xp_data_uncertainty_measured_dark_DN_array_accuracy, $
         out_dark_count_rate = xp_data_dark_DN_rate, $
         out_uncertainty_XP_measured_dark_count_rate_array=xp_data_uncertainty_dark_DN_rate_accuracy)
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
-      ;Precision
-      XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci[good_xp_in_time_indices]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci[good_xp_in_time_indices]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci[good_xp_in_time_indices]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci[good_xp_in_time_indices]].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
+    ; Precision
+    XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
         uncertainty_XP_measured_count_rate_array=xp_data_uncertainty_DN_rate_precision, $
         uncertainty_background_subtracted_mean_count_rate = xp_data_uncertainty_background_subtracted_mean_DN_rate_precision, $
         uncertainty_background_subtracted_count_rate = xp_data_uncertainty_background_subtracted_DN_rate_precision, $
         uncertainty_mean_background_subtracted_count_rate = xp_data_uncertainty_mean_background_subtracted_DN_rate_precision, $
         out_uncertainty_XP_measured_dark_count_array = xp_data_uncertainty_measured_dark_DN_array_precision, $
         out_uncertainty_XP_measured_dark_count_rate_array=xp_data_uncertainty_dark_DN_rate_precision)
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;Calculate the fA data
-      xp_data_mean_background_subtracted_fC_rate = minxss_detector_response.XP_FC_PER_DN*xp_data_mean_background_subtracted_DN_rate
-      xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_accuracy
-      xp_data_uncertainty_mean_background_subtracted_fC_rate_precision = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_precision
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      XP_fc_precision = xp_data_uncertainty_mean_background_subtracted_fC_rate_precision
-      XP_fc_accuracy = xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;7. Compare the predicted XP signal from the X123 measurements
-      ;Compare x123 to the XP measurements
-      ;use a nominal 0.0 energy bin offset
-      energy_bins_offset_zero = 0.0
-      if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
+    ; Calculate the fA data
+    xp_data_mean_background_subtracted_fC_rate = minxss_detector_response.XP_FC_PER_DN*xp_data_mean_background_subtracted_DN_rate
+    xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_accuracy
+    xp_data_uncertainty_mean_background_subtracted_fC_rate_precision = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_precision
+    XP_fc_precision = xp_data_uncertainty_mean_background_subtracted_fC_rate_precision
+    XP_fc_accuracy = xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy
 
-      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $
-        output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
-        output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
-        output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
-        output_uncertainty_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only)
+    ; 7. Compare the predicted XP signal from the X123 measurements
+    ; Compare x123 to the XP measurements
+    ; use a nominal 0.0 energy bin offset
+    energy_bins_offset_zero = 0.0
+    if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
 
-      Fractional_Difference_xp_data_mean_DN_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_DN_rate - xp_data_mean_DN_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_DN_rate
-      Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_fC_rate - xp_data_mean_fC_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_fC_rate
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $
+      output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
+      output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
+      output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
+      output_uncertainty_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only)
 
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ; 8. Put data into structures
-      ; fill the variables in the level1_xp structure
-      minxsslevel1_xp[num_L1_xp].time = minxsslevel0d[wsci[good_xp_in_time_indices[0]]].time
-      minxsslevel1_xp[num_L1_xp].interval_start_time_jd = x_minute_jd_time_array[k]
-      minxsslevel1_xp[num_L1_xp].interval_end_time_jd = x_minute_jd_time_array[k+1]
-      minxsslevel1_xp[num_L1_xp].interval_start_time_human = strtrim((start_valid_year), 1)+ '-' +strtrim((start_valid_month), 1)+ '-' +strtrim((start_valid_day), 1)+ ' ' +strtrim((start_valid_hour), 1)+ ':' +strtrim((start_valid_minute), 1)+ ':' +strmid(strtrim((start_valid_second), 1), 0, 4)
-      minxsslevel1_xp[num_L1_xp].interval_end_time_human = strtrim((end_valid_year), 1)+ '-' +strtrim((end_valid_month), 1)+ '-' +strtrim((end_valid_day), 1)+ ' ' +strtrim((end_valid_hour), 1)+ ':' +strtrim((end_valid_minute), 1)+ ':' +strmid(strtrim((end_valid_second), 1), 0, 4)
-      minxsslevel1_xp[num_L1_xp].flight_model = minxsslevel0d[wsci[good_xp_in_time_indices[0]]].flight_model
-      minxsslevel1_xp[num_L1_xp].signal_fc = xp_data_mean_background_subtracted_fC_rate
-      minxsslevel1_xp[num_L1_xp].signal_fc_accuracy = XP_fc_accuracy
-      minxsslevel1_xp[num_L1_xp].signal_fc_precision = XP_fc_precision
-      minxsslevel1_xp[num_L1_xp].signal_fc_stddev = !VALUES.F_NAN
-      minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci[good_xp_in_time_indices[0]]].sps_xp_integration_time
-      ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
-      ;minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      minxsslevel1_xp[num_L1_xp].number_xp_samples = n_valid_xp
+    Fractional_Difference_xp_data_mean_DN_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_DN_rate - xp_data_mean_DN_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_DN_rate
+    Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_fC_rate - xp_data_mean_fC_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_fC_rate
+    
+    ; 8. Put data into structures
+    ; fill the variables in the level1_xp structure
+    minxsslevel1_xp[num_L1_xp].time = minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp[0]]].time
+    minxsslevel1_xp[num_L1_xp].interval_start_time_jd = x_minute_jd_time_array[k]
+    minxsslevel1_xp[num_L1_xp].interval_end_time_jd = x_minute_jd_time_array[k+1]
+    minxsslevel1_xp[num_L1_xp].interval_start_time_human = strtrim((start_valid_year), 1)+ '-' +strtrim((start_valid_month), 1)+ '-' +strtrim((start_valid_day), 1)+ ' ' +strtrim((start_valid_hour), 1)+ ':' +strtrim((start_valid_minute), 1)+ ':' +strmid(strtrim((start_valid_second), 1), 0, 4)
+    minxsslevel1_xp[num_L1_xp].interval_end_time_human = strtrim((end_valid_year), 1)+ '-' +strtrim((end_valid_month), 1)+ '-' +strtrim((end_valid_day), 1)+ ' ' +strtrim((end_valid_hour), 1)+ ':' +strtrim((end_valid_minute), 1)+ ':' +strmid(strtrim((end_valid_second), 1), 0, 4)
+    minxsslevel1_xp[num_L1_xp].flight_model = minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp[0]]].flight_model
+    minxsslevel1_xp[num_L1_xp].signal_fc = xp_data_mean_background_subtracted_fC_rate
+    minxsslevel1_xp[num_L1_xp].signal_fc_accuracy = XP_fc_accuracy
+    minxsslevel1_xp[num_L1_xp].signal_fc_precision = XP_fc_precision
+    minxsslevel1_xp[num_L1_xp].signal_fc_stddev = !VALUES.F_NAN
+    minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp[0]]].sps_xp_integration_time
+    ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
+    ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
+    ;minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
+    minxsslevel1_xp[num_L1_xp].number_xp_samples = n_valid_xp
 
-      if n_valid_xp gt 1 then begin
-        minxsslevel1_xp[num_L1_xp].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
-        minxsslevel1_xp[num_L1_xp].integration_time = total(minxsslevel0d[wsci[good_xp_in_time_indices]].sps_xp_integration_time, /double, /nan)
-      endif
-
-      if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
-      num_L1_xp += 1
-
+    if n_valid_xp gt 1 then begin
+      minxsslevel1_xp[num_L1_xp].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
+      minxsslevel1_xp[num_L1_xp].integration_time = total(minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, /double, /nan)
     endif
+
+    if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
+    num_L1_xp += 1
   endfor ; k loop for XP
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;dark data
-  ;loop for the X123 dark data
-  ;  find data within x-minute of current index
+  
+  ; dark x123 data
+  ; loop for the X123 dark data
+  ; find data within x-minute of current index
   for k=1, num_L1_fill_dark do begin
     index_x_minute_average_loop_dark = where((minxsslevel0d[wdark].time.jd ge x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wdark].time.jd le x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure+1]), n_valid_dark)
-    ;    if n_valid_dark gt 0 then begin
+    if n_valid_dark eq 0 then continue
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; start x123 dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;convert jd back to calendar date for clarity
+    ; convert jd back to calendar date for clarity
     caldat, x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
     caldat, x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure + 1], end_valid_month, end_valid_day, end_valid_year, end_valid_hour, end_valid_minute, end_valid_second
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; 5.  Calculate the uncertainties
-    ;incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
-    ;pre-flight cal uncertainty (SURF) is ~10%
+    ; 5. Calculate the uncertainties
+    ; incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
+    ; pre-flight cal uncertainty (SURF) is ~10%
     pre_flight_cal_uncertainty = 0.1
     x123_cps_mean_count_rate_uncertainty_accuracy = minxss_X123_mean_count_rate_uncertainty(float(minxsslevel0d[wdark[index_x_minute_average_loop_dark]].x123_spectrum), x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wdark[index_x_minute_average_loop_dark]].x123_accum_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
       x123_mean_count_rate = x123_cps_mean_count_rate, $
@@ -768,16 +729,14 @@ endfor
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_accuracy, $
       X123_Summed_Integration_time_seconds=X123_total_integration_time)
 
-    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(float(minxsslevel0d[wdark[index_x_minute_average_loop_dark]].x123_spectrum), x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wdark[index_x_minute_average_loop_dark]].x123_accum_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
+    x123_cps_mean_count_rate_uncertainty_precision = minxss_X123_mean_count_rate_uncertainty(float(minxsslevel0d[wdark[index_x_minute_average_loop_dark]].x123_spectrum), x123_energy_bin_centers_kev=energy_bins_kev, integration_time_array=minxsslevel0d[wdark[index_x_minute_average_loop_dark]].x123_accum_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $ uncertainty_integration_time=uncertatinty_integration_time, uncertainty_fov=uncertainty_fov, use_bin_width=use_bin_width, use_detector_area=use_detector_area, $
       x123_mean_count_rate = x123_cps_mean_count_rate, $
       x123_count_rate = x123_cps_count_rate, $
       uncertainty_x123_measured_count_rate_array=x123_cps_count_rate_uncertainty_precision, $
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_precision)
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; 8. Put data into structures
     ; fill the variables in the level1_x123 structure
-    ;
     correct_1AU = (minxsslevel0d[wdark[index_x_minute_average_loop_dark[0]]].earth_sun_distance)^2.
     minxsslevel1_x123_dark[num_L1_dark].time = minxsslevel0d[wdark[index_x_minute_average_loop_dark[0]]].time
     minxsslevel1_x123_dark[num_L1_dark].interval_start_time_jd = x_minute_jd_time_array[k]
@@ -832,23 +791,23 @@ endfor
     ; increment k and num_L1
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1_dark += 1
-  endfor ; k loop for X123 dark
+  endfor
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end x123 dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; start xp dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  for k=1, num_L1_fill_xp_dark-1 do begin
-    index_x_minute_average_loop_dark = where((minxsslevel0d[wdark].time.jd ge x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wdark].time.jd le x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure+1]), n_valid_dark)
-    good_xp_dark_indices = where((((minxsslevel0d[wdark[index_x_minute_average_loop_dark]].XPS_DATA_SCI/minxsslevel0d[wdark[index_x_minute_average_loop_dark]].sps_xp_integration_time) - (minxsslevel0d[wdark[index_x_minute_average_loop_dark]].SPS_DARK_DATA_SCI/minxsslevel0d[wdark[index_x_minute_average_loop_dark]].sps_xp_integration_time)) gt 0), n_valid_xp_dark)
+  for k=1, num_xp_fill_dark-1 do begin
+    index_x_minute_average_loop_dark = where((minxsslevel0d[wsci_xp_dark].time.jd ge x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci_xp_dark].time.jd le x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure+1]), n_valid_dark)
+    good_xp_dark_indices = where((((minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].XPS_DATA_SCI/minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].sps_xp_integration_time) - (minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].SPS_DARK_DATA_SCI/minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].sps_xp_integration_time)) gt 0), n_valid_xp_dark)
     good_xp_dark_in_time_indices = index_x_minute_average_loop_dark[good_xp_dark_indices]
     
-    if n_valid_xp_dark gt 0 then begin
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ; 5.  Calculate the uncertainties
-      ; Include background (from the dark diode) subtracted XP data
-      ;incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
-      pre_flight_cal_uncertainty = 0.1
-      XP_data_Uncertainty_mean_DN_rate_accuracy = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wdark[good_xp_dark_in_time_indices]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wdark[good_xp_dark_in_time_indices]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wdark[good_xp_dark_in_time_indices]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wdark[good_xp_dark_in_time_indices]].sps_xp_integration_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
+    if n_valid_xp_dark EQ 0 then CONTINUE
+
+    ; 5.  Calculate the uncertainties
+    ; Include background (from the dark diode) subtracted XP data
+    ; incorporate the SURF relative uncertainty of 10%, to be added in quadrature with the other uncertainties
+    pre_flight_cal_uncertainty = 0.1
+    XP_data_Uncertainty_mean_DN_rate_accuracy = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci_xp_dark[good_xp_dark_in_time_indices]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci_xp_dark[good_xp_dark_in_time_indices]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci_xp_dark[good_xp_dark_in_time_indices]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci_xp_dark[good_xp_dark_in_time_indices]].sps_xp_integration_time, fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
         XP_mean_count_rate=XP_data_mean_DN_rate, $
         relative_uncertainty_XP_mean_count_rate=xp_data_relative_Uncertainty_mean_DN_rate, $
         uncertainty_XP_measured_count_array=xp_data_uncertainty_measured_DN_array, $
@@ -865,83 +824,64 @@ endfor
         out_uncertainty_XP_measured_dark_count_array = xp_data_uncertainty_measured_dark_DN_array_accuracy, $
         out_dark_count_rate = xp_data_dark_DN_rate, $
         out_uncertainty_XP_measured_dark_count_rate_array=xp_data_uncertainty_dark_DN_rate_accuracy)
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;Precision
-  
-      XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
+
+    ; Precision
+    XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci_xp_dark].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci_xp_dark].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci_xp_dark].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci_xp_dark].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
         uncertainty_XP_measured_count_rate_array=xp_data_uncertainty_DN_rate_precision, $
         uncertainty_background_subtracted_mean_count_rate = xp_data_uncertainty_background_subtracted_mean_DN_rate_precision, $
         uncertainty_background_subtracted_count_rate = xp_data_uncertainty_background_subtracted_DN_rate_precision, $
         uncertainty_mean_background_subtracted_count_rate = xp_data_uncertainty_mean_background_subtracted_DN_rate_precision, $
         out_uncertainty_XP_measured_dark_count_array = xp_data_uncertainty_measured_dark_DN_array_precision, $
         out_uncertainty_XP_measured_dark_count_rate_array=xp_data_uncertainty_dark_DN_rate_precision)
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;Calculate the fA data
-      xp_data_mean_background_subtracted_fC_rate = minxss_detector_response.XP_FC_PER_DN*xp_data_mean_background_subtracted_DN_rate
-      xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_accuracy
-      xp_data_uncertainty_mean_background_subtracted_fC_rate_precision = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_precision
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      XP_fc_precision = xp_data_uncertainty_mean_background_subtracted_fC_rate_precision
-      XP_fc_accuracy = xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;Compare x123 to the XP measurements
-      ;use a nominal 0.0 energy bin offset
-      energy_bins_offset_zero = 0.0
-      if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
+
+    ; Calculate the fA data
+    xp_data_mean_background_subtracted_fC_rate = minxss_detector_response.XP_FC_PER_DN*xp_data_mean_background_subtracted_DN_rate
+    xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_accuracy
+    xp_data_uncertainty_mean_background_subtracted_fC_rate_precision = minxss_detector_response.XP_FC_PER_DN*xp_data_uncertainty_mean_background_subtracted_DN_rate_precision
+    XP_fc_precision = xp_data_uncertainty_mean_background_subtracted_fC_rate_precision
+    XP_fc_accuracy = xp_data_uncertainty_mean_background_subtracted_fC_rate_accuracy
+    ; Compare x123 to the XP measurements
+    ; use a nominal 0.0 energy bin offset
+    energy_bins_offset_zero = 0.0
+    if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
   
-      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ ; input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, $
-        ;  output_uncertainty_XP_DN_signal_estimate_ARRAY=output_model_uncertainty_XP_DN_signal_estimate, $
-        ;  output_XP_fC_signal_estimate_ARRAY=output_model_XP_fC_signal_estimate, $
-        ;  output_uncertainty_XP_fC_signal_estimate_ARRAY=output_model_uncertainty_XP_fC_signal_estimate, $
-        ;  output_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_DN_signal_estimate_be_si_photopeak_only, $
-        ;  output_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only, $
-        ;  output_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_fC_signal_estimate_be_si_photopeak_only, $
-        ;  output_uncertainty_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_fC_signal_estimate_be_si_photopeak_only, $
+    xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ ; input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, $
         output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
         output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only)
   
-      Fractional_Difference_xp_data_mean_DN_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_DN_rate - xp_data_mean_DN_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_DN_rate
-      Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_fC_rate - xp_data_mean_fC_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_fC_rate
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    Fractional_Difference_xp_data_mean_DN_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_DN_rate - xp_data_mean_DN_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_DN_rate
+    Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_fC_rate - xp_data_mean_fC_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_fC_rate
+
+    ; 8. Put data into structures
+    ; fill the variables in the level1_xp structure
+    minxsslevel1_xp_dark[num_L1_xp_dark].time = minxsslevel0d[wdark[good_xp_dark_in_time_indices[0]]].time
+    minxsslevel1_xp_dark[num_L1_xp_dark].interval_start_time_jd = x_minute_jd_time_array[k]
+    minxsslevel1_xp_dark[num_L1_xp_dark].interval_end_time_jd = x_minute_jd_time_array[k+1]
+    minxsslevel1_xp_dark[num_L1_xp_dark].interval_start_time_human = strtrim((start_valid_year), 1)+ '-' +strtrim((start_valid_month), 1)+ '-' +strtrim((start_valid_day), 1)+ ' ' +strtrim((start_valid_hour), 1)+ ':' +strtrim((start_valid_minute), 1)+ ':' +strmid(strtrim((start_valid_second), 1), 0, 4)
+    minxsslevel1_xp_dark[num_L1_xp_dark].interval_end_time_human = strtrim((end_valid_year), 1)+ '-' +strtrim((end_valid_month), 1)+ '-' +strtrim((end_valid_day), 1)+ ' ' +strtrim((end_valid_hour), 1)+ ':' +strtrim((end_valid_minute), 1)+ ':' +strmid(strtrim((end_valid_second), 1), 0, 4)
+    minxsslevel1_xp_dark[num_L1_xp_dark].flight_model = minxsslevel0d[wdark[good_xp_dark_in_time_indices[0]]].flight_model
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc = xp_data_mean_background_subtracted_fC_rate
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_accuracy = XP_fc_accuracy
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_precision = XP_fc_precision
+    minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = !VALUES.F_NAN
+    minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[good_xp_dark_in_time_indices[0]]].sps_xp_integration_time
+    ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
+    ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
+    ;minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
+    minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = n_valid_xp_dark
   
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ; 8. Put data into structures
-      ; fill the variables in the level1_xp structure
-      minxsslevel1_xp_dark[num_L1_xp_dark].time = minxsslevel0d[wdark[good_xp_dark_in_time_indices[0]]].time
-      minxsslevel1_xp_dark[num_L1_xp_dark].interval_start_time_jd = x_minute_jd_time_array[k]
-      minxsslevel1_xp_dark[num_L1_xp_dark].interval_end_time_jd = x_minute_jd_time_array[k+1]
-      minxsslevel1_xp_dark[num_L1_xp_dark].interval_start_time_human = strtrim((start_valid_year), 1)+ '-' +strtrim((start_valid_month), 1)+ '-' +strtrim((start_valid_day), 1)+ ' ' +strtrim((start_valid_hour), 1)+ ':' +strtrim((start_valid_minute), 1)+ ':' +strmid(strtrim((start_valid_second), 1), 0, 4)
-      minxsslevel1_xp_dark[num_L1_xp_dark].interval_end_time_human = strtrim((end_valid_year), 1)+ '-' +strtrim((end_valid_month), 1)+ '-' +strtrim((end_valid_day), 1)+ ' ' +strtrim((end_valid_hour), 1)+ ':' +strtrim((end_valid_minute), 1)+ ':' +strmid(strtrim((end_valid_second), 1), 0, 4)
-      minxsslevel1_xp_dark[num_L1_xp_dark].flight_model = minxsslevel0d[wdark[good_xp_dark_in_time_indices[0]]].flight_model
-      minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc = xp_data_mean_background_subtracted_fC_rate
-      minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_accuracy = XP_fc_accuracy
-      minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_precision = XP_fc_precision
-      minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = !VALUES.F_NAN
-      minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[good_xp_dark_in_time_indices[0]]].sps_xp_integration_time
-      ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
-      ;minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
-      minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = n_valid_xp_dark
+    if n_valid_xp_dark gt 1 then begin
+      minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
+      minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = total(minxsslevel0d[wdark[good_xp_dark_in_time_indices]].sps_xp_integration_time, /double, /nan)
+    endif
   
-      if n_valid_xp_dark gt 1 then begin
-        minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
-        minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = total(minxsslevel0d[wdark[good_xp_dark_in_time_indices]].sps_xp_integration_time, /double, /nan)
-      endif
-  
-  
-      ; increment k and num_L1
-      if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
-      num_L1_xp_dark += 1
-     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end xp dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     endif
+    if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
+    num_L1_xp_dark += 1
   endfor
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end xp dark ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-  ;
   ; truncate down to the elements used
   minxsslevel1_x123 = minxsslevel1_x123[0:num_L1-1]
   minxsslevel1_xp = minxsslevel1_xp[0:num_L1_xp-1]
@@ -951,10 +891,7 @@ endfor
   x_minute_average_string_name_digits = long(Alog10(x_minute_average) + 1)
   x_minute_average_string = strmid(strtrim(x_minute_average, 1), 0, x_minute_average_string_name_digits)
 
-
-  ;
-  ;
-  ;create the file name extension that changes with the minute average chossen as a variable
+  ; create the file name extension that changes with the minute average chossen as a variable
   x_minute_average_string_name_digits = long(Alog10(x_minute_average) + 1)
   x_minute_average_string = strmid(strtrim(x_minute_average, 1), 0, x_minute_average_string_name_digits)
 
@@ -965,7 +902,7 @@ endfor
   CAL_VER = '2.0.1'
   outfile = 'minxss' + fm_str + '_l1_' + x_minute_average_string + '_minute' + '_mission_length.sav'
 
-  ;x123 information structure
+  ; x123 information structure
   minxsslevel1_x123_meta = { $
     Title: 'MinXSS Level 1 Data Product, ' + x_minute_average_string + '-min averages', $
     Source: 'MinXSS SOC at LASP / CU', $
@@ -1031,7 +968,7 @@ endfor
     CORRECT_AU: 'Earth-Sun Distance correction factor' $
   }
 
-  ;xp information structure
+  ; xp information structure
   minxsslevel1_xp_meta = { $
     Title: 'MinXSS Level 1 Data Product, ' + x_minute_average_string + '-min  averages corrected', $
     Source: 'MinXSS SOC at LASP / CU', $
@@ -1078,12 +1015,13 @@ endfor
 
   ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .fits files also
   ;
-  ;create the file name extension that changes with the minute average chossen as a variable
+  ; create the file name extension that changes with the minute average chossen as a variable
   outdir = fmdir + 'level1' + path_sep()
 
   if keyword_set(verbose) then print, 'Saving Level 1 save set in ', outdir+outfile
   save, minxsslevel1_x123, minxsslevel1_x123_meta, minxsslevel1_x123_dark, $
-    minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark,  file=outdir+outfile
+        minxsslevel1_xp, minxsslevel1_xp_meta, minxsslevel1_xp_dark, $
+        file=outdir+outfile
 
   if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', systime()
 
