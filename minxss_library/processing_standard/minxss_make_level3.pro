@@ -46,8 +46,12 @@ if (fm gt 2) or (fm lt 1) then begin
   return
 endif
 
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss1_l1_mission_length_v2.sav'
+
 message, /INFO, JPMsystime() + " Creating Level 3 data for FM-" + strtrim(fm, 2) + ": daily average of level 1"
-minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1440
+minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1440, $
+                            minxsslevel1_x123_time_structure=minxsslevel1.x123.time, minxsslevel1_x123_dark_time_structure=minxsslevel1.x123_dark.time, $
+                            minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time
 
 ; Move the generated files to the Level 3 folder
 level1Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/'
