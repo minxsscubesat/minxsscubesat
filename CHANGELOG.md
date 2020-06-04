@@ -33,6 +33,7 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * New method for removing tags from structures (from SolarSoft).. takes 26 different functions but it's orders of magnitude faster than using IDL >8.3's hashes
 * Filter for tossing out bad data that would be in Level 1 product otherwise: bin 200 can't be higher than a value of 40 (see [commit](https://github.com/minxsscubesat/minxsscubesat/commit/9f8ad64948e918c788cff6f69e42ee9f25de7c3a))
 * Filter for X123 read/write errors that would be in Level 1 product
+* Improved filtering out of X123 spectra during times of higher signal noise as related to spacecraft radio or reaction wheels for Level 1 product
 
 ### Changed
 * All (hopefully) usages of `systime()` to `JPMsystime()` to comply with ISO 8601 time format
