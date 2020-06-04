@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 This changelog only came into existence on 2020-06-04. It's unlikely that all of the major changes in the last few years are captured here because it relies on memory and sifting through the [git commits](https://github.com/minxsscubesat/minxsscubesat/commits/master). Going forward, proper changelogging will be practiced. 
 
 ### Added 
-* MinXSS-1 CubeSat Data User Guide
+* [MinXSS-1 CubeSat Data User Guide](minxss-1_cubesat_data_user_guide.md)
 * Level 2 product: 1-minute and 1-hour time averages of data
 * netCDF output: data products are now in both IDL savesets (.sav) and netCDF3 (.ncdf) files
 * Plotting routines in [plotting](minxss_library/plotting): 
