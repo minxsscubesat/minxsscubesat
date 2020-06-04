@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 This changelog only came into existence on 2020-06-04. It's unlikely that all of the major changes in the last few years are captured here because it relies on memory and sifting through the [git commits](https://github.com/minxsscubesat/minxsscubesat/commits/master). Going forward, proper changelogging will be practiced. 
 
 ### Added 
+* MinXSS-1 CubeSat Data User Guide
 * Level 2 product: 1-minute and 1-hour time averages of data
 * netCDF output: data products are now in both IDL savesets (.sav) and netCDF3 (.ncdf) files
 * Plotting routines in [plotting](minxss_library/plotting): 
@@ -33,10 +34,6 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * Filter for tossing out bad data that would be in Level 1 product otherwise: bin 200 can't be higher than a value of 40 (see [commit](https://github.com/minxsscubesat/minxsscubesat/commit/9f8ad64948e918c788cff6f69e42ee9f25de7c3a))
 * Filter for X123 read/write errors that would be in Level 1 product
 
-
-
-TODO: user guide?
-
 ### Changed
 * All (hopefully) usages of `systime()` to `JPMsystime()` to comply with ISO 8601 time format
 * Defaults in code from MinXSS flight model 1 to 2
@@ -51,28 +48,25 @@ TODO: user guide?
 ### Deprecated 
 * `PLOT` keyword in [minxss_get_beta()](minxss_library/convenience_functions_minxss/minxss_get_beta.pro)
 
-
 ### Removed
 * Numerous redundant copies of code
 * Many of the IDL header modification histories since that is now tracked with git
 * A lot of commented out code rot
 * `spacecraft_in_saa` flag from Level 1 product since these bad data are filtered out already
 * `irradiance_low` and `irradiance_high` from Level 1 product
+* `spectrum_total_counts`, `spectrum_total_counts_accuracy`, and `spectrum_total_counts_precision` from Level 1 product since they can be calculated by combining the `spectrum_cps_*` with the `integration_time`
 * `xp.x123_estimated_xp_fc` from Level 1 product until we find a fix for its calculation (TODO for next release)
 * `x123.group_count` from Level 0D because its not needed for Level 1
-
 
 ### Fixed
 * Erroneous flight model labeling 
 * Error that set all XP number of samples to 1
-* Numerous minor bugs
+* `x123.spectrum_cps_stddev` and `x123_dark.spectrum_cps_stddev` were always 0 -- fixed
+* Numerous minor bugs, for example:
   * Moved timers outside loops as they were intended to go
   * `JPMPrintNumber()` now handles integer rounding when `/NO_DECIMALS` is set, and can handle larger numbers
   * `JPMjd2iso()` handles times with seconds = 60 by setting it to 0 and propagating the increment to minutes 
   * Some ADCS telemetry points were read incorrectly because they pointed to the wrong byte addresses in the packet
-
-
-
 
 ## [1.0.0] - 2016-05-16
 
