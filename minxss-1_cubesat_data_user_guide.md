@@ -10,6 +10,7 @@ For more details on the MinXSS design and science results, see the MinXSS projec
 
 Points of contact
 * James Mason, *MinXSS* Instrument Scientist and Processing System Lead: `james.mason @ lasp.colorado.edu`
+* Amir Caspi, *MinXSS* Instrument Scientist and Solar Physics Analysis Lead: `amir @ boulder.swri.edu`
 * Thomas Woods, *MinXSS* PI, `tom.woods @ lasp.colorado.edu`
 
 This *MinXSS* Data User Guide provides examples on how to use the *MinXSS* Level 1 product (its main science product) to examine solar SXR spectra and variability over time using some of the Python and IDL code provided with the *MinXSS-1* data archive.
