@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
+### Fixed
+* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
+* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+
+## [v2.0.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v2.0.0)
+
 This changelog only came into existence on 2020-06-04. It's unlikely that all of the major changes in the last few years are captured here because it relies on memory and sifting through the [git commits](https://github.com/minxsscubesat/minxsscubesat/commits/master). Going forward, proper changelogging will be practiced. 
 
 ### Added 
@@ -69,7 +75,7 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
   * `JPMjd2iso()` handles times with seconds = 60 by setting it to 0 and propagating the increment to minutes 
   * Some ADCS telemetry points were read incorrectly because they pointed to the wrong byte addresses in the packet
 
-## [1.0.0] - 2016-05-16
+## [v1.0.0] - 2016-05-16
 
 This changelog only came into existence on 2020-06-04. This retroactive release is only notional. 
 
