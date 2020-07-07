@@ -6,9 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
+### Added
+* Flare catalog generation code (minxss_make_flare_catalog.pro)
+
+### Changed
+
+### Deprecated
+
+### Removed
+
 ### Fixed
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
 * TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+
 
 ## [v2.0.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v2.0.0)
 
