@@ -10,8 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * Flare catalog generation code (minxss_make_flare_catalog.pro)
 
 ### Changed
-*  `lowcnt` filter logic changed to correctly filter out shifted spectra for level 1
-*  `peakcnt`-`lowcnt` filter changed to dynamicly filter out spectra with large low count noise for level 1
+*  `lowcnt` filter logic changed to correctly filter out shifted spectra for level ≥1
+*  `peakcnt`-`lowcnt` filter changed to dynamicly filter out spectra with large low count noise for level ≥1
 
 ### Deprecated
 
