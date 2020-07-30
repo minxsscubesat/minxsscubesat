@@ -69,7 +69,7 @@ dir_metadata = dir_data + 'metadata' + slash
 if keyword_set(version) then begin
   ver_str = string(long(version),format='(I03)')
 endif else begin
-  ver_str = '002'
+  ver_str = '003dev'
 endelse
 
 ;
