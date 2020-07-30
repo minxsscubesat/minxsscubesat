@@ -61,6 +61,8 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * `enable_` to `switch_` variable names in Level 1
 * `switch_` data type from byte to float type to allow for bad data NaN flag
 * `sps_sum` is now in degrees instead of data numbers
+*  lowcnt filter logic changed to correctly filter out shifted spectra for level 1
+*  peakcnt-lowcnt filter changed to dynamicly filter out spectra with large low count noise for level 1
 
 ### Deprecated 
 * `PLOT` keyword in [minxss_get_beta()](minxss_library/convenience_functions_minxss/minxss_get_beta.pro)
