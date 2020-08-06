@@ -206,7 +206,7 @@ endfor
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
   wsci = where((minxsslevel0d.x123_radio_flag le 1) and (sps_sum gt sps_sum_sun_min) $
                and (minxsslevel0d.adcs_mode eq 1) and ((lowcnts-new_low_limit) le 0) $
-               and ((peakcnts*0.5-lowcnts) ge 0) and (peakcnts gt 0) $
+               and ((peakcnts*0.5-lowcnts) ge 0) and (peakcnts ge 0.8) $
                and (fast_count lt fast_limit) and (slow_count gt slow_count_min) $
                and (minxsslevel0d.eclipse lt 1.0) and (minxsslevel0d.SPACECRAFT_MODE gt science_mode_flag_threshold) $
                and (fe_cnts lt FE_CNTS_MAX) $

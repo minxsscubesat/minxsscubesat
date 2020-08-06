@@ -66,6 +66,7 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 *  lowcnt filter logic changed to correctly filter out shifted spectra for level 1
 *  peakcnt-lowcnt filter changed to dynamicly filter out spectra with large low count noise for level 1
 *  walked back lowcnt filter logic
+*  changed peakcnts check to be above 0.8
 
 
 ### Deprecated 
