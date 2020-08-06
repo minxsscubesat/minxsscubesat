@@ -63,6 +63,10 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * `enable_` to `switch_` variable names in Level 1
 * `switch_` data type from byte to float type to allow for bad data NaN flag
 * `sps_sum` is now in degrees instead of data numbers
+*  lowcnt filter logic changed to correctly filter out shifted spectra for level 1
+*  peakcnt-lowcnt filter changed to dynamicly filter out spectra with large low count noise for level 1
+*  walked back lowcnt filter logic
+
 
 ### Deprecated 
 * `PLOT` keyword in [minxss_get_beta()](minxss_library/convenience_functions_minxss/minxss_get_beta.pro)
@@ -76,6 +80,7 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * `spectrum_total_counts`, `spectrum_total_counts_accuracy`, and `spectrum_total_counts_precision` from Level 1 product since they can be calculated by combining the `spectrum_cps_*` with the `integration_time`
 * `xp.x123_estimated_xp_fc` from Level 1 product until we find a fix for its calculation (TODO for next release)
 * `x123.group_count` from Level 0D because its not needed for Level 1
+*  removed SAA exclusion filter for level 1
 
 ### Fixed
 * Erroneous flight model labeling 
