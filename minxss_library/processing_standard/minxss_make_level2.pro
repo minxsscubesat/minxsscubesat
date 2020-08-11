@@ -10,6 +10,9 @@
 ;
 ; OPTIONAL INPUTS:
 ;   fm [integer]: Flight Model number 1 or 2 (default is 1)
+;   version [string]: Set this to specify a particular level 1 file to restore for filtering.
+;                     Defaults to '' (nothing), which is intended for situations where you've
+;                     just processed level 1 but haven't yet appended a version number to the filename.
 ;
 ; OPTIONAL INPUTS:
 ;   None
@@ -36,7 +39,7 @@
 ;   1. Call minxss_make_level_xminute for each time average desired (1 minute, 1 hour)
 ;   2. Move the files it generates to the Level 2 folder
 ;+
-PRO minxss_make_level2, fm = fm, $
+PRO minxss_make_level2, fm = fm, version = version, $
                         VERBOSE = VERBOSE
 
 ; Defaults and validity checks - fm
@@ -45,8 +48,13 @@ if (fm gt 2) or (fm lt 1) then begin
   message, /INFO, JPMsystime() + "ERROR: need a valid 'fm' value. FM can be 1 or 2."
   return
 endif
+IF version EQ !NULL THEN version = ''
+IF ~isA(version, 'string') THEN BEGIN
+  message, /INFO, JPMsystime() + " ERROR: version input must be a string"
+  return
+ENDIF
 
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss1_l1_mission_length_v2.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss1_l1_mission_length' + version + '.sav'
 
 message, /INFO, JPMsystime() + " Creating Level 2 data for FM-" + strtrim(fm, 2) + ": time averages of level 1 for 1 minute and 1 hour"
 minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1, $

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 * Flare catalog generation code (minxss_make_flare_catalog.pro)
+* `version` optional input to `minxss_make_level2` and `minxss_make_level3`, to specify which level 1 version of filtering to apply
 
 ### Changed
 *  `lowcnt` filter logic changed to correctly filter out shifted spectra for level ≥1
