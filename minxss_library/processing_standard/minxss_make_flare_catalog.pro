@@ -70,10 +70,9 @@ FOR flare_index = 0, n_elements(flare_start_jd) - 1 DO BEGIN
   tmp = where(time_jd GE goesEvents[flare_index].eventStartTimeJd AND time_jd LE (goesEvents[flare_index].eventPeakTimeJd + (goesEvents[flare_index].duration / seconds_per_minute) / minutes_per_day), npoints_within_goes)
   
   ; Write to disk
-  minxss_flare = strarr(n_elements(irradiance[0, *]), n_elements(irradiance[*, 0]) + 1)
-  minxss_flare[*, 0] = jpmjd2iso(time_jd[time_indices])
-  minxss_flare[*, 1:-1] = irradiance
-  minxss_flare = transpose(minxss_flare)
+  minxss_flare = strarr(n_elements(irradiance[*, 0]) + 1, n_elements(irradiance[0, *]))
+  minxss_flare[0, *] = jpmjd2iso(time_jd[time_indices])
+  minxss_flare[1:-1, *] = irradiance
   write_csv, saveloc + 'CSV/' + jpmjd2iso(goesEvents[flare_index].eventPeakTimeJd) + ' ' + strtrim(goesEvents[flare_index].st$class, 2) + '.csv', minxss_flare, header = ['timestamp', strtrim(energy[good_energy_indices], 2)]
   save, minxss_flare, filename = saveloc + 'IDL Savesets/' + jpmjd2iso(goesEvents[flare_index].eventPeakTimeJd) + ' ' + strtrim(goesEvents[flare_index].st$class, 2) + '.sav'
   
