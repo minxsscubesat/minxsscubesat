@@ -64,10 +64,14 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * `enable_` to `switch_` variable names in Level 1
 * `switch_` data type from byte to float type to allow for bad data NaN flag
 * `sps_sum` is now in degrees instead of data numbers
-*  lowcnt filter logic changed to correctly filter out shifted spectra for level 1
-*  peakcnt-lowcnt filter changed to dynamicly filter out spectra with large low count noise for level 1
-*  walked back lowcnt filter logic
-*  changed peakcnts check to be above 0.4
+* `lowcnt` filter logic changed to correctly filter out shifted spectra for level 1
+* `peakcnt`-`lowcnt` filter changed to dynamicly filter out spectra with large low count noise for level 1
+* Walked back lowcnt filter logic
+* Changed peakcnts check to be above 0.4
+* Small time shit to all packets to move them from end of packet integration (time recorded onboard) to mid-point time of sample
+  * Moves housekeeping packet (`hk`) back by 1.5 seconds
+  * Moves ADCS packets (`adcs1`, `adcs2`, `adcs3`, `adcs4`) back by 0.1 seconds
+  * Moves science packet (`sci`) back by half the wall clock integration time (`x123_real_time / 2`)
 
 
 ### Deprecated 

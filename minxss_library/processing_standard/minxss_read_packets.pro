@@ -521,7 +521,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           hk_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           hk_struct1.seq_count = packet_seq_count
           hk_struct1.data_length = packet_length
-          hk_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+          hk_struct1.time = packet_time - 1.5 ; seconds (GPS format), why subtract 1.5? Because packet time is time it was recorded to SD; this shift changes that time to the midpoint of the 3 second cadence
 
           hk_struct1.cdh_info = (long(data[pindex+12])) ;None
           hk_struct1.cdh_state = ISHFT(hk_struct1.cdh_info AND 'F0'X, -4) ;extract the state from the MSN, returns one number
@@ -883,6 +883,9 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
               + ishft(long(data[pindex+58]),16) + ishft(long(data[pindex+59]),24))  ; DN = msec
             sci_struct1.x123_real_time = (long(data[pindex+60]) + ishft(long(data[pindex+61]),8) $
               + ishft(long(data[pindex+62]),16) + ishft(long(data[pindex+63]),24))  ; DN = msec
+              
+            ; Shift packet time stamp from time it was recorded to SD to the center of the integration time
+            sci_struct1.time -= (sci_struct1.x123_real_time / 1000.d / 2.d)
 
             sci_struct1.x123_hv = (long(data[pindex+64]) + ishft(long(data[pindex+65]),8))   ; volt (signed)
             ;Because the value can be positive or negative we have to calculate the two's compliment
@@ -1003,7 +1006,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs1_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           adcs1_struct1.seq_count = packet_seq_count
           adcs1_struct1.data_length = packet_length
-          adcs1_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+          adcs1_struct1.time = packet_time - 0.1   ; seconds (GPS format), why subtract 1.5? Because packet time is time it was recorded to SD; this shift changes that time to the midpoint of the 3 second cadence
           adcs1_struct1.SpareByte = (long(data[pindex+209])) ;None
 ;          adcs1_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
 ;          adcs1_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ;none
@@ -1153,7 +1156,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs2_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           adcs2_struct1.seq_count = packet_seq_count
           adcs2_struct1.data_length = packet_length
-          adcs2_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+          adcs2_struct1.time = packet_time - 0.1   ; seconds (GPS format), why subtract 1.5? Because packet time is time it was recorded to SD; this shift changes that time to the midpoint of the 3 second cadence
           adcs2_struct1.SpareByte = (long(data[pindex+209])) ;None
 ;          adcs2_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
 ;          adcs2_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ;none
@@ -1308,7 +1311,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs3_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           adcs3_struct1.seq_count = packet_seq_count
           adcs3_struct1.data_length = packet_length
-          adcs3_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+          adcs3_struct1.time = packet_time - 0.1   ; seconds (GPS format), why subtract 1.5? Because packet time is time it was recorded to SD; this shift changes that time to the midpoint of the 3 second cadence
           adcs3_struct1.SpareByte = (long(data[pindex+209])) ;None
 ;          adcs3_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
 ;          adcs3_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))  ; None
@@ -1476,7 +1479,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
           adcs4_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
           adcs4_struct1.seq_count = packet_seq_count
           adcs4_struct1.data_length = packet_length
-          adcs4_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+          adcs4_struct1.time = packet_time - 0.1   ; seconds (GPS format), why subtract 1.5? Because packet time is time it was recorded to SD; this shift changes that time to the midpoint of the 3 second cadence
 ;          adcs4_struct1.checkbytes = long(data[pindex+210]) + ishft(long(data[pindex+211]),8)
 ;          adcs4_struct1.SyncWord = (long(data[pindex+212]) + ishft(long(data[pindex+213]),8))
 ; 8 Dec 2018: Amir Caspi: FM1 ADCS packet is 220 bytes! 6 bytes of zeros before CRC/Sync... moving indices to accommodate

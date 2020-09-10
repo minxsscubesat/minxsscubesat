@@ -539,6 +539,9 @@ pro daxss_read_packets, input, sci=sci, log=log, dump=dump, hexdump=hexdump, fm=
               + ishft(long(data[pindex+148]),16) + ishft(long(data[pindex+149]),24))  ; DN = msec
             sci_struct1.x123_real_time = (long(data[pindex+150]) + ishft(long(data[pindex+151]),8) $
               + ishft(long(data[pindex+152]),16) + ishft(long(data[pindex+153]),24))  ; DN = msec
+              
+            ; Shift packet time stamp from time it was recorded to SD to the center of the integration time
+            sci_struct1.time -= (sci_struct1.x123_real_time / 1000.d / 2.d)
 
             sci_struct1.x123_hv = (long(data[pindex+154]) + ishft(long(data[pindex+155]),8))   ; volt (signed)
             ;Because the value can be positive or negative we have to calculate the two's compliment
