@@ -38,7 +38,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires access to MinXSS binary data and MinXSS code package
-;   
+;
 ;+
 pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xactimage, $
                          hexdump=hexdump, adcs1=adcs1, adcs2=adcs2, adcs3=adcs3, adcs4=adcs4, fm=fm, $
@@ -449,6 +449,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
             ishft(ulong(data[pindex+8]),16) + ishft(ulong(data[pindex+9]),24)
           packet_time2 = uint(data[pindex+10]) + ishft(uint(data[pindex+11]),8)
           packet_time = double(packet_time1) + packet_time2 / 1000.D0
+          packet_time += minxss1_time_offset( packet_time )
           break
         endif
         index3 += 1
@@ -883,7 +884,7 @@ pro minxss_read_packets, input, hk=hk, sci=sci, log=log, diag=diag, xactimage=xa
               + ishft(long(data[pindex+58]),16) + ishft(long(data[pindex+59]),24))  ; DN = msec
             sci_struct1.x123_real_time = (long(data[pindex+60]) + ishft(long(data[pindex+61]),8) $
               + ishft(long(data[pindex+62]),16) + ishft(long(data[pindex+63]),24))  ; DN = msec
-              
+
             ; Shift packet time stamp from time it was recorded to SD to the center of the integration time
             sci_struct1.time -= (sci_struct1.x123_real_time / 1000.d / 2.d)
 

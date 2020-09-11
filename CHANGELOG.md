@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   * Moves housekeeping packet (`hk`) back by 1.5 seconds
   * Moves ADCS packets (`adcs1`, `adcs2`, `adcs3`, `adcs4`) back by 0.1 seconds
   * Moves science packet (`sci`) back by half the wall clock integration time (`x123_real_time / 2`)
+* Onboard clock drift is now corrected for (only a few seconds over the mission)
 
 ### Deprecated
 
