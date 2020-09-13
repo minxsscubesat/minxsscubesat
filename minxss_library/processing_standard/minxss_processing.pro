@@ -135,7 +135,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, 'Processing ' + MinXSS_name + ' L4 for full mission'
   print, ' '
   print, '***************************************************************'
-  minxss_make_level4, fm=fm, /VERBOSE
+  ; minxss_make_level4, fm=fm, /VERBOSE ; TODO: Commented out until this is routine
 ENDIF
 
 if keyword_set(debug) THEN stop, 'DEBUG minxss_processing at end...'
