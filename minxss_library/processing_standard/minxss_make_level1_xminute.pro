@@ -488,11 +488,11 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   num_xp_fill_dark = num_L1_fill_dark
   start_index_xp_dark_x_minute_jd_time_array = start_index_x123_dark_x_minute_jd_time_array
 
-  ; replicate the structure to the actual number of MinXSS-1 spectra that is valid in the time interval
-  minxsslevel1_x123 = replicate(level1_x123, num_L1_fill)
-  minxsslevel1_x123_dark = replicate(level1_x123_dark, num_L1_fill_dark)
-  minxsslevel1_xp = replicate(level1_xp, num_L1_fill_xp)
-  minxsslevel1_xp_dark = replicate(level1_xp_dark, num_xp_fill_dark)
+  ; replicate the structure to the actual number of MinXSS spectra that is valid in the time interval
+  minxsslevel1_x123 = replicate(level1_x123, num_L1_fill > 1)
+  minxsslevel1_x123_dark = replicate(level1_x123_dark, num_L1_fill_dark > 1)
+  minxsslevel1_xp = replicate(level1_xp, num_L1_fill_xp > 1)
+  minxsslevel1_xp_dark = replicate(level1_xp_dark, num_xp_fill_dark > 1)
 
   ; calculate parameters and fill in the structures
   num_L1 = 0L
