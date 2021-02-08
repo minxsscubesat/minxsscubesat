@@ -54,7 +54,7 @@ IF ~isA(version, 'string') THEN BEGIN
   return
 ENDIF
 
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss1_l1_mission_length' + version + '.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length' + version + '.sav'
 
 message, /INFO, JPMsystime() + " Creating Level 2 data for FM-" + strtrim(fm, 2) + ": time averages of level 1 for 1 minute and 1 hour"
 minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1, $
