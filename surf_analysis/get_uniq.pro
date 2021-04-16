@@ -46,7 +46,7 @@ if keyword_set(no_case) then begin
  endif
 endif
 
-if not sorted then sorder=uniq([array],sort([array]), epsilon=epsilon)
+if not sorted then sorder=uniq([array],sort([array]))
 
 count=n_elements(sorder)
 if count eq 1 then sorder=sorder[0]
