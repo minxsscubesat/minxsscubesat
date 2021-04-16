@@ -321,8 +321,6 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     flight_model: 0, $
     irradiance: fltarr(1024), $
     irradiance_uncertainty: fltarr(1024), $
-    irradiance_low: fltarr(1024), $
-    irradiance_high: fltarr(1024), $
     energy: fltarr(1024), $
     spectrum_cps: fltarr(1024), $
     spectrum_cps_accuracy: fltarr(1024), $
@@ -557,8 +555,6 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxsslevel1_x123[num_L1].flight_model = minxsslevel0d[wsci[index_x_minute_average_loop[0]]].flight_model
     minxsslevel1_x123[num_L1].irradiance = x123_irradiance_structure.irradiance*correct_1AU
     minxsslevel1_x123[num_L1].irradiance_uncertainty = x123_irradiance_structure.IRRADIANCE_UNCERTAINTY*correct_1AU
-    minxsslevel1_x123[num_L1].irradiance_low = x123_irradiance_structure.irradiance_low*correct_1AU
-    minxsslevel1_x123[num_L1].irradiance_high = x123_irradiance_structure.irradiance_high*correct_1AU
     minxsslevel1_x123[num_L1].energy = energy_bins_kev
     minxsslevel1_x123[num_L1].spectrum_cps = x123_cps_mean_count_rate
     minxsslevel1_x123[num_L1].spectrum_cps_accuracy = x123_cps_mean_count_rate_uncertainty_accuracy
@@ -936,8 +932,6 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
     IRRADIANCE: 'X123 Irradiance in units of photons/sec/cm^2/keV, float array[1024]', $
     IRRADIANCE_UNCERTAINTY: 'X123 Irradiance uncertainty, float array[1024]', $
-    IRRADIANCE_LOW: 'X123 Irradiance low estimate, float array[1024]', $
-    IRRADIANCE_HIGH: 'X123 Irradiance High estimate, float array[1024]', $
     ENERGY: 'X123 Energy bins in units of keV, float array[1024]', $
     SPECTRUM_CPS: 'X123 Deadtime corrected spectrum in units of counts per second (cps), float array[1024]', $
     SPECTRUM_CPS_ACCURACY: 'X123 Deadtime corrected spectrum uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
