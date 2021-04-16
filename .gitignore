@@ -84,3 +84,5 @@ minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/warn-aut
 minxss_library/pass_planning_tool/python/build/auto_pass_manager_v3.1.0/xref-auto_pass_manager_v3.1.0.html
 minxss_library/pass_planning_tool/set_ephemeris_latest.prc
 minxss_library/pass_planning_tool/passes_latest_BOULDER.sav
+*.SAV
+*.geny
