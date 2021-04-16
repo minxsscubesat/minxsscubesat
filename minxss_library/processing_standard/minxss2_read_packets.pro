@@ -1642,7 +1642,7 @@ IF keyword_set(EXPORT_RAW_ADCS_TLM) THEN BEGIN
           binaryData = minxss_read_sdr_log(input)
           openw, lun, strreplace(xact_export_path_file, 'log', 'bin'), /GET_LUN 
           writeu, lun, binaryData
-          close, lun
+          free_lun, lun
           
           IF adcs4 NE !NULL THEN BEGIN
             bla = where(adcs4.time GT 1228188625.8759999d and adcs4.time LE 1228189615.3820000d, ncount)
