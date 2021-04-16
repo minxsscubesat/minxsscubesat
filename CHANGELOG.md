@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Deprecated
 
 ### Removed
+* `irradiance_low` and `irradiance_high` from level 2 and 3 `x123` structure. Now it's just e.g., `minxsslevel3.x123.irradiance`
 
 ### Fixed
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
