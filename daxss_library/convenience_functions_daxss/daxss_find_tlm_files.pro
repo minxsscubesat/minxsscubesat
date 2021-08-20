@@ -44,7 +44,7 @@ function daxss_find_tlm_files, yyyydoy, numfiles=numfiles, $
   endif
 
   ; check for valid input and then make YYYY_DOY string
-  if (yyyydoy lt 2019001L) or (yyyydoy gt 2025001) then begin
+  if (yyyydoy lt 2018001L) or (yyyydoy gt 2025001) then begin
     if keyword_set(verbose) then message, /ERROR, ' with input date !'
     numfiles = 0L
     return, -1L
