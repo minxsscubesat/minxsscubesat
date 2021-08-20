@@ -144,7 +144,7 @@ if strlen(dropbox_tle_dir) ne 0 then dropbox_tle_dir += slash + 'tle' + slash
 ;			latitude value
 ;			hours from UT, time zone name (standard)
 ;
-gs_locate_file = station_caps + slash + 'station_location_' + station_caps + '.txt'
+gs_locate_file = station + slash + 'station_location_' + station_caps + '.txt'
 longitude = 0.0D0
 latitude = 0.0D0
 zone_hours = -7L
@@ -197,7 +197,7 @@ gs_location = [ longitude, latitude ]
 ;			satellite_ID, name_in_SpaceTrack, name_for_output_file
 ;			... for more satellites
 ;
-sat_list_file = station_caps + slash + 'satellites_track_' + station_caps + '.txt'
+sat_list_file = station + slash + 'satellites_track_' + station_caps + '.txt'
 MAX_SATELLITES = 100L
 num_satellites = 0
 satid = lonarr(MAX_SATELLITES)
@@ -300,7 +300,7 @@ if (not keyword_set(no_update)) and (not keyword_set(debug)) then begin
 ;	2.  Calculate passes for next 10 days for each satellite
 ;
 number_passes_total = 0L
-save_path = path_name + station_caps + slash
+save_path = path_name + station + slash
 save_name3_base = 'location_latest_'
 pass_orbit_number = -1L
 
@@ -360,7 +360,7 @@ if keyword_set(verbose) then print, 'Total Number of Passes = ', number_passes_t
 ;
 ;	3.  Write pass information to IDL save set, HTML table, and CSV text file
 ;
-save_path = path_name + station_caps + slash
+save_path = path_name + station + slash
 save_name1 = 'passes_latest_'+station_caps+'.sav'
 if keyword_set(verbose) then print, 'Saving "passes" data to ', save_path+save_name1
 save, passes, pass_orbit_number, file=save_path+save_name1
