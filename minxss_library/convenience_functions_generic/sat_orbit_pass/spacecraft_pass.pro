@@ -163,11 +163,15 @@ pro spacecraft_pass, date, pass_array, number_passes, id_satellite=id_satellite,
 				sunlight: 0, sun_dot_pos: 0.0, doppler_vel: 0.0, pass_range: 0.0 }
 	sc_location = replicate(sc_locate1,n_elements(time))
 	sc_location.time_jd = time
-	sc_location.longitude = reform(location[0,*])
-	sc_location.latitude = reform(location[1,*])
-	sc_location.altitude = reform(location[2,*])
-	sc_location.sunlight = sunlight
-	sc_location.sun_dot_pos = sun_dot_pos
+	IF location NE [-1] THEN BEGIN
+  	sc_location.longitude = reform(location[0,*])
+  	sc_location.latitude = reform(location[1,*])
+  	sc_location.altitude = reform(location[2,*])
+  	sc_location.sunlight = sunlight
+  	sc_location.sun_dot_pos = sun_dot_pos
+ ENDIF ELSE BEGIN
+  IF keyword_set(verbose) THEN message, /INFO, 'spacecraft_location returned null (-1) location data.'
+ ENDELSE
 
   ;
   ;  Calculate Doppler Velocity
