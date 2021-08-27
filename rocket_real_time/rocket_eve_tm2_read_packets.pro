@@ -167,9 +167,14 @@ IF keyword_set(DOMEGSA) THEN BEGIN
     ;
     IF megsATotalPixelsFound LT 2048L * 1024L - 2L AND megsATotalPixelsFound NE 0 THEN BEGIN ; -2 because we're expecting to lose two pixels due to including fiducials
       ;IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
-        message, /INFO, JPMsystime() + ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
+        numberLostPixels = (2048L * 1024L - 2L) - megsATotalPixelsFound
+        message, /INFO, JPMsystime() + ' Lost ' + JPMPrintNumber(numberLostPixels, /NO_DECIMALS) + ' MEGS-A pixels'
+        ;message, /INFO, JPMsystime() + ' Some MEGS A data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsATotalPixelsFound, /NO_DECIMALS)
       ;ENDIF
-    ENDIF
+    ENDIF 
+    IF megsATotalPixelsFound EQ 2048L * 1024L - 2L THEN BEGIN ; -2 because we're expecting to lose two pixels due to including fiducials
+      message, /INFO, JPMsystime() + ' Expected number of pixels found. Hooray!'
+    ENDIF 
     
     ; Reset image pointers for a new image
     megsAPixelIndex = 0LL
@@ -224,10 +229,12 @@ IF keyword_set(DOMEGSB) THEN BEGIN
     
     ; TASK 4.2: If totalPixels LE imageSize, issue warning. 
     IF megsBTotalPixelsFound LT 2048L * 1024L - 2L AND megsBTotalPixelsFound NE 0 THEN BEGIN
-      IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
-        message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
-                        ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
-      ENDIF
+      ;IF keyword_set(DEBUG) OR keyword_set(VERBOSE) THEN BEGIN
+        numberLostPixels = (2048L * 1024L - 2L) - megsBTotalPixelsFound
+        message, /INFO, JPMsystime() + ' Lost ' + JPMPrintNumber(numberLostPixels, /NO_DECIMALS) + ' MEGS-B pixels'
+        ;message, /INFO, JPMsystime() + $ ; -2 because we're expecting to lose two pixels due to including fiducials
+        ;                ' Some MEGS B data in previous image was lost. Expected 2048x1024 = 2,097,152 pixels but received ' + JPMPrintNumber(megsBTotalPixelsFound, /NO_DECIMALS)
+      ;ENDIF
     ENDIF
     
     ; Reset image pointers for a new image

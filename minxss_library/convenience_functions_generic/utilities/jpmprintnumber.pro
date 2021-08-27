@@ -78,6 +78,6 @@ FOREACH numberToFormat, numbersToFormat DO BEGIN
   formattedNumbers = [formattedNumbers, trimmed]
 ENDFOREACH ; Handle array input
 
-return, formattedNumbers
+return, formattedNumbers[0]
 
 END

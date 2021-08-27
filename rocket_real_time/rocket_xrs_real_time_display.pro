@@ -3,10 +3,10 @@
 ;   rocket_xrs_real_time_display
 ;
 ; PURPOSE:
-;   Wrapper script for reading from an ISIS socket. Calls rocket_read_packets when new data comes over the pipe. 
+;   Wrapper script for reading from an Hydra socket. Calls rocket_read_packets when new data comes over the pipe. 
 ;
 ; INPUTS:
-;   isisIP [string]: The local IP address of the computer running ISIS. This requires that both machines are running on the same network. 
+;   hydraIP [string]: The local IP address of the computer running Hydra. This requires that both machines are running on the same network. 
 ;                    This is provided as an optional input only so that a hardcoded value can be specified and the Run button hit, instead
 ;                    of needing to call the code from the command line each time. However, a correct IP address really is necessary. 
 ;
@@ -22,13 +22,13 @@
 ;   VERBOSE: Set this to print out additional information about the status of the code as it processes
 ;
 ; OUTPUTS:
-;   Produces a plot pane with all the most important data in the world, displayed in real time from an ISIS socket. 
+;   Produces a plot pane with all the most important data in the world, displayed in real time from an Hydra socket. 
 ;
 ; OPTIONAL OUTPUTS:
 ;   None
 ;
 ; RESTRICTIONS:
-;   Requires that ISIS is running. Must provide IP address via the optional input or hard code.
+;   Requires that Hydra is running. Must provide IP address via the optional input or hard code.
 ;   Requires JPMRange.pro
 ;   Requires JPMPrintNumber.pro
 ;
@@ -37,14 +37,15 @@
 ;
 ; MODIFICATION HISTORY:
 ;   2015-03-30: James Paul Mason: Copied from minxss_real-time_socket_read_wrapper and modified for use with EVE rocket 36.300
-;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme. 
+;   2016-05-03: James Paul Mason: Changed color scheme default, added LIGHT_BACKGROUND keyword to maintain old color scheme.
+;   2021-08-25: James Paul Mason and Robert Sewell: Updated for new instruments on flight 36.353.
 ;-
-PRO rocket_xrs_real_time_display, isisIP = isisIP, number_of_packets_to_store = number_of_packets_to_store, data_cadence = data_cadence, $
+PRO rocket_xrs_real_time_display, hydraIP = hydraIP, number_of_packets_to_store = number_of_packets_to_store, data_cadence = data_cadence, $
                                   time_window_to_store = time_window_to_store, windowSize = windowSize, $
                                   VERBOSE = VERBOSE, LIGHT_BACKGROUND = LIGHT_BACKGROUND
 
 ; Defaults
-IF ~keyword_set(isisIP) THEN isisIP = '128.138.65.240' ; WinD2791 = 27" HP ; Rocket5 = 192.88.37.191, Rocket6 = 169.254.191.0
+IF ~keyword_set(hydraIP) THEN hydraIP = '192.168.50.15'
 IF ~keyword_set(number_of_packets_to_store) THEN number_of_packets_to_store = 12
 IF ~keyword_set(data_cadence) THEN data_cadence = 3. ; seconds/packet
 IF keyword_set(time_window_to_store) THEN number_of_packets_to_store = time_window_to_store / data_cadence ; time_window_to_store in seconds
@@ -68,7 +69,7 @@ ENDIF ELSE BEGIN
 ENDELSE
 
 ; Create place holder plots
-w = window(DIMENSIONS = windowSize, /DEVICE, LOCATION = [1415, 0], WINDOW_TITLE = 'EVE Rocket 36.336 XRS/X123 Science Data', BACKGROUND_COLOR = backgroundColor)
+w = window(DIMENSIONS=windowSize, /DEVICE, location=[1415, 0], window_title='EVE Rocket 36.353 SPA-XRS + X55 + SPA-OWLS Science Data', BACKGROUND_COLOR = backgroundColor)
 
 ; XRS A1 and B1 
 ; (xps_data and xps_data2)
@@ -134,17 +135,17 @@ t = text(0.0, 0.0, 'Last refresh: ' + JPMsystime(), FONT_COLOR = fontColor)
 
 ; Open up a  to the Hydra computer stream
 ; Ports:
-; 10000 = XRS
-; 10003 = SPS
-; 10001 = X123
+; 10010 = X55_SPA
+; 10020 = OWLS
+
 get_lun, lun
-socket, lun, isisIP, 10000, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
+socket, lun, hydraIP, 10010, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
 get_lun, lun2
-socket, lun2, isisIP, 10003, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
+socket, lun2, hydraIP, 10020, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
 get_lun, lun3
-socket, lun3, isisIP, 10001, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
+socket, lun3, hydraIP, 10001, ERROR = socketError, CONNECT_TIMEOUT = 10, /RAWIO ; timeout is in seconds
 
 ; Start an infinite loop
 WHILE 1 DO BEGIN

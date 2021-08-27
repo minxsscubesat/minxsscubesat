@@ -40,27 +40,33 @@
 ;
 ; EXAMPLE:
 ;   rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s, sdoor_state
-;
-; MODIFICATION HISTORY:
-;   2018-05-29: Robert Sewell: Wrote script for rocket_eve_tm1_real_time_display updates and 36.336 Altair changes
 ;-
 
-FUNCTION rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s, sdoor_state
+FUNCTION rocket_eve_tm1_read_packets, socketData, analogMonitorsStructure, offsets, packetsize, monitorsRefreshText, monitorsSerialRefreshText, stale_a, stale_s, sdoor_state, sdoor_history
 
-common rocket_eve_tm1_read_packets,sdoor_history
+;common rocket_eve_tm1_read_packets,sdoor_history
 
-;Conversion factors for each individual monitor. Found in DataView
-conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023,5./1023,$
+; Conversion factors for each individual monitor. Found in DataView
+; ===========36.336============
+;conv_factor=[5./1023,5./1023,5./1023*2,0.01,5./1023,5./1023,5./1023,5./1023,5./1023,5./1023,$
+;             5./1023,5./1023*10,5./1023,5./1023,$
+;             0.05,0.055,5./1023,5./1023,5./1023,5./1023,1,0.00918]
+;megsp_temp=0,megsa_htr=0,xrs_5v=0,csol_5v=1,slr_pressure=0,cryo_cold=0,megsb_htr=0,xrs_temp=0,megsa_ccd_temp=0,megsb_ccd_temp=1,cryo_hot=1,exprt_28v=1,vac_valve_pos=1,hvs_pressure=1,exprt_15v=1,fpga_5v=1,tv_12v=1,megsa_ff_led=1,megsb_ff_led=1,exprt_bus_cur=0,sdoor_pos=1,exprt_main_28v=0,esp_fpga_time=1,esp_rec_counter=1
+;esp1=1,esp2=1,esp3=1,esp4=1
+;esp5=1,esp6=1,esp7=1,esp8=1
+;esp9=1,megsp_fpga_time=1,megsp1=1,megsp2=1
+; Byte offsets for each individual monitor. Also found in DataView
+
+; TODO: for flight - add a 0 for shutter door o/c
+;shift=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21.7]
+
+; ===========36.352============
+conv_factor=[5./1023,5./1023,5./1023*2,5./1023,5./1023,5./1023,5./1023,5./1023,5./1023,$
              5./1023,5./1023*10,5./1023,5./1023,$
-             0.05,0.055,5./1023,5./1023,5./1023,5./1023,1,0.00918]
+             0.05,0.055,5./1023,5./1023,5./1023,1,.0049,.01205]
+shift=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,.09566,22]
              
-;Byte offsets for each individual monitor. Also found in DataView
-
-;TODO forflight - add a 0 for shutter door o/c
-shift=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21.7]
-
-
-channel_num=24;We should have 24 offsets in a valid Dewesoft packet. One for each pulled channel
+channel_num=23;We should have 24 offsets in a valid Dewesoft packet. One for each pulled channel
 
 serial_num=14;Number of serial data points in our monitor structure
 
@@ -88,24 +94,14 @@ if (channel_num eq n_elements(offsets)-1) then begin
    
    ;Shutter door logic
    
-   if analogMonitorsStructure.sdoor_oc ge 100 then begin
-    sdoor_history=shift(sdoor_history,1)
-    sdoor_history[0]=analogMonitorsStructure.sdoor_oc
-   endif
-   
-   ;this is a common array so if it's not already defined, then define it --> else it's already defined so we don't need to redefine it
-   if size(sdoor_history,/type) eq 0 then begin
-    sdoor_history=lonarr(10)
-    sdoor_state = "UNKNOWN"
-   endif
+   sdoor_history=shift(sdoor_history,1)
+   sdoor_history[0]=analogMonitorsStructure.sdoor_pos
    
    ;check if most values of sdoor_history are above the open threshold or above the closed theshold
-   if median(sdoor_history) gt 475 then begin
+   sdoor_state = "Closed"
+   if median(sdoor_history) gt 500. then begin
     sdoor_state = "Open"
-   endif else if median(sdoor_history) gt 100 then begin
-    sdoor_state = "Closed"
    endif
-   
    
    ;Process esp channel data which comes next
    sync_esp_ind=-1;Where we found the ESP sync word in the dewesoft channel
@@ -180,6 +176,7 @@ endif else begin
   ;If we didn't see all the valid offsets than increment our invalid packets counters
    stale_a=stale_a+1
    stale_s=stale_s+1
+   sdoor_state = 'UNKNOWN'
 endelse
 ;If we didn't see a valid packet then just pass back the struct we were passed (which will just be the last valid packet data)
 return,analogMonitorsStructure
