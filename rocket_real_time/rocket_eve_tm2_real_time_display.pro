@@ -289,15 +289,7 @@ WHILE 1 DO BEGIN
     socketDataBuffer = [temporary(socketDataBuffer), temporary(socketData)]
     
     ; Do an efficient search for just the last DEWESoft sync byte
-    sync7Indices = where(socketDataBuffer EQ 7 AND $
-       shift(socketDataBuffer,-1) EQ 6 AND $
-       shift(socketDataBuffer,-2) EQ 5 AND $
-       shift(socketDataBuffer,-3) EQ 4 AND $
-       shift(socketDataBuffer,-4) EQ 3 AND $
-       shift(socketDataBuffer,-5) EQ 2 AND $
-       shift(socketDataBuffer,-6) EQ 1 AND $
-       shift(socketDataBuffer,-7) EQ 0 $
-       , numSync7s)
+    sync7Indices = where(socketDataBuffer EQ 7, numSync7s)
   
     ; If some 0x07 sync bytes were found, then loop to verify the rest of the sync byte pattern (0x00 0x01 0x02 0x03 0x04 0x05 0x06)
     ; and process the data between every set of two verified sync byte patterns
@@ -318,22 +310,13 @@ WHILE 1 DO BEGIN
         IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 5] NE 2 THEN CONTINUE
         IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 6] NE 1 THEN CONTINUE
         IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 7] NE 0 THEN CONTINUE
-;        IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 7 + 12] NE 0 THEN CONTINUE ; check packet type
-;        IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 7 + 13] NE 0 THEN CONTINUE ; check packet type
-;        IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 7 + 14] NE 0 THEN CONTINUE ; check packet type
-;        IF socketDataBuffer[sync7Indices[sync7LoopIndex] - 7 + 15] NE 0 THEN CONTINUE ; check packet type
-
         
         ; If this is the first syncLoopIndex, then verify this sync pattern and continue to the next sync pattern to determine 
         ; the data to process (singleFullDeweSoftPacket) between the two sync patterns
         IF sync7LoopIndex EQ 0 THEN BEGIN
           verifiedSync7Index = sync7Indices[sync7LoopIndex]
-            CONTINUE
+          CONTINUE
         ENDIF
-;        IF verifiedSync7Index EQ !NULL THEN BEGIN
-;           verifiedSync7Index = sync7Indices[sync7LoopIndex] 
-;           CONTINUE
-;         ENDIF
          
         ; Store the data to be processed between two DEWESoft sync patterns
         singleFullDeweSoftPacket = socketDataBuffer[verifiedSync7Index - 7:sync7Indices[sync7LoopIndex] - 8]
@@ -581,7 +564,7 @@ WHILE 1 DO BEGIN
         ; Set the index of this verified sync pattern for use in the next iteration of the DEWESoft sync7Loop
         verifiedSync7Index = sync7Indices[sync7LoopIndex]
       ENDFOR ; sync7LoopIndex = 0, numSync7s - 1
-      
+
       ; Now that all processable data has been processed, overwrite the buffer to contain only bytes from the beginning of 
       ; last sync pattern to the end of socketDataBuffer
       socketDataBuffer = socketDataBuffer[verifiedSync7Index - 7:-1]
