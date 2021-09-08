@@ -26,10 +26,12 @@ endif else if rnum eq 36.318 then begin
   launch_time = 19.*3600. + 0.*60. + 0.
 endif else if rnum eq 36.336 then begin
   launch_time = 19.*3600. + 0.*60. + 0.
+endif else if rnum eq 36.336 then begin
+  launch_time = 17.*3600. + 25.*60. + 0.  ; TBD
 endif else begin
-  print, 'WARNING: invalid rocket number, so assuming 36.336'
-  rocket_number = 36.336
-  launch_time = 19.*3600. + 0.*60. + 0.
+  print, 'WARNING: invalid rocket number, so assuming 36.353'
+  rocket_number = 36.353
+  launch_time = 17.*3600. + 25.*60. + 0.
 endelse
 
 rocket_data_dir = getenv('rocket_dir')

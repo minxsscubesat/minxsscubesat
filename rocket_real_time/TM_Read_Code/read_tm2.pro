@@ -27,6 +27,9 @@
 ;
 ;	Updated June 2018 to process Compact SOLSTICE (CSOL) images (uses CLASSIC items)
 ;
+;	Updated Sept 2021 to have default rocket number of 36.353
+;		Instrument Changes:  CSOL is not included in payload
+;
 pro  read_tm2, filename, cd=cd, launchtime=launchtime, time=time, $
 					amegs=amegs, bmegs=bmegs, classic=classic, csol=csol, $
 					rocket=rocket, debug=debug
@@ -68,11 +71,11 @@ fbase = strmid( filename, fb1+1, fb2-fb1-1 ) + '_'
 ;  just use the full input file name
 fbase = filename + '_'
 
-if keyword_set(rocket) then rnum = rocket else rnum = 36.336
-if (rnum ne 36.336) and (rnum ne 36.318) and (rnum ne 36.300) and (rnum ne 36.290) and $
-		(rnum ne 36.286) and (rnum ne 36.240) and (rnum ne 36.233) then begin
-  print, 'ERROR: rocket number is not valid, resetting to 36.318'
-  rnum = 36.336
+if keyword_set(rocket) then rnum = rocket else rnum = 36.353
+if (rnum ne 36.353) and (rnum ne 36.336) and (rnum ne 36.318) and (rnum ne 36.300) and $
+		(rnum ne 36.290) and (rnum ne 36.286) and (rnum ne 36.240) and (rnum ne 36.233) then begin
+  print, 'ERROR: rocket number is not valid, resetting to 36.353'
+  rnum = 36.353
 endif
 print, 'Processing for rocket # ', string(rnum,format='(F7.3)')
 
@@ -86,8 +89,9 @@ if (not keyword_set(launchtime)) and (fpos ge 0) then begin
   if (rnum eq 36.286) then launchtime = 13*3600L + 30*60L + 1.000D0
   if (rnum eq 36.290) then launchtime = 12*3600L + 0*60L + 0.4D0
   if (rnum eq 36.300) then launchtime = 13*3600L + 14*60L + 25.1D0
-  if (rnum eq 36.318) then launchtime = 19*3600L + 0*60L + 0.0D0
-  if (rnum eq 36.336) then launchtime = 19*3600L + 0*60L + 0.0D0  ; TBD !!!
+  if (rnum eq 36.318) then launchtime = 19*3600L + 0*60L + 0.0D0	; UT time
+  if (rnum eq 36.336) then launchtime = 19*3600L + 0*60L + 0.0D0
+  if (rnum eq 36.353) then launchtime = 17*3600L + 25*60L + 0.0D0  ; TBD !!!
   print, 'NOTE:  set launch time for ', strtrim(launchtime,2), ' sec of day'
 endif
 
@@ -763,7 +767,7 @@ if arg_present(amegs) or keyword_set(amegs) then begin
   read, 'Show MEGS-A image movie (Y/N) ? ', ans
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then begin
-  	movie_raw_megs, famegs, 'A', 2, data=amegs
+  	movie_raw_megs, famegs, 'A', 1.0, data=amegs
   	aSaveFile = fbase + 'image_amegs.sav'
   	print, 'Saving processed MEGS-A data (amegs) in ', aSaveFile
   	save, amegs, file=aSaveFile
@@ -777,7 +781,7 @@ if arg_present(bmegs) or keyword_set(bmegs) then begin
   read, 'Show MEGS-B image movie (Y/N) ? ', ans
   ans = strupcase(strmid(ans,0,1))
   if (ans eq 'Y') then begin
-  	movie_raw_megs, fbmegs, 'B', 2, data=bmegs
+  	movie_raw_megs, fbmegs, 'B', 1.0, data=bmegs
   	bSaveFile = fbase + 'image_bmegs.sav'
   	print, 'Saving processed MEGS-B data (bmegs) in ', bSaveFile
   	save, bmegs, file=bSaveFile

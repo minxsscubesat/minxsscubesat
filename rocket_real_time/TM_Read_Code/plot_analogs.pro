@@ -17,9 +17,11 @@
 ;	10/15/06  Tom Woods   Original Code
 ;	3/23/11   Tom Woods   Updated so can read *.sav file instead of binary *.dat file
 ;	4/30/15	  Tom Woods   Added option to make PDF file, indicate Timer functions, and grid lines
+;	9/3/21	  Tom Woods   Added 36.353 option
 ;
 pro plot_analogs, filename, data, xrange=xrange, plotnum=plotnum, tzero=tzero, rocket=rocket, $
 				ccd=ccd, debug=debug, noplot=noplot, pdf=pdf, notimer=notimer, nogrid=nogrid
+
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
   filename = dialog_pickfile(title='Pick All Analogs Data File', filter='*analogs.dat')
@@ -28,11 +30,11 @@ if (strlen(filename) lt 1) then begin
   print, 'No filename was given...'
   return
 endif
-rnum = 36.336
+rnum = 36.353
 if keyword_set(rocket) then rnum = rocket
 if (rnum ne 36.275) and (rnum ne 36.233) and (rnum ne 36.240) and (rnum ne 36.258) $
 	and (rnum ne 36.286) and (rnum ne 36.290) and (rnum ne 36.300) $
-	and (rnum ne 36.318) and (rnum ne 36.336) then begin
+	and (rnum ne 36.318) and (rnum ne 36.336) and (rnum ne 36.353) then begin
   stop, 'STOP:  ERROR with "rnum"...'
 endif
 rocket_str = string(rnum,format='(F6.3)')
@@ -159,27 +161,40 @@ endif else if (rnum eq 36.300) then begin
   			shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
   			shutter_door_cur: 0.0 }
 endif else if (rnum eq 36.318) then begin
-  ;
-  ;   define the TM items for all of the analog monitors
-  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
-  ;
+  ;
+
+  ;   define the TM items for all of the analog monitors
+
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+
+  ;
+
   numanalogs = 28L
-  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
-    tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
-    solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
-    xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
-    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
-    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
-    xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
-    xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
-    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+
+    tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
+
+    solar_press: 0.0, gate_valve: 0.0, cryo_hot_temp: 0.0, $
+
+    xps_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+
+    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+
+    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_28v: 0.0, $
+
+    xps_pos: 0.0, xps_cw: 0.0, xps_ccw: 0.0, $
+
+    xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
+
+    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+
     shutter_door_cur: 0.0 }
-endif else if (rnum eq 36.336) then begin
-  ;
-  ;   define the TM items for all of the analog monitors
-  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
-  ;
-  numanalogs = 33L
+endif else if (rnum eq 36.336) then begin
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
+  numanalogs = 33L
   atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
   	hvs_press: 0.0, solar_press: 0.0, exp_15v: 0.0, $
     tv_12v: 0.0, tv_pos: 0.0, fpga_5v: 0.0, $
@@ -191,7 +206,24 @@ endif else if (rnum eq 36.336) then begin
     xrs_tempa: 0.0, xrs_tempb: 0.0, xrs_5v: 0.0, $
     shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
     shutter_door_cur: 0.0, csol_5v: 0.0, csol_tec_temp: 0.0 }
+endif else if (rnum eq 36.353) then begin
+  ;
+  ;   define the TM items for all of the analog monitors
+  ;     X = WD + 3 (CD, -1 for RT), Y = FR - 1
+  ;
+  numanalogs = 27L
+  atemp = { time: 0.0D0, tm_28v: 0.0, tm_cur: 0.0, exp_28v: 0.0, $
+  	hvs_press: 0.0, solar_press: 0.0, exp_15v: 0.0, $
+    tv_12v: 0.0, tv_batt: 0.0, fpga_5v: 0.0, $
+    gate_valve: 0.0, cryo_cold_temp: 0.0, cryo_hot_temp: 0.0, $
+	xrs_tempb: 0.0, megsa_ff: 0.0, megsb_ff: 0.0, $
+    megsa_ccd_temp: 0.0, megsa_heater: 0.0, megsp_temp: 0.0, $
+    megsb_ccd_temp: 0.0, megsb_heater: 0.0, xrs_5v: 0.0, $
+    shutter_door_pos: 0.0, shutter_door_mon: 0.0, shutter_door_volt: 0.0, $
+    shutter_door_cur: 0.0, shutter_door_open: 0.0, shutter_door_close: 0.0 }
 endif
+
+
 nbytes = n_tags(atemp,/length)
 ;
 ;  two options for reading data

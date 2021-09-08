@@ -154,7 +154,7 @@ endif else begin
 endelse
 
 common rocket_common, rocket_number, launch_time, rocket_data_dir
-if not keyword_set(rocket) then rocket=36.336
+if not keyword_set(rocket) then rocket=36.353
 rocket_set_number, rocket
 tzero = launch_time
 
@@ -203,6 +203,13 @@ endif else if (rocket eq 36.318) then begin
 endif else if (rocket eq 36.336) then begin
     ; tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 250.
+    dtlight = 30.
+    tdark1 = 65.
+    tdark2 = 490.
+    dtdark=10.
+endif else if (rocket eq 36.353) then begin
+    ; tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT (TBD)
+    tapogee = 250. ; TBD
     dtlight = 30.
     tdark1 = 65.
     tdark2 = 490.

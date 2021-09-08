@@ -126,8 +126,8 @@ if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.286
   if (rocket ne 36.258) and (rocket ne 36.275) and (rocket ne 36.286) $
   		and (rocket ne 36.290) and (rocket ne 36.300) and (rocket ne 36.318) $
-  		and (rocket ne 36.336) then rocket = 36.336
-endif else rocket = 36.336
+  		and (rocket ne 36.336) and (rocket ne 36.353) then rocket = 36.353
+endif else rocket = 36.353
 
 print, 'Processing ESP data for rocket = ', rocket
 
@@ -201,6 +201,16 @@ endif else if (rocket eq 36.336) then begin
     tdark2 = 490.
     dtdark=5.
     twindow = 332.
+    dtwindow=3.
+    dtmove=2.
+endif else if (rocket eq 36.353) then begin
+    rkt_tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT (TBD)
+    tapogee = 276. ; TBD
+    dtlight = 15.
+    tdark1 = 60.
+    tdark2 = 490.
+    dtdark=5.
+    twindow = 332. ; TBD
     dtwindow=3.
     dtmove=2.
 endif else begin
