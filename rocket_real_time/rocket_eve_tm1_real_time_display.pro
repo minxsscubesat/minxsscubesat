@@ -579,14 +579,13 @@ WHILE 1 DO BEGIN
             set_monitor_window_color, analogTextObjArray
           ENDIF ELSE BEGIN
             monitorsRefreshText.font_color = blueColor
-            set_monitor_window_color, [ta82, ta25, ta26, ta30, ta1], color=fontColor
+            set_monitor_window_color, [ta82, ta25, ta26, ta30, ta1,ta22], color=fontColor
 
-            get_color_limit, ta23, analogMonitors.exprt_28v, rl=22, rh=35
+            get_color_limit, ta23, analogMonitors.exprt_28v, rl=0, rh=22
             get_color_limit, ta124, analogMonitors.tm_exp_batt_volt, rl=22, rh=35
             get_color_limit, ta106, analogMonitors.exprt_bus_cur, rl=0.9, rh=2
-            get_color_limit, ta13, analogMonitors.slr_pressure, rl=4, rh=5 ; TODO: Update with reasonable realisitc values
+            get_color_limit, ta13, analogMonitors.slr_pressure, rl=0, rh=.5
             get_color_limit, ta14, t_cold_finger, rl=-273, rh=-35
-            get_color_limit, ta22, t_cryo_hotside, rl=-273, rh=-35 ; TODO: Update with reasonable realisitc values
             get_color_limit, ta29, analogMonitors.fpga_5v, rl=4.5, rh=5.5
             get_color_limit, ta3, analogMonitors.megsa_htr, rl=-1, rh=0.2, red_string='ON ', green='OFF '
             get_color_limit, ta15, analogMonitors.megsb_htr, rl=-1, rh=0.2, red_string='ON ', green='OFF '
