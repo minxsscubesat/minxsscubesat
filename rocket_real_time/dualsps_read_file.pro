@@ -400,7 +400,7 @@ while (not eof(lun)) do begin
 			data[data_num].uart_tx_count = fix(darray[9])	; skip Tx header
 			data[data_num].uart_tx_fifo_length = fix(darray[10])
 		endif
-		if (darray[0] eq 'DS.HX55') then begin
+		if ((darray[0] eq 'DS.HX55') and (n_elements(darray) gt 11 )) then begin
 			; parse  DS.HX55 data line
 			data[data_num].have_x55 = 1
 			data[data_num].x55_time_since_on = double(darray[1])

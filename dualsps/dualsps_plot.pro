@@ -506,13 +506,12 @@ endif
 
 ; plot time series of "cnt"
 if keyword_set(win) then window,win,title=inst, XPOS=xpos , YPOS=ypos, XSIZE=xsize , YSIZE=ysize
-
-plot, ptime[0:10], psignal[0:10], xmargin=xm, ymargin=ym, ystyle=1, $
+plot, ptime[-11:-1], psignal[-11:-1], xmargin=xm, ymargin=ym, ystyle=1, $
       xtitle=xtitle1, ytitle=ytitle, title=fileshort
 
 if (isQuad ne 0) then begin
   ym2 = [3,0.5]
-  plot, ptime[0:10], plotdata[0:10].quadx, /nodata, yrange=[-1,1], ystyle=1, xmargin=xm, ymargin=ym2, $
+  plot, ptime[-11:-1], plotdata[-11:-1].quadx, /nodata, yrange=[-1,1], ystyle=1, xmargin=xm, ymargin=ym2, $
       xtitle=xtitle, ytitle='Quad Position', title=" "
   xx = !x.crange[0] * 0.9 + !x.crange[1] * 0.1
   yy = 0.75
@@ -523,9 +522,8 @@ if (isQuad ne 0) then begin
     xyouts, xx, yy, 'Quad13 Rel. Pos.', color=cc[0], charsize=cs, charthick=ct
     xyouts, xx, yy-dy, 'Quad24 Rel. Pos.', color=cc[3], charsize=cs, charthick=ct
   endif else begin
-    print, ptime[0:10]
-    oplot, ptime[0:10], plotdata[0:10].quadx, color=cc[0]  ; red
-    oplot, ptime[0:10], plotdata[0:10].quady, color=cc[3]  ; green
+    oplot, ptime[-11:-1], plotdata[-11:-1].quadx, color=cc[0]  ; red
+    oplot, ptime[-11:-1], plotdata[-11:-1].quady, color=cc[3]  ; green
     xyouts, xx, yy, 'X Rel. Pos. '+string(median(plotdata.quadx),format='(F6.3)') $
     	+' +/- '+string(stddev(plotdata.quadx),format='(F7.4)'), color=cc[0], charsize=cs, charthick=ct
     xyouts, xx, yy-dy, 'Y Rel. Pos. '+string(median(plotdata.quady),format='(F6.3)') $

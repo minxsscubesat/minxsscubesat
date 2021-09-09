@@ -474,7 +474,7 @@ ct = 1.5
 
 tbase = long(plotdata[0].time/1000.) * 1000L
 ptime = plotdata.time - tbase
-xtitle = 'Time (SOD)'
+xtitle = 'Time (SOD'
 if (tbase ne 0) then xtitle=xtitle+'-'+strtrim(tbase,2)+')' else xtitle=xtitle+')'
 
 if (isQuad ne 0) then begin
@@ -506,7 +506,6 @@ endif
 
 ; plot time series of "cnt"
 if keyword_set(win) then window,win,title=inst, XPOS=xpos , YPOS=ypos, XSIZE=xsize , YSIZE=ysize
-
 plot, ptime[-11:-1], psignal[-11:-1], xmargin=xm, ymargin=ym, ystyle=1, $
       xtitle=xtitle1, ytitle=ytitle, title=fileshort
 
