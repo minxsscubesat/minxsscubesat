@@ -186,6 +186,10 @@ endif else if (ch eq 'X55') then begin
   sdark = 0.0
   darkFactor = 1.00
   plotdata.signal = data.x55_slow_count
+  wg = where( data.have_x55 ne 0, num_gd )
+  if (num_gd gt 1) then begin
+	  plotdata = plotdata[wg]
+  endif else print, 'WARNING: No X55 Data found !'
 endif
 
 ;

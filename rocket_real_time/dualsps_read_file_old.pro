@@ -288,7 +288,7 @@ while (not eof(lun)) do begin
 				data[data_num].sps2_temperature = float(darray[11])
 			endif  ; else it is the DOT character and packet ASPS ends here
 		endif
-		if (darray[0] eq 'DS.1SPS') then begin
+		if (darray[0] eq 'DS.1SPS') and (n_elements(darray) EQ 10 ) then begin
 			; parse DS.1SPS data line
 			data[data_num].have_sps1 = 1
 			data[data_num].sps1_time_since_on = darray[1]  ; CHANGE for V3.03
@@ -447,8 +447,9 @@ while (not eof(lun)) do begin
 				if (n_elements(x55_data_raw) eq X55_ELEMENTS_PER_PACKET) then $
 					x55_packets[x55_num_last_hx55].x55_spectra_raw[raw_index] = x55_data_raw $
 				else begin
-					x55_data_error = 1
-					print, '***** ERROR: X55 Hex String Conversion did not have 35 bytes.'
+					;x55_data_error = 1
+					x55_data_error = 0 
+					print, '***** WARNING: X55 Hex String Conversion did not have 35 bytes.'
 				endelse
 				;  check if X55 spectrum is ready to uncompress
 				if (x55_spectrum_count ge data[data_num_last_hx55].x55_data_length) and (x55_data_error eq 0) then begin

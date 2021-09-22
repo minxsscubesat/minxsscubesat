@@ -14,6 +14,7 @@
 ;		9/21/2019	Tom Woods: updated so TTM packets can be higher rate and separate return
 ;		1/4/2020	Tom Woods: updated for rocket channels nanoSIM, mechanism board, dual-UART, Amptek X55
 ;		3/4/2020	Tom Woods: updated for packet format changes in flight software version 3.03
+;		9/11/2021	Tom Woods: tuned for debugging packets
 ;
 
 ; helper function: hex2byte
@@ -51,7 +52,7 @@ if (not file_test(filename)) then begin
 	return, data
 endif
 
-if keyword_set(debug) then verbose=1
+if keyword_set(debug) then verbose=1 else debug=0
 if keyword_set(verbose) then print, 'DUALSPS_READ_FILE: reading ', filename, ' ...'
 
 data_num = 0L
@@ -183,11 +184,14 @@ theCDHversion = 3.03	; assumes the latest version
 ;	It uses DS.RTC packets to increment packet counter (data_num).
 ;	This will over-write packets if DS.RTC packets are not found.
 ;
+linecount = 0
 while (not eof(lun)) do begin
 	readf,lun,dstr
+	linecount++
 	darray = strsplit( dstr, pattern, /extract, count=nstr )
 	; if keyword_set(debug) then stop, 'DEBUG parse of file string...'
 	if (nstr ge 3) then begin
+		if debug ge 2 then print, 'DEBUG: Packet .'+darray[0]+'.'
 		;  PROCESS MESSAGE PACKETS
 		if (darray[0] eq 'DS.MSGC') then begin
 			; increment to next message
@@ -203,6 +207,7 @@ while (not eof(lun)) do begin
 		; PROCESS LINKED DATA PACKETS:  DS.CDHA is first linked packet
 		if (darray[0] eq 'DS.CDHA') then begin
 			; increment to next record - that is, DS.CDHA packets are always first packet
+			; DS.CDHA         4.211  2.527  4.968 13.680   26.62 V3.05 rXRS C=0x0000 I=  0      .
 			if (data[data_num].have_cdh eq 1) then begin
 				data_num += 1L
 				; clear all other packet "have" flags
@@ -265,8 +270,9 @@ while (not eof(lun)) do begin
 									data[data_num].year, data[data_num].hour, $
 									data[data_num].minute, data[data_num].second )
 		endif
-		if (darray[0] eq 'DS.ASPS') then begin
+		if (darray[0] eq 'DS.ASPS') and (n_elements(darray) ge 12) then begin
 			; parse DS.ASPS data line: it can be SPS-1 and SPS-2, or just one of them
+			; DS.ASPS         4.311 1     2  1.525  0.000   26.37 2     2  1.524  0.000   26.34 .
 			data[data_num].have_spsa = 1
 			data[data_num].sps_time_since_on = darray[1]  ; CHANGE for V3.03
 			if (darray[2] eq '1') then begin
@@ -288,8 +294,9 @@ while (not eof(lun)) do begin
 				data[data_num].sps2_temperature = float(darray[11])
 			endif  ; else it is the DOT character and packet ASPS ends here
 		endif
-		if (darray[0] eq 'DS.1SPS') then begin
+		if (darray[0] eq 'DS.1SPS') and (n_elements(darray) ge 10) then begin
 			; parse DS.1SPS data line
+			; DS.1SPS         4.411     299 16393 16394 16392 16395       54  0.0000  0.0000    .
 			data[data_num].have_sps1 = 1
 			data[data_num].sps1_time_since_on = darray[1]  ; CHANGE for V3.03
 			data[data_num].sps1_loop_count = long(darray[2])
@@ -298,8 +305,9 @@ while (not eof(lun)) do begin
 			data[data_num].sps1_quad_x = float(darray[8])
 			data[data_num].sps1_quad_y = float(darray[9])
 		endif
-		if (darray[0] eq 'DS.2SPS') then begin
+		if (darray[0] eq 'DS.2SPS') and (n_elements(darray) ge 10) then begin
 			; parse DS.2SPS data line
+			; DS.2SPS         4.511     306 16976 17868 17519 16393        0  0.0000  0.0000    .
 			data[data_num].have_sps2 = 1
 			data[data_num].sps2_time_since_on = darray[1]  ; CHANGE for V3.03
 			data[data_num].sps2_loop_count = long(darray[2])
@@ -308,7 +316,7 @@ while (not eof(lun)) do begin
 			data[data_num].sps2_quad_x = float(darray[8])
 			data[data_num].sps2_quad_y = float(darray[9])
 		endif
-		if (darray[0] eq 'DS.TTMD') then begin
+		if (darray[0] eq 'DS.TTMD') and (n_elements(darray) ge 8) then begin
 			if (theCDHversion gt 0) then begin
 				; parse DS.TTMD data line - Option for Version 1.07 and older - doesn't have TIME_SINCE_ON
 				if (theCDHversion lt 1.08) then begin
@@ -347,8 +355,9 @@ while (not eof(lun)) do begin
 				ttm_num += 1
 			endif
 		endif
-		if (darray[0] eq 'DS.mech') then begin
+		if (darray[0] eq 'DS.mech') and (n_elements(darray) ge 12) then begin
 			; parse DS.mech data line
+			; DS.mech         4.611 ~~00 ~~01     0     1     3     2     4     3     1  3906   .
 			data[data_num].have_mech = 1
 			data[data_num].mech_time_since_on = double(darray[1])
 			data[data_num].mech1_status = darray[2]
@@ -362,7 +371,7 @@ while (not eof(lun)) do begin
 			data[data_num].mech_battery_return_dn = fix(darray[10])
 			data[data_num].mech_battery_power_dn = fix(darray[11])
 		endif
-		if (darray[0] eq 'DS.aSIM') then begin
+		if (darray[0] eq 'DS.aSIM') and (n_elements(darray) ge 11) then begin
 			; parse DS.aSIM data line
 			data[data_num].have_aSIM = 1
 			data[data_num].aSIM_time_since_on = double(darray[1])
@@ -371,7 +380,7 @@ while (not eof(lun)) do begin
 			for i=0,5 do data[data_num].aSIM_data[i] = float(darray[4+i])
 			data[data_num].aSIM_temperature = float(darray[10])
 		endif
-		if (darray[0] eq 'DS.bSIM') then begin
+		if (darray[0] eq 'DS.bSIM') and (n_elements(darray) ge 11) then begin
 			; parse DS.bSIM data line
 			data[data_num].have_bSIM = 1
 			data[data_num].bSIM_time_since_on = double(darray[1])
@@ -380,7 +389,7 @@ while (not eof(lun)) do begin
 			for i=0,5 do data[data_num].bSIM_data[i] = float(darray[4+i])
 			data[data_num].bSIM_temperature = float(darray[10])
 		endif
-		if (darray[0] eq 'DS.cSIM') then begin
+		if (darray[0] eq 'DS.cSIM') and (n_elements(darray) ge 11) then begin
 			; parse DS.cSIM data line
 			data[data_num].have_cSIM = 1
 			data[data_num].cSIM_time_since_on = double(darray[1])
@@ -389,8 +398,9 @@ while (not eof(lun)) do begin
 			for i=0,5 do data[data_num].cSIM_data[i] = float(darray[4+i])
 			data[data_num].cSIM_temperature = float(darray[10])
 		endif
-		if (darray[0] eq 'DS.uart') then begin
+		if (darray[0] eq 'DS.uart') and (n_elements(darray) ge 11) then begin
 			; parse DS.uart data line
+			; DS.uart         4.711 U1 Rx 0x00     0  3144   0  Tx    16   4                    .
 			data[data_num].have_uart = 1
 			data[data_num].uart_time_since_on = double(darray[1])
 			data[data_num].uart_rx_status = hex2byte(strmid(darray[4],2,2))  ; skip U1 Rx headers
@@ -400,7 +410,7 @@ while (not eof(lun)) do begin
 			data[data_num].uart_tx_count = fix(darray[9])	; skip Tx header
 			data[data_num].uart_tx_fifo_length = fix(darray[10])
 		endif
-		if (darray[0] eq 'DS.HX55') then begin
+		if ((darray[0] eq 'DS.HX55') and (n_elements(darray) ge 12)) then begin
 			; parse  DS.HX55 data line
 			data[data_num].have_x55 = 1
 			data[data_num].x55_time_since_on = double(darray[1])
@@ -447,8 +457,8 @@ while (not eof(lun)) do begin
 				if (n_elements(x55_data_raw) eq X55_ELEMENTS_PER_PACKET) then $
 					x55_packets[x55_num_last_hx55].x55_spectra_raw[raw_index] = x55_data_raw $
 				else begin
-					x55_data_error = 1
-					print, '***** ERROR: X55 Hex String Conversion did not have 35 bytes.'
+					x55_data_error = 0  ; was = 1
+					print, '***** WARNING: X55 Hex String Conversion did not have 35 bytes.'
 				endelse
 				;  check if X55 spectrum is ready to uncompress
 				if (x55_spectrum_count ge data[data_num_last_hx55].x55_data_length) and (x55_data_error eq 0) then begin

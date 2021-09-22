@@ -261,6 +261,7 @@ if (ch eq 'X55') then begin
   setplot
   if keyword_set(win) then window,win,title=inst, XPOS=xpos , YPOS=ypos, XSIZE=xsize , YSIZE=ysize
   plot,indgen(1024),plotdata.x55_spectra,title='X55 Spectra',ytitle='Counts',xtitle='Bin'
+  ;plot,plotdata.x55_spectra,title='X55 Spectra',ytitle='Counts',xtitle='Bin',xr=[0,20],xs=1
 endif else begin
 
 if (numgood lt 10) then begin
@@ -503,8 +504,8 @@ if (ch eq 'SPS_Y') then begin
 	ytitle='SPS Y'
 	psignal = plotdata.signal
 endif
-
 ; plot time series of "cnt"
+if (numgood gt 10) then begin
 if keyword_set(win) then window,win,title=inst, XPOS=xpos , YPOS=ypos, XSIZE=xsize , YSIZE=ysize
 plot, ptime[-11:-1], psignal[-11:-1], xmargin=xm, ymargin=ym, ystyle=1, $
       xtitle=xtitle1, ytitle=ytitle, title=fileshort
@@ -531,6 +532,7 @@ if (isQuad ne 0) then begin
     xyouts, xx, yy-dy*2, 'Quad Sum Mean '+string(median(plotdata.signal),format='(F8.0)') $
     	+' +/- '+string(stddev(plotdata.signal),format='(F9.1)') , charsize=cs, charthick=ct
   endelse
+endif
 endif
 endelse
 ;

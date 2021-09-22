@@ -26,7 +26,12 @@
 ;		IDL>  help, image
 ;		  image
 ;
-pro movie_raw_megs, filename, channel, waittime, data=data, scale=scale, image=image, rocket=rocket
+pro movie_raw_megs, filename, channel, waittime, data=data, scale=scale, image=image, rocket=rocket, debug=debug
+
+common rocket_common, rocket_number, launch_time, rocket_data_dir
+if not keyword_set(rocket) then rocket=36.353
+rocket_set_number, rocket
+tzero = launch_time
 
 if (n_params() lt 1) then filename=''
 if (strlen(filename) lt 1) then begin
@@ -130,6 +135,7 @@ for k=0L,dcnt-1L do begin
 
 endfor
 if (kcnt ne dcnt) then data=data[0:kcnt-1]
+dcnt = kcnt
 
 close, lun
 free_lun, lun
@@ -142,7 +148,11 @@ endif else if (extfile eq 'SAV') then begin
   restore, filename	; expect to have "data" in this save set
   dcnt = n_elements(data)
   if (dcnt eq 0) then begin
-    if ch eq "A" then data=amegs else data=bmegs
+    if rocket eq 36.353 then begin
+    	if ch eq "A" then data=adata else data=bdata
+    endif else begin
+    	if ch eq "A" then data=amegs else data=bmegs
+    endelse
     dcnt = n_elements(data)
   endif
   if (dcnt eq 0) then begin
@@ -153,10 +163,10 @@ endif else begin
   return
 endelse
 
-common rocket_common, rocket_number, launch_time, rocket_data_dir
-if not keyword_set(rocket) then rocket=36.353
-rocket_set_number, rocket
-tzero = launch_time
+if keyword_set(debug) then begin
+	print, 'DEBUG: Rocket # ', rocket
+	stop, 'STOP for DEBUG of data[] ...'
+endif
 
 if (rocket eq 36.258) then begin
     ; tzero = 18*3600L+32*60L+2.00D0  ; launch time in UT
@@ -282,7 +292,11 @@ for k=kstart,kend do begin
     if (waittime lt 0) then begin
       ans = ' '
       read, 'Next ? ', ans
-    endif else  wait, waittime
+    endif else begin
+    	if keyword_set(debug) and (max(im) gt 10000.) then begin
+    		stop, 'STOP: DEBUG at k='+strtrim(k,2)
+    	endif else wait, waittime
+	endelse
 
 endfor
 
@@ -308,6 +322,8 @@ endif
 ;	return "image" data if asked for single image
 ;
 if keyword_set(image) then image = image1
+
+if keyword_set(debug) then stop, 'STOP: DEBUG at end of movie_raw_megs()...'
 
 return
 end

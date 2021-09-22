@@ -54,9 +54,13 @@ if (extfile eq 'DAT') then begin
 ;	pdata data structure needs to be same as what is defined in read_tm1_cd.pro
 ;
 
-;	add extra LONG at end to work on Intel based Mac
-pmegs1 = { time: 0.0D0, fpga_time: 0.0, rec_error: 0, cnt: uintarr(numpcnt), monitor: ulonarr(numpanalog) } ; , dummy: 0L }
+;	may need to add extra LONG at end to work on Intel based Mac
+pmegs1 = { time: 0.0D0, fpga_time: 0.0, rec_error: 0, cnt: uintarr(numpcnt), $
+		analog_raw: ulonarr(numpanalog) }
 nbytes = n_tags(pmegs1,/length)
+
+pmegs_full = { time: 0.0D0, fpga_time: 0.0, rec_error: 0, cnt: uintarr(numpcnt), $
+		analog_raw: ulonarr(numpanalog), analog_converted: fltarr(numpanalog), analog_unit: strarr(numpanalog) }
 
 openr,lun,filename, /get_lun
 a = assoc(lun, pmegs1)
@@ -75,11 +79,16 @@ endif
 ;
 ;	read the data
 ;
-pdata = replicate( pmegs1, dcnt )
+pdata = replicate( pmegs_full, dcnt )
 for k=0L,dcnt-1L do begin
   ptemp = a[k]
   ; swap_endian_inplace, ptemp, /swap_if_little_endian
-  pdata[k] = ptemp
+  pdata[k].time = ptemp.time
+  pdata[k].fpga_time = ptemp.fpga_time
+  pdata[k].rec_error = ptemp.rec_error
+  pdata[k].cnt = ptemp.cnt
+  pdata[k].analog_raw = ptemp.analog_raw
+  ; pdata.analog_converted and pdata.analog_unit is filled in IF called with /allanalog option
 endfor
 
 close, lun
@@ -156,8 +165,8 @@ endif else if (rocket eq 36.336) then begin
     tdark2 = 490.
     dtdark=5.
 endif else if (rocket eq 36.353) then begin
-    tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT (TBD)
-    tapogee = 275. ; TBD
+    tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT
+    tapogee = 278.
     dtlight = 15.
     tdark1 = 60.
     tdark2 = 490.
@@ -328,7 +337,9 @@ for k=kstart,kend,numplots do begin
     ytitle=aunits[j]
 
     ; convert to proper unit
-    analogdata = pdata.monitor[j] * aconvert[1,j] + aconvert[0,j]
+    analogdata = pdata.analog_raw[j] * aconvert[1,j] + aconvert[0,j]
+    pdata.analog_converted[j] = analogdata
+    pdata.analog_unit[j] = aunits[j]
     yrange = median(analogdata) * [0.9, 1.1]
     if keyword_set(xrange) then begin
       plot, ptime, analogdata, yrange=yrange, ys=1, xrange=xrange, xs=1, $

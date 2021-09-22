@@ -204,14 +204,14 @@ endif else if (rocket eq 36.336) then begin
     dtwindow=3.
     dtmove=2.
 endif else if (rocket eq 36.353) then begin
-    rkt_tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT (TBD)
-    tapogee = 276. ; TBD
+    rkt_tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT
+    tapogee = 278.
     dtlight = 15.
     tdark1 = 60.
     tdark2 = 490.
     dtdark=5.
-    twindow = 332. ; TBD
-    dtwindow=3.
+    twindow = 314.
+    dtwindow=6.
     dtmove=2.
 endif else begin
     ; force plot to not look for dark and visible light
