@@ -124,11 +124,7 @@ minxsslevel3_meta = { $
    SOURCE          :    'MinXSS SOC at LASP / CU', $
    MISSION         :    'MinXSS-'+fm_str, $
    DATA_PRODUCT_TYPE :    'MinXSS Level 3', $
-   DATA_PRODUCT_VERSION :    '1.0', $
-   DATA_PRODUCT_REVISION :    '1.0.1', $
-   PRODUCT_FORMAT_VERSION :    'IDL Save Set', $
-   SOFTWARE_VERSION :    '1.0.1', $
-   SOFTWARE_NAME   :    'IDL save.pro called from minxss_merge_level3.pro', $
+   VERSION         :    minxsslevel1_meta.version, $
    CALIBRATION_VERSION :    minxsslevel1_meta.CALIBRATION_VERSION, $
    DESCRIPTION     :    'Calibrated MinXSS X123 science data averaged over a day and corrected to 1-AU', $
    HISTORY         :    '2017/02/03: Tom Woods: Original Level 3 code', $

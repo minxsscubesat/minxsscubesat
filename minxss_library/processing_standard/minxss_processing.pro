@@ -14,6 +14,8 @@
 ;   end_date [long or string]:   Same as start_date but for the end date to process (e.g., 20170507). 
 ;                                Defaults to today. 
 ;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
+;   version [string]:            The version tag to put in the output filename and internal anonymous structure. Default is '2.0'
+;   cal_version [string]:        The calibration version tag to put in the internal anonymous structure. Default is '2.0.0'
 ;
 ; KEYWORD PARAMETERS:
 ;   MISSION:    Set this to ignore the start_date and end_date optional inputs and process the entire known dates for the corresponding fm mission.
@@ -34,7 +36,7 @@
 ;   Just run it! 
 ;
 ;-
-PRO minxss_processing, start_date = start_date, end_date = end_date, fm = fm, $
+PRO minxss_processing, start_date = start_date, end_date = end_date, fm = fm, version=version, cal_version=cal_version, $
                        MISSION = MISSION, TO_0C_ONLY = TO_0C_ONLY, COPY_GOES = COPY_GOES, DEBUG = DEBUG
 
 TIC
@@ -47,6 +49,8 @@ IF fm GE 3 THEN BEGIN
   message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS.' 
   return
 ENDIF
+IF version EQ !NULL THEN version = '2.0'
+IF cal_version EQ !NULL THEN cal_version = '2.0.0'
 IF keyword_set(MISSION) THEN BEGIN
   IF fm EQ 1 THEN BEGIN
     start_date = 2016137L
@@ -108,7 +112,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, 'Processing ' + MinXSS_name + ' L1 for full mission'
   print, ' '
   print, '***************************************************************'
-  minxss_make_level1, fm=fm, /VERBOSE
+  minxss_make_level1, fm=fm, version=version, cal_version=cal_version, /VERBOSE
   
   print, ' '
   print, '***************************************************************'

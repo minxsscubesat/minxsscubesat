@@ -26,6 +26,8 @@
 ;   directory_calibration_file [string]: ??? ; FIXME: Fill in
 ;   output_filename [string]:            ??? ; FIXME: Fill in
 ;   directory_minxss_data [string]:      ??? ; FIXME: Fill in
+;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0'.
+;   cal_version [string]: Calibration version to store in internal anonymous structure. Default is '2.0.0'.
 ;               
 ; KEYWORD PARAMETERS:
 ;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
@@ -58,13 +60,10 @@
 ;   7. Save the Level 1 results (mission-length file)
 ;
 ;+
-PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, $
-                        DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, verbose=verbose, debug=debug
-
-  ;seconds_per_day = 60.0*60.0*24.0
-  seconds_per_day = 60.0*60.0*24.0
-  ; check for valid input parameters
-  ;
+PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, version=version, cal_version=cal_version, $
+                        DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE=VERBOSE, DEBUG=DEBUG
+  
+  ; Defaults
   if keyword_set(debug) then verbose=1
 
   if not keyword_set(fm) then fm=1    ; Default Flight Model (FM)
@@ -75,6 +74,11 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
     print, "minxss_make_level1 is processing data for FM " + fm_str
     print, '   START at ', JPMsystime()
   endif
+  IF version EQ !NULL THEN version = '2.0'
+  IF cal_version EQ !NULL THEN cal_version = '2.0.0'
+  
+  ; Constants
+  seconds_per_day = 60.0*60.0*24.0
 
   if fm eq 1 then LOW_LIMIT_DEFAULT = 7.0 $
   else LOW_LIMIT_DEFAULT = 7.0  ; for FM-2 ???
@@ -756,15 +760,10 @@ minxsslevel1_xp = minxsslevel1_xp[0:num_L1_xp-1]
 minxsslevel1_x123_dark = minxsslevel1_x123_dark[0:num_L1_dark-1]
 minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
 
-VERSION = '2.0'
-REVISION = '2.0.0'
-FORM_VER = 'IDL Save Set'
-SOFT_VER = '2.0.0'
-CAL_VER = '2.0.0'
 if keyword_set(output_filename) then begin
   outfile = output_filename + '.sav'
 endif else begin
-  outfile = 'minxss' + fm_str + '_l1_mission_length.sav'
+  outfile = 'minxss' + fm_str + '_l1_mission_length_' + version + '.sav'
 endelse
 
 ; X123 information structure
@@ -773,12 +772,8 @@ minxsslevel1_x123_meta = { $
   Source: 'MinXSS SOC at LASP / CU', $
   Mission: 'MinXSS-'+fm_str, $
   Data_product_type: 'MinXSS Level 1', $
-  Data_product_version: VERSION, $
-  Data_product_revision: REVISION, $
-  Product_format_version: FORM_VER, $
-  Software_version: SOFT_VER, $
-  Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
-  Calibration_version: CAL_VER, $
+  VERSION: version, $
+  Calibration_version: cal_version, $
   Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
   History: [ '2016-07-30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
   '2016-07-25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017-06-23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data', $
@@ -837,12 +832,8 @@ minxsslevel1_xp_meta = { $
   Source: 'MinXSS SOC at LASP / CU', $
   Mission: 'MinXSS-'+fm_str, $
   Data_product_type: 'MinXSS Level 1', $
-  Data_product_version: VERSION, $
-  Data_product_revision: REVISION, $
-  Product_format_version: FORM_VER, $
-  Software_version: SOFT_VER, $
-  Software_name: 'IDL save.pro called from minxss_make_level1.pro', $
-  Calibration_version: CAL_VER, $
+  VERSION: version, $
+  Calibration_version: cal_version, $
   Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
   History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
   '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, XP data'], $

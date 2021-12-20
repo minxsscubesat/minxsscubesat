@@ -55,11 +55,7 @@ endif
 ;	get root data directory dependent on FM number
 ;
 ;  slash for Mac = '/', PC = '\'
-if !version.os_family eq 'Windows' then begin
-    slash = '\'
-endif else begin
-    slash = '/'
-endelse
+slash = path_sep()
 dir_data = getenv('minxss_data') + slash + 'fm' + fm_str + slash
 dir_metadata = dir_data + 'metadata' + slash
 
