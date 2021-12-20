@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   * Moves housekeeping packet (`hk`) back by 1.5 seconds
   * Moves ADCS packets (`adcs1`, `adcs2`, `adcs3`, `adcs4`) back by 0.1 seconds
   * Moves science packet (`sci`) back by half the wall clock integration time (`x123_real_time / 2`)
-* Onboard clock drift is now corrected for (only a few seconds over the mission)
+* Onboard clock drift is now corrected (only a few seconds over the mission)
 
 ### Deprecated
 
@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * `irradiance_low` and `irradiance_high` from level 2 and 3 `x123` structure. Now it's just e.g., `minxsslevel3.x123.irradiance`
 
 ### Fixed
+* Energy resolution (`x123_spectral_resolution_array`) was calculated slightly wrong before. Recalculated with 0.168 keV at Fe-55 energy:  N=13.6. 
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
 * TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
 
