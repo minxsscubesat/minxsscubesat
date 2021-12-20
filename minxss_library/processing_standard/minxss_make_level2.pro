@@ -54,25 +54,25 @@ IF ~isA(version, 'string') THEN BEGIN
   return
 ENDIF
 
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length' + version + '.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length_v' + version + '.sav'
 
 message, /INFO, JPMsystime() + " Creating Level 2 data for FM-" + strtrim(fm, 2) + ": time averages of level 1 for 1 minute and 1 hour"
-minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1, $
+minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1, version=version, cal_version=cal_version, $
                             minxsslevel1_x123_time_structure=minxsslevel1.x123.time, minxsslevel1_x123_dark_time_structure=minxsslevel1.x123_dark.time, $
                             minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time    
-minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=60, $
+minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=60, version=version, cal_version=cal_version, $
                             minxsslevel1_x123_time_structure=minxsslevel1.x123.time, minxsslevel1_x123_dark_time_structure=minxsslevel1.x123_dark.time, $
                             minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time
 
 ; Move the generated files to the Level 3 folder
 level1Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/'
 level2Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level2/'
-file_move, level1Folder + '*1_minute_mission_length.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length.sav', /OVERWRITE
-file_move, level1Folder + '*60_minute_mission_length.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1hour_average_mission_length.sav', /OVERWRITE
+file_move, level1Folder + '*1_minute_mission_length_' + version + '.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length_v' + version + '.sav', /OVERWRITE
+file_move, level1Folder + '*60_minute_mission_length.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1hour_average_mission_length_v' + version + '.sav', /OVERWRITE
 
 ; Rename the structures in the files from minxsslevel1* to minxsslevel3*
-minxss_rename_level_structure, level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length.sav', newlevel = 2
-minxss_rename_level_structure, level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1hour_average_mission_length.sav', newlevel = 2
+minxss_rename_level_structure, level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length_v' + version + '.sav', newlevel = 2
+minxss_rename_level_structure, level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1hour_average_mission_length_v' + version + '.sav', newlevel = 2
 
 message, /INFO, JPMsystime() + " All done!"
 END

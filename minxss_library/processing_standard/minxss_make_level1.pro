@@ -763,7 +763,7 @@ minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
 if keyword_set(output_filename) then begin
   outfile = output_filename + '.sav'
 endif else begin
-  outfile = 'minxss' + fm_str + '_l1_mission_length_' + version + '.sav'
+  outfile = 'minxss' + fm_str + '_l1_mission_length_v' + version + '.sav'
 endelse
 
 ; X123 information structure

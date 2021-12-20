@@ -20,6 +20,8 @@
 ;   x_minute_average [integer]: Set to the number of minutes you want to average. Default is 1. 
 ;   start_time_cd_array [??]:   Not sure what this is for
 ;   end_time_cd_array [??]:     Not sure what this is for
+;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0'.
+;   cal_version [string]: Calibration version to store in internal anonymous structure. Default is '2.0.0'.
 ;
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set this to print processing messages
@@ -51,13 +53,12 @@
 ;   7. Save the Level 1 results (mission-length file)
 ;
 ;+
-PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array, end_time_cd_array=end_time_cd_array, low_limit=low_limit, $
+PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_time_cd_array=start_time_cd_array, end_time_cd_array=end_time_cd_array, low_limit=low_limit, version=version, cal_version=cal_version, $
                                 minxsslevel1_x123_time_structure=minxsslevel1_x123_time_structure, minxsslevel1_x123_dark_time_structure=minxsslevel1_x123_dark_time_structure, minxsslevel1_xp_time_structure=minxsslevel1_xp_time_structure, minxsslevel1_xp_dark_time_structure=minxsslevel1_xp_dark_time_structure, $
                                 VERBOSE=VERBOSE, DEBUG=DEBUG
 
   seconds_per_day = 60.0*60.0*24.0
-  ; check for valid input parameters
-  ;
+  ; Defaults 
   if keyword_set(debug) then verbose=1
 
   if not keyword_set(fm) then fm=1    ; Default Flight Model (FM)
@@ -68,6 +69,8 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     print, "minxss_make_level1 is processing data for FM " + fm_str
     print, '   START at ', systime()
   endif
+  IF version EQ !NULL THEN version = '2.0'
+  IF cal_version EQ !NULL THEN cal_version = '2.0.0'
 
   if fm eq 1 then LOW_LIMIT_DEFAULT = 7.0 $
   else LOW_LIMIT_DEFAULT = 7.0  ; for FM-2 ???
@@ -890,13 +893,8 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   ; create the file name extension that changes with the minute average chossen as a variable
   x_minute_average_string_name_digits = long(Alog10(x_minute_average) + 1)
   x_minute_average_string = strmid(strtrim(x_minute_average, 1), 0, x_minute_average_string_name_digits)
-
-  VERSION = '2.0'
-  REVISION = '2.0.1'
-  FORM_VER = 'IDL Save Set'
-  SOFT_VER = '2.0.1'
-  CAL_VER = '2.0.1'
-  outfile = 'minxss' + fm_str + '_l1_' + x_minute_average_string + '_minute' + '_mission_length.sav'
+  
+  outfile = 'minxss' + fm_str + '_l1_' + x_minute_average_string + '_minute' + '_mission_length_v' + version + '.sav'
 
   ; x123 information structure
   minxsslevel1_x123_meta = { $
@@ -904,12 +902,8 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     Source: 'MinXSS SOC at LASP / CU', $
     Mission: 'MinXSS-'+fm_str, $
     Data_product_type: 'MinXSS Level 1', $
-    Data_product_version: VERSION, $
-    Data_product_revision: REVISION, $
-    Product_format_version: FORM_VER, $
-    Software_version: SOFT_VER, $
-    Software_name: 'IDL save.pro called from minxss_make_level1_xminute.pro', $
-    Calibration_version: CAL_VER, $
+    VERSION: version, $
+    Calibration_version: cal_version, $
     Description: 'Calibrated MinXSS X123 science data averaged over a minute and corrected to 1-AU', $
     History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
     '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data'], $
@@ -968,12 +962,8 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     Source: 'MinXSS SOC at LASP / CU', $
     Mission: 'MinXSS-'+fm_str, $
     Data_product_type: 'MinXSS Level 1', $
-    Data_product_version: VERSION, $
-    Data_product_revision: REVISION, $
-    Product_format_version: FORM_VER, $
-    Software_version: SOFT_VER, $
-    Software_name: 'IDL save.pro called from minxss_make_level1_xminute.pro', $
-    Calibration_version: CAL_VER, $
+    VERSION: version, $
+    Calibration_version: cal_version, $
     Description: 'Calibrated MinXSS X123 science data averaged over a minute and corrected to 1-AU', $
     History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
     '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, x minute averaging, XP data'], $
