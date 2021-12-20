@@ -23,8 +23,9 @@ if not keyword_set(rocket) then rocket=36.353
 rocket_set_number, rocket
 tzero = launch_time
 
-if (n_params() lt 2) then BEGIN
+if (n_params() lt 1) then BEGIN
 	print, 'USAGE: plot_sam, filename, image_number, data=data, /scale, rocket=rocket, /debug'
+	; if keyword_set(debug) then stop, 'DEBUG early exit ...'
 	return
 endif
 
@@ -63,6 +64,11 @@ if (rocket eq 36.258) then begin
     tdark1 = 50.
     tdark2 = 550.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.275) then begin
     ; tzero = 17*3600L+50*60L+0.354D0  ; launch time in UT
     tapogee = 275.
@@ -70,6 +76,11 @@ endif else if (rocket eq 36.275) then begin
     tdark1 = 60.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.286) then begin
     ; tzero = 19*3600L+30*60L+1.000D0  ; launch time in UT
     tapogee = 276.
@@ -77,6 +88,11 @@ endif else if (rocket eq 36.286) then begin
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.290) then begin
     ; tzero = 18*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 275.
@@ -84,6 +100,11 @@ endif else if (rocket eq 36.290) then begin
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.300) then begin
     ; tzero = 19*3600L+15*60L+0.000D0  ; launch time in UT
     tapogee = 200.
@@ -91,6 +112,11 @@ endif else if (rocket eq 36.300) then begin
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.318) then begin
     ; tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 250.
@@ -98,6 +124,11 @@ endif else if (rocket eq 36.318) then begin
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.336) then begin
     ; tzero = 19*3600L+0*60L+0.000D0  ; launch time in UT
     tapogee = 250.
@@ -105,13 +136,23 @@ endif else if (rocket eq 36.336) then begin
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif else if (rocket eq 36.353) then begin
-    ; tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT (TBD)
-    tapogee = 250. ; TBD
+    ; tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT
+    tapogee = 278.
     dtlight = 30.
     tdark1 = 65.
     tdark2 = 490.
     dtdark=10.
+    if (n_params() lt 2) then begin
+    	wgd = where( (data.time ge (tapogee-dtlight)) and (data.time le (tapogee+dtlight)) )
+    	image = [wgd[0],wgd[-1]]
+    	print, 'Setting IMAGE range for ', image
+	endif
 endif
 
 ;
