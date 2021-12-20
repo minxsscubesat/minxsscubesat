@@ -15,6 +15,7 @@
 ;		1/4/2020	Tom Woods: updated for rocket channels nanoSIM, mechanism board, dual-UART, Amptek X55
 ;		3/4/2020	Tom Woods: updated for packet format changes in flight software version 3.03
 ;		9/11/2021	Tom Woods: tuned for debugging packets
+;		11/19/2021  Tom Woods: update for Version 3.16 that changed DS.CDHA packet to be DS.nCDH packet with extra monitors
 ;
 
 ; helper function: hex2byte
@@ -87,6 +88,7 @@ data1 = { jd: 0.0D0, $
 	gps_seconds: 0.0D0, have_rtc: 0, $
 	; variables in DS.CDHA data line
 	time_since_on: 0.0D0, sps_2_5V: 0.0, power_5V: 0.0, power_battery: 0.0, $
+	power_3V3_volt: 0.0, power_3V3_mAmp: 0.0,  $  ; NEW monitors with FSW V3.16
 	power_temperature: 0.0, cdh_version: 0.0, have_cdh: 0, $
 	cdh_instr_name: '????', cdh_command_info: '????', cdh_command_index: 0, $
 	; variables in DS.ASPS data line
@@ -129,8 +131,8 @@ data1 = { jd: 0.0D0, $
 	x55_time_since_on: 0.0D0, x55_fast_count: 0L, x55_slow_count: 0L, $
 	x55_accum_time: 0.0, x55_live_time: 0.0, x55_real_time: 0.0, $
 	x55_hv: 0.0, x55_det_temp: 0.0, x55_board_temp: 0.0, $
-	x55_compress_flag: 0U, x55_data_length: 0U, have_x55: 0, $
-	x55_packet_index: 0L	 }
+	x55_compress_flag: 0U, x55_data_length: 0U, x55_packet_index: 0L, $
+	have_x55: 0  }
 
 data = replicate(data1, data_max )
 data[data_num].have_cdh = 0		; configure to read first packet
@@ -166,7 +168,8 @@ x55_1 = { $
 	x55_time_since_on: 0.0D0, x55_fast_count: 0L, x55_slow_count: 0L, $
 	x55_accum_time: 0.0, x55_live_time: 0.0, x55_real_time: 0.0, $
 	x55_hv: 0.0, x55_det_temp: 0.0, x55_board_temp: 0.0, $
-	x55_error_flag: 0, x55_compress_flag: 0U, x55_data_length: 0U, have_x55: 0, x55_uncompressed: 0, $
+	x55_error_flag: 0, x55_compress_flag: 0U, x55_data_length: 0U, have_x55: 0, $
+	x55_uncompressed: 0, x55_bin_limit: 0, $
 	x55_spectra: fltarr(X55_SPECTRA_LENGTH), x55_spectra_raw: bytarr(X55_DATA_LENGTH_MAX) }
 
 x55_packets = replicate(x55_1, x55_max )
@@ -175,7 +178,9 @@ x55_packets[x55_num].have_x55 = 0		; configure to read first packet
 ; STRSPLIT pattern with Space, comma, slash, colon, Tab (0x09)
 pattern = ' ,/:' + string(byte(9))
 
-theCDHversion = 3.03	; assumes the latest version
+; theCDHversion = 3.03	; assumes the latest version
+; theCDHversion = 3.16	; assumes the latest version
+theCDHversion = 0.0
 
 ;
 ;	DATA lines (packets) have fixed format of 80 characters per line
@@ -194,8 +199,6 @@ while (not eof(lun)) do begin
 		if debug ge 2 then print, 'DEBUG: Packet .'+darray[0]+'.'
 		;  PROCESS MESSAGE PACKETS
 		if (darray[0] eq 'DS.MSGC') then begin
-			; increment to next message
-			if (messages[msg_num].have_msg eq 1) then msg_num += 1L
 			; parse DS.MSGC data line
 			messages[msg_num].have_msg = 1
 			messages[msg_num].time_since_on = double(darray[1])
@@ -203,11 +206,15 @@ while (not eof(lun)) do begin
 			messages[msg_num].msg_text = ""
 			for i=3,nstr-2 do messages[msg_num].msg_text += (" " + darray[i])
 			messages[msg_num].msg_text = strtrim(messages[msg_num].msg_text,2)
+			; increment to next message
+			msg_num += 1L
 		endif
 		; PROCESS LINKED DATA PACKETS:  DS.CDHA is first linked packet
-		if (darray[0] eq 'DS.CDHA') then begin
+		if (darray[0] eq 'DS.CDHA') or (darray[0] eq 'DS.nCDH') then begin
 			; increment to next record - that is, DS.CDHA packets are always first packet
 			; DS.CDHA         4.211  2.527  4.968 13.680   26.62 V3.05 rXRS C=0x0000 I=  0      .
+			;    or for V3.16 (2021-Nov-19)
+			; DS.nCDH         9.215  2.513  5.031 14.840   28.95  3.304   76.0 V3.16 rXRS C=000 .
 			if (data[data_num].have_cdh eq 1) then begin
 				data_num += 1L
 				; clear all other packet "have" flags
@@ -226,6 +233,8 @@ while (not eof(lun)) do begin
 			endif
 			; parse DS.CDHA data line  (next line is example)
 			; DS.CDHA         6.462  2.508  5.004 13.495   22.03 V3.04 OWLS C=0x0000 I=  0      .
+			;    or for V3.16 (2021-Nov-19)
+			; DS.nCDH         9.215  2.513  5.031 14.840   28.95  3.304   76.0 V3.16 rXRS C=000 .
 			data[data_num].have_cdh = 1
 			data[data_num].time_since_on = double(darray[1])
 			data[data_num].sps_2_5V = double(darray[2])
@@ -233,18 +242,27 @@ while (not eof(lun)) do begin
 			data[data_num].power_battery = double(darray[4])
 			data[data_num].power_temperature = double(darray[5])
 			if (theCDHversion le 0) then begin
-				; force check for old packet format first
-				data[data_num].cdh_version = double(strmid(darray[6],1,strlen(darray[6])-1))
-				; stop, 'DEBUG cdh_version conversion !'
-				if (data[data_num].cdh_version eq 0) then begin
-					; try to get cdh_version as last element
-					data[data_num].cdh_version = double(strmid(darray[10],1,strlen(darray[10])-1))
-					; stop, 'DEBUG cdh_version conversion !'
-				endif
-				;  save first instance of cdh_version for use by TTM packets
-				theCDHversion = data[data_num].cdh_version
+				; Look for parameter that starts with "V"
+				iiLimit = n_elements(darray) - 1
+				for ii=6L,iiLimit do begin
+					if (strmid(darray[ii],0,1) eq "V") then break
+				endfor
+				if (ii lt iiLimit) then begin
+					theCDHversion = double(strmid(darray[ii],1,strlen(darray[ii])-1))
+					print, '***** CDH Version number = ', theCDHversion
+					; stop, 'DEBUG CDH version number...'
+				endif else begin
+					theCDHversion = 3.16  ; assumes latest version number
+					stop, 'DEBUG - can not find CDH Version number...'
+				endelse
+				data[data_num].cdh_version = theCDHversion
 			endif else data[data_num].cdh_version = theCDHversion  ; only read Version # once
-			if (theCDHversion ge 3.03) then begin
+			if (theCDHversion ge 3.159) then begin
+				data[data_num].power_3V3_volt = double(darray[6])
+				data[data_num].power_3V3_mAmp = double(darray[7])
+				data[data_num].cdh_instr_name = darray[9]
+				data[data_num].cdh_command_info = darray[10]
+			endif else if (theCDHversion ge 3.029) then begin
 				; also read Instrument Name and command info
 				data[data_num].cdh_instr_name = darray[7]
 				data[data_num].cdh_command_info = darray[8]
@@ -254,7 +272,7 @@ while (not eof(lun)) do begin
 		if (darray[0] eq 'DS.RTC') then begin
 			; parse DS.RTC line
 			data[data_num].have_rtc = 1
-			if (theCDHversion ge 3.03) then begin
+			if (theCDHversion ge 3.029) then begin
 				data[data_num].rtc_time_since_on = double(darray[1])
 				ii=1
 			endif else ii=0
@@ -443,6 +461,7 @@ while (not eof(lun)) do begin
 			x55_packets[x55_num].x55_compress_flag  = data[data_num].x55_compress_flag
 			x55_packets[x55_num].x55_data_length  = data[data_num].x55_data_length
 			x55_packets[x55_num].x55_uncompressed = 0;
+			x55_packets[x55_num].x55_bin_limit = 0;
 			x55_num++;
 		endif
 		if (darray[0] eq 'DS.SX55') then begin
@@ -462,12 +481,14 @@ while (not eof(lun)) do begin
 				endelse
 				;  check if X55 spectrum is ready to uncompress
 				if (x55_spectrum_count ge data[data_num_last_hx55].x55_data_length) and (x55_data_error eq 0) then begin
+					bin_limit = 0
 					if keyword_set(debug) then stop, 'STOP: DEBUG x123_decompress INPUTS...'
 					new_spectrum = x123_decompress( x55_packets[x55_num_last_hx55].x55_spectra_raw, $
 								x55_spectrum_count, $
 								x55_packets[x55_num_last_hx55].x55_compress_flag, $
-								x55_packets[x55_num_last_hx55].x55_data_length, verbose=verbose )
+								x55_packets[x55_num_last_hx55].x55_data_length, bin_limit=bin_limit, verbose=verbose )
 					if keyword_set(debug) then stop, 'STOP: DEBUG x123 decompress OUTPUT...'
+					x55_packets[x55_num_last_hx55].x55_bin_limit = bin_limit
 					if (n_elements(new_spectrum) eq X55_SPECTRA_LENGTH)	then begin
 						x55_packets[x55_num_last_hx55].x55_spectra = new_spectrum
 						x55_packets[x55_num_last_hx55].x55_uncompressed = 1
@@ -491,7 +512,8 @@ data = data[0:data_num-1]
 
 ; exclude bad data without valid time
 wgood = where( data.have_rtc eq 1, numgood )
-if (numgood gt 1) then data=data[wgood]
+; actually, don't exclude these data
+; if (numgood gt 1) then data=data[wgood]
 
 ; trim down to what was actually read
 messages = messages[0:msg_num-1]
