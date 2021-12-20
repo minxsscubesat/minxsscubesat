@@ -1,7 +1,8 @@
 #!/anaconda3/bin/python
 
-import plotly
-import plotly.plotly as py
+# import plotly
+import chart_studio as plotly
+import chart_studio.plotly as py
 import plotly.graph_objs as go
 import pandas as pd
 import numpy as np
@@ -12,9 +13,9 @@ ground_stations = ['Boulder', 'Fairbanks']
 for ground_station in ground_stations:
     # Read data
     if ground_station == 'Boulder':
-        filename = '/Users/minxss/Dropbox/minxss_dropbox/tle/Boulder/passes_latest_BOULDER.csv'
+        filename = '~/Dropbox/minxss_dropbox/tle/Boulder/passes_latest_BOULDER.csv'
     elif ground_station == 'Fairbanks':
-        filename = '/Users/minxss/Dropbox/minxss_dropbox/tle/Fairbanks/passes_latest_FAIRBANKS.csv'
+        filename = '~/Dropbox/minxss_dropbox/tle/Fairbanks/passes_latest_FAIRBANKS.csv'
 
     df = pd.read_csv(filename, header=[1])
 
@@ -43,5 +44,5 @@ for ground_station in ground_stations:
     data = [trace]
     fig = dict(data=data, layout=layout)
     url = py.iplot(fig, filename='{} Passes'.format(ground_station))
-    print('Posted passes for {0} at {1}'.format(ground_station, url.resource))
+    #print('Posted passes for {0} at {1}'.format(ground_station, url.resource))
 
