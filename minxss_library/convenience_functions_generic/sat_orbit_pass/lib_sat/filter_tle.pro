@@ -13,7 +13,7 @@ pro filter_tle,tle
   if count gt 0 then tle=tle[nw]
 
   ; TURN OFF checksum for testing TLE manually installed
-  DO_CHECKSUM = 1
+  DO_CHECKSUM = 0
   if (DO_CHECKSUM ne 0) then begin
     ;check the checksum on line 1
     w=where(~check_checksum(tle[*].line1),count,complement=nw,ncomp=ncount)
