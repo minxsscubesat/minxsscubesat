@@ -140,8 +140,9 @@ endelse
 if keyword_set(rocket) then begin
   ;  force default to be last flight = 36.290
   if (rocket ne 36.258) or (rocket ne 36.275) or (rocket ne 36.286) $
-  		or (rocket ne 36.290) then rocket = 36.290
-endif else rocket = 36.290
+  		or (rocket ne 36.290) or (rocket ne 36.353) then rocket = 36.353
+endif else rocket = 36.353
+print, 'MEGS_SAM_MAKE: using rocket # ', rocket
 
 if (rocket eq 36.258) then begin
     tzero = 18*3600L+32*60L+2.00D0  ; launch time in UT
@@ -175,7 +176,16 @@ if (rocket eq 36.290) then begin
     tdark2 = 490.
     dtdark=10.
 endif
-
+if (rocket eq 36.353) then begin
+    tzero = 17*3600L+25*60L+0.000D0  ; launch time in UT
+    tapogee = 278.
+    dtlight = 30.
+    tdark1 = 65.
+    tdark2 = 490.
+    dtdark=10.
+    data = adata
+    adata = 0.
+endif
 ;
 ;	no need to set T-zero (launch) time as that is already in the raw data file
 ;
