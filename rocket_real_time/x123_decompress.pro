@@ -5,13 +5,16 @@
 ;
 ; Must return lonarr(1024)
 ;
-function x123_decompress, raw_data, raw_count, cmp_info, spect_len, verbose=verbose
+;	10/1/2021	T. Woods, Updated to have bin_limit return value option (issue for 36.353 9/9/21 flight)
+;
+function x123_decompress, raw_data, raw_count, cmp_info, spect_len, bin_limit=bin_limit, verbose=verbose
 
   X123_SPECTRUM_BINS = 1024L
   X123_SPECTRUM_LENGTH = X123_SPECTRUM_BINS * 3L
   spectrum = lonarr(X123_SPECTRUM_BINS)
 
   if (n_params() lt 4) then return, spectrum
+  bin_limit = 0
 
   if (cmp_info eq 0) then begin
     ;
@@ -23,6 +26,7 @@ function x123_decompress, raw_data, raw_count, cmp_info, spect_len, verbose=verb
       strtrim(imax,2), ' bins'
     for i=0L,imax-1 do spectrum[i] = (long(raw_data[i*3L]) $
       + ishft(long(raw_data[1+i*3L]),8) + ishft(long(raw_data[2+i*3L]),16))
+    k_sp = imax
   endif else begin
     ;
     ; compressed data to unpack
@@ -77,6 +81,11 @@ function x123_decompress, raw_data, raw_count, cmp_info, spect_len, verbose=verb
       endfor
     endfor
   endelse
+
+  ; new 10/1/2021 - check on bin limit for decompression / non-zero data
+  bin_limit = k_sp
+  for i=X123_SPECTRUM_BINS-1,0,-1 do if (spectrum[i] ne 0) then BREAK
+  bin_limit = i
 
   return, spectrum
 end
