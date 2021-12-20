@@ -173,9 +173,7 @@ function minxss_XP_signal_from_X123_signal, x123_energy_bins_kev, converted_ener
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-IF keyword_set(VERBOSE) THEN BEGIN
-  message, /INFO, JPMsystime() + ' Running minxss_xp_signal_estimate for corrected inverted photon flux, Be Si photopeaks only, and Be photopeak only'
-ENDIF
+
 ;Corrected inverted photon flux
 output_model_xp_DN_signal_estimate = minxss_xp_signal_estimate(converted_energy_bins, X123_photon_estimate_ARRAY_positive, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, output_minxss_xp_signal_fC=output_model_xp_fC_signal_estimate, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, verbose=verbose)
 ;be_si_photopeak_only
@@ -188,9 +186,6 @@ output_model_xp_DN_signal_estimate_be_photoelectron_only = minxss_xp_signal_esti
 ;calculate uncertatinty on the XP data
 
 If KEYWORD_SET(uncertainty_x123_measured_counts) THEN BEGIN
-  IF keyword_set(VERBOSE) THEN BEGIN
-    message, /INFO, JPMsystime() + ' Running uncertainties for minxss_xp_signal_estimate for corrected inverted photon flux, Be Si photopeaks only, and Be photopeak only'
-  ENDIF
   ;corrected counts
   ;high
   output_model_xp_DN_signal_estimate_high = minxss_xp_signal_estimate(converted_energy_bins, X123_photon_estimate_ARRAY_positive+uncertainty_X123_photon_estimate, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, output_minxss_xp_signal_fC=output_model_xp_fC_signal_estimate_high, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, verbose=verbose)
