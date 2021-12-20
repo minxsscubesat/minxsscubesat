@@ -34,7 +34,7 @@
 ; PROCEDURE:
 ;   1. Task 1: Concatenate data for all telemetry files.
 ;   2. Task 2: Now that all data has been concatenated, sort it by time.
-;   3. Write MinXSS data structures to disk as IDL save file
+;   3. Write DAXSS data structures to disk as IDL save file
 ;
 ;+
 PRO daxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, _extra = _extra, $
@@ -110,7 +110,7 @@ PRO daxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   outputFilename = 'daxss_l0b_' + strmid(yyyydoy, 0, 4) + '_' + strmid(yyyydoy, 4, 3)
   fullFilename = getenv('minxss_data') + path_sep() + 'fm4' + path_sep() + 'level0b' + path_sep() + outputFilename + '.sav'
 
-  IF keyword_set(verbose) THEN message, /INFO, 'Saving MinXSS sorted packets into ' + fullFilename
+  IF keyword_set(verbose) THEN message, /INFO, 'Saving DAXSS sorted packets into ' + fullFilename
   save, sci, log, dump, FILENAME = fullFilename, /COMPRESS, $
         description = 'DAXSS Level 0B data ' + '; Year = '+strmid(yyyydoy, 0, 4) + '; DOY = ' + strmid(yyyydoy, 4, 3) + ' ... FILE GENERATED: '+ JPMsystime()
 
