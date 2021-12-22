@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * Energy resolution (`x123_spectral_resolution_array`) was calculated slightly wrong before. Recalculated with 0.168 keV at Fe-55 energy:  N=13.6. 
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
 * TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+* TODO: In spacecraft_position.pro, line 76, need to add a case for the NORADID of MinXSS-2. Right always defaults to MinXSS-1 NORADID. 
 
 
 ## [v2.0.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v2.0.0)
