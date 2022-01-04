@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 * Flare catalog generation code (minxss_make_flare_catalog.pro)
-* `version` optional input to `minxss_make_level2` and `minxss_make_level3`, to specify which level 1 version of filtering to apply
+* `version` optional input to `minxss_make_level0c`, `minxss_make_level0d`, and `minxss_make_level1` to specify what string will be appended to the output filenames and internal data structure in the corresponding fields
+* `cal_version` optional input to `minxss_make_level` to specify which calibration version should be applied 
+* `version` optional input to `minxss_make_level2` and `minxss_make_level3` to specify which level 1 files to use (level 2 and 3 are just time averages of level 1)
 
 ### Changed
 *  `lowcnt` filter logic changed to correctly filter out shifted spectra for level ≥1
