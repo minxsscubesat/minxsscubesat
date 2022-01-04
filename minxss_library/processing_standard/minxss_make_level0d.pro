@@ -22,7 +22,8 @@
 ;                       Date formats can be either yyyydoy or yyyymmdd, e.g., [2016152] or [20160601]. 
 ;                       Time within a day is ignored here i.e., yyyydoy.fod or yyyymmdd.hhmmmss can be input but time information
 ;                       will be ignored. Code always starts from day start, i.e., fod = 0.0. 
-;                       If timeRange is not provided, then code will process all Level0C data. 
+;                       If timeRange is not provided, then code will process all Level0C data.
+;   version [string]:   Software/data product version to store in filename and internal anonymous structure. Default is '2.0.0'.
 ;
 ; KEYWORD PARAMETERS:
 ;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
@@ -51,8 +52,8 @@
 ;   3. Retrieve and package relevant ancillary data with MinXSS data
 ;   4. Save interpolated, unified array of structures to disk
 ;+
-PRO minxss_make_level0d, fm = fm, dateRange = dateRange, $ 
-                         DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE = VERBOSE
+PRO minxss_make_level0d, fm=fm, dateRange=dateRange, version=version, $ 
+                         DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE=VERBOSE
 
 ;;
 ; 0. Defaults and validity checks 
@@ -64,6 +65,7 @@ IF (fm GT 2) OR (fm LT 1) THEN BEGIN
   print, "ERROR: minxss_make_level0d needs a valid 'fm' value. FM can be 1 or 2."
   return
 ENDIF
+IF version EQ !NULL THEN version = '2.0.0'
 
 ; Defaults and validity checks - dateRange
 dateRangeYYYYDOY = lonarr(2)
@@ -100,8 +102,8 @@ ENDELSE
 
 ; Defaults and validity checks - output filename
 outputPath = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/'
-IF dateRange EQ !NULL THEN outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_mission_length.sav' ELSE $
-  outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_' + strtrim(JPMyyyydoy2yyyymmdd(dateRangeYYYYDOY[0]), 2) + '-' + strtrim(JPMyyyydoy2yyyymmdd(dateRangeYYYYDOY[1]), 2) + '.sav'
+IF dateRange EQ !NULL THEN outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_mission_length_v' + version + '.sav' ELSE $
+  outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_' + strtrim(JPMyyyydoy2yyyymmdd(dateRangeYYYYDOY[0]), 2) + '-' + strtrim(JPMyyyydoy2yyyymmdd(dateRangeYYYYDOY[1]), 2) + '_v ' + version + '.sav'
 
 ;;
 ; 1. Restore the Level 0C mission lenghth file
@@ -177,7 +179,7 @@ ENDIF
 ;;
 
 minxssLevel0D = unifiedArrayofStructuresWithNewTags
-save, minxssLevel0D, FILENAME = outputFilename
+save, minxssLevel0D, filename=outputFilename
 
 ; Export to netCDF
 minxss_make_netcdf, '0d', fm = fm, verbose = verbose

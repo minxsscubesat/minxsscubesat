@@ -14,10 +14,11 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   fm [integer]:    Flight Model number 1 or 2 (default is 1)
-;   yyyydoy	[long]:  Optional input of yyyymmdd date to find telemetry files with that date
-;						         If yyyydoy or yyyymmdd is not provided, then process for all days
-;   yyyymmdd [long]: Optional input of yyyymmdd date to find telemetry files with that date, instead of yyyydoy. 
+;   fm [integer]:     Flight Model number 1 or 2 (default is 1)
+;   yyyydoy	[long]:   Optional input of yyyymmdd date to find telemetry files with that date
+;						          If yyyydoy or yyyymmdd is not provided, then process for all days
+;   yyyymmdd [long]:  Optional input of yyyymmdd date to find telemetry files with that date, instead of yyyydoy.
+;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0'.
 ;   
 ; KEYWORD PARAMETERS:
 ;   VERBOSE:             Set this to print processing messages 
@@ -46,27 +47,20 @@
 ;   4. Sort the selected packets by time of day
 ;	  5. Save the sorted packets (file per day)
 ;
-; MODIFICATION HISTORY:
-;	  2015/09/07: Tom Woods: Updated to provide playback stats
-;   2015/10/23: James Paul Mason: Refactored minxss_processing -> minxss_data and changed affected code to be consistent
-;   2015/10/23: James Paul Mason: Updated formatting of this header and converted FM to a standard format optional input
-;   2016/03/25: James Paul Mason: Added yyyymmdd optional input. 
-;   2016/05/29: Amir Caspi: Look back one day from yyyydoy, since L0B is local time and L0C is UTC; for mission_length, look ahead one day
-;   2016-11-21: James Paul Mason: Null out data variables before restoring another day's data -- otherwise can result in stale data propagation
 ;+
-PRO minxss_make_level0c, fm = fm, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
-                         VERBOSE = VERBOSE, MAKE_MISSION_LENGTH = MAKE_MISSION_LENGTH, MERGE_ONLY = MERGE_ONLY
+PRO minxss_make_level0c, fm=fm, yyyydoy=yyyydoy, yyyymmdd=yyyymmdd, version=version, $
+                         VERBOSE=VERBOSE, MAKE_MISSION_LENGTH=MAKE_MISSION_LENGTH, MERGE_ONLY=MERGE_ONLY
 
 ;
-;	check for valid input parameters
+;	Defaults
 ;
-IF ~keyword_set(fm) THEN fm = 2
+IF fm EQ !NULL THEN fm = 2
 if (fm gt 3) or (fm lt 1) then begin
-  print, "ERROR: minxss_make_level0c needs a valid 'fm' value. FM can be 1, 2, or 3."
+  message, /INFO, "ERROR: minxss_make_level0c needs a valid 'fm' value. FM can be 1, 2, or 3."
   return
 endif
-
 IF yyyymmdd NE !NULL THEN yyyydoy = JPMyyyymmdd2yyyydoy(yyyymmdd, /RETURN_STRING)
+IF version EQ !NULL THEN version = '2.0.0'
 
 if keyword_set(yyyydoy) then begin
 	start_yd = long(yyyydoy[0])
@@ -395,7 +389,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   adcs4 = temporary(adcs4Temp)
   
   ; Save mission length file
-  save, hk, sci, log, diag, image, adcs1, adcs2, adcs3, adcs4, FILENAME = dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'all_mission_length.sav', /COMPRESS, description = 'MinXSS Level 0C data ... All ... FM = '+strtrim(fm,2)+'; FULL MISSION ('+strmid(strtrim(start_yd, 2), 0, 4) + '/' + strmid(strtrim(start_yd, 2), 4, 3)+' - '+strmid(strtrim(stop_yd, 2), 0, 4) + '/' + strmid(strtrim(stop_yd, 2), 4, 3)+') ... FILE GENERATED: '+systime()
+  save, hk, sci, log, diag, image, adcs1, adcs2, adcs3, adcs4, filename=dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'all_mission_length_v' + version + '.sav', /COMPRESS
 
   ; Export to CSV as well (mainly for use with LASP WebTCAD)
   write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'hk_latest.csv', hk, HEADER = tag_names(hk)
@@ -408,7 +402,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   
   ; Export to netCDF
   IF adcs1 NE !NULL AND adcs2 NE !NULL AND adcs3 NE !NULL AND adcs4 NE !NULL AND sci NE !NULL and hk NE !NULL THEN BEGIN
-    minxss_make_netcdf, '0c', fm = fm
+    minxss_make_netcdf, '0c', fm=fm
   ENDIF
 ENDIF ; MAKE_MISSION_LENGTH
 

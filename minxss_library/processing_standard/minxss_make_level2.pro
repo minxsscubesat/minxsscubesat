@@ -12,7 +12,7 @@
 ;   fm [integer]: Flight Model number 1 or 2 (default is 1)
 ;   version [string]: Set this to specify a particular level 1 file to restore for filtering.
 ;                     Defaults to '' (nothing), which is intended for situations where you've
-;                     just processed level 1 but haven't yet appended a version number to the filename.
+;                     just processed level 1 but didn't specify `version` in your call to minxss_make_level1. 
 ;
 ; OPTIONAL INPUTS:
 ;   None
@@ -67,8 +67,8 @@ minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=60, version
 ; Move the generated files to the Level 3 folder
 level1Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/'
 level2Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level2/'
-file_move, level1Folder + '*1_minute_mission_length_' + version + '.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length_v' + version + '.sav', /OVERWRITE
-file_move, level1Folder + '*60_minute_mission_length.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1hour_average_mission_length_v' + version + '.sav', /OVERWRITE
+file_move, level1Folder + '*1_minute_mission_length_v' + version + '.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length_v' + version + '.sav', /OVERWRITE
+file_move, level1Folder + '*60_minute_mission_length_v' + version + '.sav', level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1hour_average_mission_length_v' + version + '.sav', /OVERWRITE
 
 ; Rename the structures in the files from minxsslevel1* to minxsslevel3*
 minxss_rename_level_structure, level2Folder + 'minxss' + strtrim(fm, 2) + '_l2_1minute_average_mission_length_v' + version + '.sav', newlevel = 2

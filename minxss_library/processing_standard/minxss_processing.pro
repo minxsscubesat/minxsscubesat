@@ -14,7 +14,7 @@
 ;   end_date [long or string]:   Same as start_date but for the end date to process (e.g., 20170507). 
 ;                                Defaults to today. 
 ;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
-;   version [string]:            The version tag to put in the output filename and internal anonymous structure. Default is '2.0'
+;   version [string]:            The version tag to put in the output filename and internal anonymous structure. Default is '2.0.0'
 ;   cal_version [string]:        The calibration version tag to put in the internal anonymous structure. Default is '2.0.0'
 ;
 ; KEYWORD PARAMETERS:
@@ -36,8 +36,8 @@
 ;   Just run it! 
 ;
 ;-
-PRO minxss_processing, start_date = start_date, end_date = end_date, fm = fm, version=version, cal_version=cal_version, $
-                       MISSION = MISSION, TO_0C_ONLY = TO_0C_ONLY, COPY_GOES = COPY_GOES, DEBUG = DEBUG
+PRO minxss_processing, start_date=start_date, end_date=end_date, fm=fm, version=version, cal_version=cal_version, $
+                       MISSION=MISSION, TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, DEBUG=DEBUG
 
 TIC
 
@@ -94,7 +94,7 @@ print, 'Processing ' + MinXSS_name + ' L0C and LOG for full mission'
 print, ' '
 print, '***************************************************************'
 
-minxss_make_level0c, fm=fm, /VERBOSE, /MAKE_MISSION_LENGTH
+minxss_make_level0c, fm=fm, version=version, /VERBOSE, /MAKE_MISSION_LENGTH
 
 minxss_make_mission_log, fm=fm, /VERBOSE
 
@@ -104,7 +104,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, 'Processing ' + MinXSS_name + ' L0D for full mission'
   print, ' '
   print, '***************************************************************'
-  minxss_make_level0d, fm=fm, /VERBOSE
+  minxss_make_level0d, fm=fm, version=version, /VERBOSE
   
   print, ' '
   print, '***************************************************************'
@@ -120,7 +120,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, 'Processing ' + MinXSS_name + ' L2 for full mission'
   print, ' '
   print, '***************************************************************'
-  minxss_make_level2, fm=fm, /VERBOSE
+  minxss_make_level2, fm=fm, version=version, /VERBOSE
   
   print, ' '
   print, '***************************************************************'
@@ -131,7 +131,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   IF keyword_set(COPY_GOES) THEN BEGIN
     file_copy, '/timed/analysis/goes/goes_1mdata_widx_20*.sav', getenv('minxss_data') + 'ancillary/goes/', /OVERWRITE
   ENDIF
-  minxss_make_level3, fm=fm, /VERBOSE
+  minxss_make_level3, fm=fm, version=version, /VERBOSE
   
   print, ' '
   print, '***************************************************************'

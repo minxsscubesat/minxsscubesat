@@ -74,7 +74,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
     print, "minxss_make_level1 is processing data for FM " + fm_str
     print, '   START at ', JPMsystime()
   endif
-  IF version EQ !NULL THEN version = '2.0'
+  IF version EQ !NULL THEN version = '2.0.0'
   IF cal_version EQ !NULL THEN cal_version = '2.0.0'
   
   ; Constants
