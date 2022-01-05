@@ -10,12 +10,12 @@
 ;		level [string]: Level name: '0C', '0D', '1', '2', '3', '4'
 ;		
 ; OPTIONAL INPUTS: 
-;   version [integer]: Option to specify MinXSS data version number (default is 2)
+;   fm [integer]:     Flight model number (default is 1)
+;   version [string]: The version tag to put in the output filename and internal anonymous structure. Default is '2.0.0'
 ;   
 ; KEYWORD PARAMETERS:
-;		FM:			  Flight model number (default is 1)
-;		VERBOSE:	Set to print processing messages
-;		DEBUG:		Set to trigger stop points for debugging
+;		VERBOSE: Set to print processing messages
+;		DEBUG:	 Set to trigger stop points for debugging
 ;
 ;	OUTPUTS
 ;		None
@@ -32,75 +32,72 @@
 ;	3.	Write NetCDF file
 ;-
 pro minxss_make_netcdf, level, $
-                        version=version, $
-                        FM=FM, VERBOSE=VERBOSE, DEBUG=DEBUG
-
-if n_params() lt 1 then begin
-	print, 'USAGE: minxss_make_netcdf, level [, /fm, /verbose, /debug]'
-	return
-endif
+                        fm=fm, version=version, $
+                        VERBOSE=VERBOSE, DEBUG=DEBUG
 
 if keyword_set(verbose) then verbose=1 else verbose=0
 if keyword_set(debug) then verbose=1
 
 level_name = strtrim(strupcase(level),2)
 
-if keyword_set(fm) then fm_str = strtrim(fm,2) else fm_str='1'
-if (fm_str ne '1') and (fm_str ne '2') then begin
-	print, 'ERROR with FM number : ' + fm_str + ' - Exiting minxss_make_netcdf()'
-	return
-endif
+IF version EQ !NULL THEN version = '2.0.0'
+
+IF fm EQ !NULL THEN fm = 1
+IF fm EQ 1 THEN BEGIN
+  mission_start_date = '2016-05-16'
+ENDIF ELSE IF fm EQ 2 THEN BEGIN
+  mission_start_date = '2018-12-03'
+ENDIF
+fm = strtrim(fm, 2)
+
 
 ;
 ;	get root data directory dependent on FM number
 ;
 ;  slash for Mac = '/', PC = '\'
 slash = path_sep()
-dir_data = getenv('minxss_data') + slash + 'fm' + fm_str + slash
+dir_data = getenv('minxss_data') + slash + 'fm' + fm + slash
 dir_metadata = dir_data + 'metadata' + slash
-
-;
-;	define Version number
-;
-if keyword_set(version) then begin
-  ver_str = string(long(version),format='(I03)')
-endif else begin
-  ver_str = '003dev'
-endelse
 
 ;
 ;	1.  Setup directory and file names based on Level name provided
 ;
+SETUP: 
 case level_name of
 	'0C':	begin
 			indir = dir_data + 'level0c' + slash
-			infile = 'minxss'+fm_str+'_l0c_all_mission_length.sav'
-			outfile = 'minxss'+fm_str+'_solarSXR_level0C_2016-05-16-mission_V'+ver_str+'.ncdf'
-			attfile = 'minxss'+fm_str+'_solarSXR_level0C_metadata.att'
+			infile = 'minxss'+fm+'_l0c_all_mission_length_v' + version + '.sav'
+			outfile = 'minxss'+fm+'_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			attfile = 'minxss'+fm+'_solarSXR_level0C_metadata.att'
 			end
 	'0D':	begin
 			indir = dir_data + 'level0d' + slash
-			infile = 'minxss'+fm_str+'_l0d_mission_length.sav'
-			outfile = 'minxss'+fm_str+'_solarSXR_level0D_2016-05-16-mission_V'+ver_str+'.ncdf'
-			attfile = 'minxss'+fm_str+'_solarSXR_level0D_metadata.att'
+			infile = 'minxss'+fm+'_l0d_mission_length_v' + version + '.sav'
+			outfile = 'minxss'+fm+'_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			attfile = 'minxss'+fm+'_solarSXR_level0D_metadata.att'
 			end
 	'1': begin
 		 indir = dir_data + 'level1' + slash
-		 infile = 'minxss'+fm_str+'_l1_mission_length.sav'
-		 outfile = 'minxss'+fm_str+'_solarSXR_level1_2016-05-16-mission_V'+ver_str+'.ncdf'
-		 attfile = 'minxss'+fm_str+'_solarSXR_level1_metadata.att'
+		 infile = 'minxss'+fm+'_l1_mission_length_v' + version + '.sav'
+		 outfile = 'minxss'+fm+'_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.ncdf'
+		 attfile = 'minxss'+fm+'_solarSXR_level1_metadata.att'
 		 end
 	'2': begin
 		 indir = dir_data + 'level2' + slash
-		 infile = 'minxss'+fm_str+'_l2_mission_length.sav'
-		 outfile = 'minxss'+fm_str+'_solarSXR_level2_2016-05-16-mission_V'+ver_str+'.ncdf'
-		 attfile = 'minxss'+fm_str+'_solarSXR_level2_metadata.att'
+		 infile = 'minxss'+fm+'_l2_1minute_average_mission_length_v' + version + '.sav'
+		 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+		 attfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_metadata.att'
+		 IF one_minute_done NE !NULL THEN BEGIN
+		   infile = 'minxss'+fm+'_l2_1hour_average_mission_length_v' + version + '.sav'
+		   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+		   attfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_metadata.att'
+		 ENDIF
 		 end
 	'3': begin
 			indir = dir_data + 'level3' + slash
-			infile = 'minxss'+fm_str+'_l3_mission_length.sav'
-			outfile = 'minxss'+fm_str+'_solarSXR_level3_2016-05-16-mission_V'+ver_str+'.ncdf'
-			attfile = 'minxss'+fm_str+'_solarSXR_level3_metadata.att'
+			infile = 'minxss'+fm+'_l3_1day_average_mission_length_v' + version + '.sav'
+			outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			attfile = 'minxss'+fm+'_solarSXR_level3_1day_average_metadata.att'
 			end
 	else:	begin
 			print, 'ERROR with Level Name : ', level_name, ' - Exiting minxss_make_netcdf()'
@@ -140,6 +137,10 @@ case level_name of
 		 minxsslevel2 = minxss_flatten_structure_for_netcdf(minxsslevel2)
 		 write_netcdf, minxsslevel2, indir + outfile, status, $
 			             path=dir_metadata, att_file=attfile, /clobber
+		 IF one_minute_done EQ !NULL THEN BEGIN
+		   one_minute_done = 1
+       GOTO, SETUP
+		 ENDIF
 			end
 	'3': begin
 	    minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
