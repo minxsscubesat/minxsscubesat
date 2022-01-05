@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * `version` optional input to `minxss_make_level0c`, `minxss_make_level0d`, and `minxss_make_level1` to specify what string will be appended to the output filenames and internal data structure in the corresponding fields
 * `cal_version` optional input to `minxss_make_level` to specify which calibration version should be applied 
 * `version` optional input to `minxss_make_level2` and `minxss_make_level3` to specify which level 1 files to use (level 2 and 3 are just time averages of level 1)
+* Improved version of `minxss_fit_2temperature`, including new optional inputs like integration period and energy resolution. Now fits abundance by weighting COR and PHOTO spectra. The old method has been retained, but renamed to `minxss_fit_2temperature_old`
 
 ### Changed
 *  `lowcnt` filter logic changed to correctly filter out shifted spectra for level ≥1
@@ -20,6 +21,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   * Moves ADCS packets (`adcs1`, `adcs2`, `adcs3`, `adcs4`) back by 0.1 seconds
   * Moves science packet (`sci`) back by half the wall clock integration time (`x123_real_time / 2`)
 * Onboard clock drift is now corrected (only a few seconds over the mission)
+
 
 ### Deprecated
 
