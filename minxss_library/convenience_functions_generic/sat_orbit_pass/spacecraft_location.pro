@@ -73,7 +73,7 @@ pro spacecraft_location, time, location, sunlight, id_satellite=id_satellite, $
 		satid = id_satellite
 	endif else begin
 		; satid = 25544		; Satellite ID for ISS
-		satid = 41474L		; Satellite ID for MinXSS
+		satid = 41474L		; Satellite ID for MinXSS-1; id_satellite should be passed in if that's not what you want
 	endelse
 
 	;
