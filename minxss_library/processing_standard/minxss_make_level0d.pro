@@ -133,9 +133,14 @@ unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStruct
 unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SPACECRAFT_IN_SAA', 'float', insertIndex = 38)
 
 ; Get spacecraft location (lon, lat, alt)
-IF fm EQ 1 THEN id_satellite = 41474L ELSE $ 
-                id_satellite = 43758
-spacecraft_location, interpolatedUnifiedPacket.time.jd, spacecraftLocation, sunlightFlag, id_satellite = id_satellite, tle_path = getenv('TLE_dir'), /KEEPNAN
+IF fm EQ 1 THEN BEGIN 
+  id_satellite = 41474L 
+ENDIF ELSE IF fm EQ 2 THEN BEGIN 
+  id_satellite = 43758
+ENDIF ELSE BEGIN
+  id_satellite = 25544 ; ISS
+ENDELSE
+spacecraft_location, interpolatedUnifiedPacket.time.jd, spacecraftLocation, sunlightFlag, id_satellite=id_satellite, tle_path=getenv('TLE_dir'), /KEEPNAN
 
 ; FIXME: 2016-09-05: JPM: Temporary fix for something wrong with spacecraft_location returning too few values
 longitude = reform(spacecraftLocation[0, *])
