@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * `version` optional input to `minxss_make_level0c`, `minxss_make_level0d`, and `minxss_make_level1` to specify what string will be appended to the output filenames and internal data structure in the corresponding fields
 * `cal_version` optional input to `minxss_make_level` to specify which calibration version should be applied 
 * `version` optional input to `minxss_make_level2` and `minxss_make_level3` to specify which level 1 files to use (level 2 and 3 are just time averages of level 1)
+* Improved version of `minxss_fit_2temperature`, including new optional inputs like integration period and energy resolution. Now fits abundance by weighting COR and PHOTO spectra. The old method has been retained, but renamed to `minxss_fit_2temperature_old`
 
 ### Changed
 *  `lowcnt` filter logic changed to correctly filter out shifted spectra for level ≥1
@@ -21,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
   * Moves science packet (`sci`) back by half the wall clock integration time (`x123_real_time / 2`)
 * Onboard clock drift is now corrected (only a few seconds over the mission)
 
+
 ### Deprecated
 
 ### Removed
@@ -30,7 +32,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * Energy resolution (`x123_spectral_resolution_array`) was calculated slightly wrong before. Recalculated with 0.168 keV at Fe-55 energy: N=13.6. This fix had no impact on the irradiance, however, so is not expected to impact users results. 
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
 * TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
-* TODO: In spacecraft_position.pro, line 76, need to add a case for the NORADID of MinXSS-2. Right always defaults to MinXSS-1 NORADID. 
 
 
 ## [v2.0.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v2.0.0)
