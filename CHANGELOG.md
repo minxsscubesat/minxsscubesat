@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
+* MinXSS-2 level 1 data are now available, which (necessarily) includes our calibration! 
 * Flare catalog generation code (minxss_make_flare_catalog.pro)
 * `version` optional input to `minxss_make_level0c`, `minxss_make_level0d`, and `minxss_make_level1` to specify what string will be appended to the output filenames and internal data structure in the corresponding fields
 * `cal_version` optional input to `minxss_make_level` to specify which calibration version should be applied 
