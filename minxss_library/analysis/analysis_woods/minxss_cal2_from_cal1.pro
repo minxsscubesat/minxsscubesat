@@ -4,6 +4,7 @@
 ;	create MinXSS-2 Calibration File from MinXSS-1 Calibration File
 ;
 ;	12/06/2021	Tom Woods:  See the WORD document "MinXSS_2_calibration_update_2021_12_06.docx"
+;	12/20/2021  Tom Woods:  Update with new energy offset comparing FM2 QS to DAXSS-2018
 ;
 ;	.run minxss_cal2_from_cal1.pro
 ;
@@ -11,7 +12,7 @@
 ;
 ;	Read MinXSS-1 Calibration Data File
 ;
-cal1_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm1_response_structure.sav'
+cal1_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm1_response_structure_Ver4.sav'
 print, 'Restoring MinXSS-1 Calibration data from ', cal1_file
 restore, cal1_file
 ; save as reference for comparison plots
@@ -29,7 +30,8 @@ minxss_detector_response.FLIGHT_MODEL = 'FM2'
 ;  Energy Offset for Ground Calibrations
 minxss_detector_response.X123_ENERGY_OFFSET_KEV = -0.265
 ;  Energy Offset for on-orbit solar spectra
-minxss_detector_response.X123_ENERGY_OFFSET_KEV_ORBIT = -0.2108  ; **** flare spectrum compared to FM1 *****
+minxss_detector_response.X123_ENERGY_OFFSET_KEV_ORBIT = -0.2108  ; **** flare spectrum compared to FM1
+minxss_detector_response.X123_ENERGY_OFFSET_KEV_ORBIT = -0.2406  ; **** QS spectrum compared to DAXSS-2018
 ;  Be filter thickness in microns
 minxss_detector_response.X123_BE_FIT_THICKNESS_UM = 11.2
 ;  Photoelectron Efficiency based on Be thickness = exp(-thickness/tau) where tau=20.93 microns
@@ -70,7 +72,7 @@ minxss_detector_response.X123_EFFECTIVE_AREA = $
 ;
 ;	Save new (Version 2) FM2 calibration data results
 ;
-cal2_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm2_response_structure_Ver2.sav'
+cal2_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm2_response_structure_Ver2.1.sav'
 print, ' '
 print, 'Saving MinXSS-2 Calibration file into ', cal2_file
 print, ' '
