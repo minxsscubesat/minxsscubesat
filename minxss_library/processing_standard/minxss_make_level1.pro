@@ -898,7 +898,7 @@ minxsslevel1 = {x123:minxsslevel1_x123, $ ; FIXME: time structure needs to be el
                 
 ;save the data as a .sav and .ncdf files
 save, /compress, minxsslevel1, file=outdir+outfile
-minxss_make_netcdf, '1', fm = fm, verbose = verbose
+minxss_make_netcdf, '1', fm=fm, version=version, verbose=verbose
 
 if keyword_set(verbose) then print, 'END of minxss_make_level1 at ', JPMsystime()
 
