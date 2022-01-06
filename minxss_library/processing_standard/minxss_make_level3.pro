@@ -39,8 +39,8 @@
 ;   1. Call minxss_make_level_xminute for each daily average
 ;   2. Move the files it generates to the Level 3 folder
 ;+
-PRO minxss_make_level3, fm = fm, version = version, $
-                        VERBOSE = VERBOSE
+PRO minxss_make_level3, fm=fm, version=version, $
+                        VERBOSE=VERBOSE
 
 ; Defaults and validity checks - fm
 IF fm EQ !NULL THEN fm = 1

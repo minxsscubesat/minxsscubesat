@@ -20,7 +20,7 @@
 ;   x_minute_average [integer]: Set to the number of minutes you want to average. Default is 1. 
 ;   start_time_cd_array [??]:   Not sure what this is for
 ;   end_time_cd_array [??]:     Not sure what this is for
-;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0'.
+;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0.0'.
 ;   cal_version [string]: Calibration version to store in internal anonymous structure. Default is '2.0.0'.
 ;
 ; KEYWORD PARAMETERS:
@@ -61,15 +61,13 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   ; Defaults 
   if keyword_set(debug) then verbose=1
 
-  if not keyword_set(fm) then fm=1    ; Default Flight Model (FM)
-  if (fm lt 1) then fm=1
-  if (fm gt 2) then fm=2
+  if fm EQ !NULL then fm = 1
   fm_str = strtrim(fm,2)
   if keyword_set(verbose) then begin
     print, "minxss_make_level1 is processing data for FM " + fm_str
     print, '   START at ', systime()
   endif
-  IF version EQ !NULL THEN version = '2.0'
+  IF version EQ !NULL THEN version = '2.0.0'
   IF cal_version EQ !NULL THEN cal_version = '2.0.0'
 
   if fm eq 1 then LOW_LIMIT_DEFAULT = 7.0 $
@@ -86,7 +84,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   endif
   fmdir = ddir + path_sep() + 'fm' + fm_str + path_sep()
   indir = fmdir + 'level0d' +  path_sep()
-  infile = 'minxss' + fm_str + '_l0d_mission_length.sav'
+  infile = 'minxss' + fm_str + '_l0d_mission_length_v' + version + '.sav'
   if keyword_set(verbose) then print, '     Reading L0D data'
   restore, indir+infile    ; variable is MINXSSLEVEL0D
 
@@ -241,7 +239,6 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     minxss_calibration_file = 'minxss_fm2_response_structure.sav'
     minxss_calibration_file_path = cal_dir + minxss_calibration_file
     restore, minxss_calibration_file_path
-    ; FM-2 values  To-Do  (defined by Chris Moore but not uploaded to dropbox yet!)
     nominal_x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
     energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
   endelse
@@ -261,48 +258,13 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
 
   ; set the start and end times in jd for the MinXSS-1 mission
-  ; choose the time frame if interest to plot
-  ; define the index positions
-  index_month = 1
-  index_day = 2
-  index_year = 0
-  index_hour = 3
-  index_minute = 4
-  index_second = 5
-  ; choose the time frame if interest to plot
-  ; result = julday(month, day, year, hour, minute, second)
-  ; start time = june 9, 2016, 00:00:00 ut
-  ; start_date
-  start_date_month = 06
-  start_date_day = 09
-  start_date_year = 2016
-  start_date_hour = 00
-  start_date_minute = 00
-  start_date_second = 00
-  start_time_jd = julday(start_date_month, start_date_day, start_date_year, start_date_hour, start_date_minute, start_date_second)
- ; end time = april 25, 2017, 23:59:59 ut
-  if keyword_set(start_time_cd_array) then begin
-    start_time_jd_nominal = start_time_jd
-    start_time_jd = julday(start_time_cd_array[index_month], start_time_cd_array[index_day], start_time_cd_array[index_year], start_time_cd_array[index_hour], start_time_cd_array[index_minute], start_time_cd_array[index_second])
-    if start_time_jd lt start_time_jd_nominal then print, '!!Warning - start time is earlier than any MinXSS data!!!
-  endif
-  ; end time = april 25, 2017, 23:59:59 ut
-  ; end_date
-  end_date_month = 04
-  end_date_day = 25
-  end_date_year = 2017
-  end_date_hour = 23
-  end_date_minute = 59
-  end_date_second = 59
-  end_time_jd = julday(end_date_month, end_date_day, end_date_year, end_date_hour, end_date_minute, end_date_second)
-
-  if keyword_set(end_time_cd_array) then begin
-    end_time_jd_nominal = end_time_jd
-    end_time_jd = julday(end_time_cd_array[index_month], end_time_cd_array[index_day], end_time_cd_array[index_year], end_time_cd_array[index_hour], end_time_cd_array[index_minute], end_time_cd_array[index_second])
-    if end_time_jd lt end_time_jd_nominal then print, '!!Warning - end time is later than any MinXSS data!!!
-  endif
-
-  if start_time_jd gt end_time_jd then print, '!! ERROR !! start time is later than end time!!!'
+  IF fm EQ 1 THEN BEGIN 
+    start_time_jd = jpmiso2jd('2016-05-16T10:05:26Z')
+    end_time_jd = jpmiso2jd('2017-05-06T02:37:26Z')
+  ENDIF ELSE IF fm EQ 2 THEN BEGIN
+    start_time_jd = jpmiso2jd('2018-12-03T18:34:00Z')
+    end_time_jd = jpmiso2jd('2019-01-07T18:35:38Z')
+  ENDIF
 
   ; Calculate the number of total frames based on the defined start_time, end_time and x_minute_average chossen
   n_time_frames = (end_time_jd - start_time_jd)/time_average_day
