@@ -402,7 +402,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   
   ; Export to netCDF
   IF adcs1 NE !NULL AND adcs2 NE !NULL AND adcs3 NE !NULL AND adcs4 NE !NULL AND sci NE !NULL and hk NE !NULL THEN BEGIN
-    minxss_make_netcdf, '0c', fm=fm
+    minxss_make_netcdf, '0c', fm=fm, version=version
   ENDIF
 ENDIF ; MAKE_MISSION_LENGTH
 
