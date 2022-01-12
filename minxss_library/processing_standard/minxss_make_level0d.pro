@@ -187,7 +187,7 @@ minxssLevel0D = unifiedArrayofStructuresWithNewTags
 save, minxssLevel0D, filename=outputFilename
 
 ; Export to netCDF
-minxss_make_netcdf, '0d', fm = fm, verbose = verbose
+minxss_make_netcdf, '0d', fm=fm, verbose=verbose, version=version
 
 IF keyword_set(VERBOSE) THEN message, /INFO, systime() + ' Finished processing Level 0D for dates ' + strtrim(dateRangeYYYYDOY[0], 2) + ' - ' + strtrim(dateRangeYYYYDOY[1], 2)
 END
