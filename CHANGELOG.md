@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
 * TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
 
-## [v3.1.0]
+## [v3.1.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v3.1.0)
 
 ### Added
 * MinXSS-2 level 1 data are now available, which (necessarily) includes our calibration! 
