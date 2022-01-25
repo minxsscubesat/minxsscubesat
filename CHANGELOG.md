@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
+* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+
+## [v3.1.0]
+
+### Added
 * MinXSS-2 level 1 data are now available, which (necessarily) includes our calibration! 
 * Flare catalog generation code (minxss_make_flare_catalog.pro)
 * `version` optional input to `minxss_make_level0c`, `minxss_make_level0d`, and `minxss_make_level1` to specify what string will be appended to the output filenames and internal data structure in the corresponding fields
@@ -31,8 +45,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Fixed
 * Energy resolution (`x123_spectral_resolution_array`) was calculated slightly wrong before. Recalculated with 0.168 keV at Fe-55 energy: N=13.6. This fix had no impact on the irradiance, however, so is not expected to impact users results. 
-* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
-* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
 
 
 ## [v2.0.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v2.0.0)
