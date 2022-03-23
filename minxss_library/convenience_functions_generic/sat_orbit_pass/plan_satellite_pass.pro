@@ -17,6 +17,7 @@
 ;
 ;	INPUT
 ;		station		Required input to specify which Ground Station by name ("Boulder", "Fairbanks")
+;						Expanded in 2022 to include India, Singapore, and Taiwan
 ;		date_range	Option to specify JD date range, default is to calculate passes for next 10 days
 ;		debug		Option to not download latest TLE while debugging this procedure
 ;		verbose		Option to print information while running
@@ -50,12 +51,14 @@
 ;								and addition of Fairbanks Ground Station
 ;		2017-Mar-27  T. Woods  Updated to be generic pass planning tool with Ground Station definition file
 ;								and list of satellites for that ground station in a definition file too
+;		2022-Feb-16  T. Woods  Updated so Time Zone offset can be fraction of hour (IST is +5.5 hours)
 ;
 ;   Space-Track.org names
 ;	-------------------
 ;	MinXSS-1 =  MINXSS
 ;	QB50 = ISS (ZARYA)   		 (for initial testing)
 ;	MinXSS-2 = IRIS (ESRO 2B)	 (for initial testing)
+;	INSPIRESAT-1    (2022-Feb-14 launch)
 ;
 
 pro plan_satellite_pass, station, date_range, debug=debug, verbose=verbose, $
@@ -67,6 +70,7 @@ pro plan_satellite_pass, station, date_range, debug=debug, verbose=verbose, $
 ;
 if (n_params() lt 1) then begin
 	print, 'WARNING: input the station name "Boulder" or "Fairbanks" to run plan_satellite_pass.pro !'
+	print, '         Other station names can be "India", "Singapore" or "Taiwan".'
 	station = 'Boulder'
 	print, 'WARNING: default station ', station, ' is being used.'
 endif
@@ -163,7 +167,8 @@ latitude = double(strtrim(inStr,2))
 READF, UNIT1, inStr		; read hours from UT and Zone name
 str2 = strsplit( inStr, ',', /extract )
 if (n_elements(str2) ne 2) then goto, DoneFile1
-zone_hours = long(strtrim(str2[0],2))
+;  2022 Update:  change zone_hours to be float instead of long for IST being +5.5 hours from UTC
+zone_hours = float(strtrim(str2[0],2))
 zone_name = strupcase(strtrim(str2[1],2))
 
 ; Clean up file reading
