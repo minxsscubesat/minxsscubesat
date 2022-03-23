@@ -81,5 +81,18 @@ if keyword_set(minxss1) then begin
 	restore, mdir+mfile1   ; minxsslevel1 variable is structure
 endif
 
+;
+;	make Time Series plot with DAXSS slow counts and GOES XRS irradiance
+;
+setplot
+cc=rainbow(7)
+
+xrange = [jd1, jd2]
+yrange1 = [1E2, 1E6]
+yrange2 = [1E-8,1E-4]
+p1_title = 'DAXSS Flare '+strtrim(long(date),2)
+
+p1 = plot( daxss_level1.time_jd, daxss_level1.x123_slow_count, xrange=xrange, xs=1, /ylog, yrange=yrange1, ys=1, title=p1_title )
+
 return
 end
