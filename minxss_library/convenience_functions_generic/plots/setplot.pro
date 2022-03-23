@@ -1,26 +1,25 @@
-;  
+;
 ;	setplot.pro
 ;
 ;	Set plot font, thickness, and background
 ;
 ;	Default values are:
 ;		font = 'Helvetica Bold'
-;		fsize = font size
 ;		thick = 2
 ;		and  /black is NOT set
 ;
 ;	Tom Woods	11/20/03
 ;
-pro  setplot, font=font, fsize=fsize, thick=thick, black=black
+pro  setplot, font=font, fontsize=fontsize, thick=thick, black=black
 
 ;
 ;  Set FONT
 ;
 if not keyword_set(font) then font = 'Helvetica'
-if not keyword_set(fsize) then fsize=9
+if not keyword_set(fontsize) then fontsize=9
 !p.font = 1
 if (!d.name eq 'PS') then begin
-  device, set_font=font, font_size=fsize, /TT_FONT
+  device, set_font=font, font_size=fontsize, /TT_FONT
 endif else begin
   device, set_font=font, /TT_FONT
 endelse
@@ -47,6 +46,14 @@ endif else begin
   !p.background = '00FFFFFF'X	; white
   !p.color = 0			; black
 endelse
+
+;
+;	2021 Addition
+;	Set default LABEL_DATE
+;
+pdate=label_date(date_format=['%N-%D','%Y'])
+print, "setplot: Plot with JD dates (MM-DD, YYYY)> "
+print, " >>> plot, x, y, XTICKFORMAT='LABEL_DATE', XTICKUNITS=['Time','Time']"
 
 return
 end
