@@ -3,9 +3,9 @@
 ;   minxss_create_uniform_packet_times.pro
 ;
 ; PURPOSE:
-;   Given MinXSS standard packets, generates an interpolated time array centered on science integration time midpoints, when possible.  
-;   Note that the purpose of Level 0D is for preparation for science Level 1. 
-;   However, this code may also useful for automation scripts and thus can handle cases where no sci packets are available. 
+;   Given MinXSS standard packets, generates an interpolated time array centered on science integration time midpoints, when possible.
+;   Note that the purpose of Level 0D is for preparation for science Level 1.
+;   However, this code may also useful for automation scripts and thus can handle cases where no sci packets are available.
 ;
 ; CATEGORY:
 ;   Level 0D
@@ -16,33 +16,33 @@
 ;                                                  /VERBOSE)
 ;
 ; INPUTS:
-;   adcs1 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL. 
-;   adcs2 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL. 
-;   adcs3 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL. 
-;   adcs4 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL. 
-;   hk    [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL. 
-;   sci   [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL. 
-;   Note: If all 6 of these are !NULL, there's obviously nothing to process so code will return -1. 
+;   adcs1 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL.
+;   adcs2 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL.
+;   adcs3 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL.
+;   adcs4 [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL.
+;   hk    [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL.
+;   sci   [structure]: Standard MinXSS processing array with sorted time (e.g., Level 0C processed). Can be !NULL.
+;   Note: If all 6 of these are !NULL, there's obviously nothing to process so code will return -1.
 ;
 ; OPTIONAL INPUTS:
-;   packetTimeEmphasis [string]: Set this to 'adcs1', 'adcs2', 'adcs3', 'adcs4', 'hk', or 'sci' to place strongest emphasis on 
-;                                that packet type for time inte rpolation. 
-;                                sci is the default. 
+;   packetTimeEmphasis [string]: Set this to 'adcs1', 'adcs2', 'adcs3', 'adcs4', 'hk', or 'sci' to place strongest emphasis on
+;                                that packet type for time inte rpolation.
+;                                sci is the default.
 ;                                If sci is !NULL, the user must provide the desired packetTimeEmphasis.
 ;   fm [integer]:                Flight Model number 1 or 2 (default is 1)
-;   
+;
 ; KEYWORD PARAMETERS:
-;   DO_PACKET_UNIFICATION: Set this to interpolate and unify minxss packet types to common time. Outputs to outputInterpolatedUnifiedPacket. 
+;   DO_PACKET_UNIFICATION: Set this to interpolate and unify minxss packet types to common time. Outputs to outputInterpolatedUnifiedPacket.
 ;   VERBOSE:               Set this to print processing messages
-;   DO_MULTITHREAD:        Set this to use multithreading - each packet type processed in parallel. Note: as of 2016/07/25 this is not yet working. 
-;                          When run sequentially on a Late 2015 27” 5K iMac with quad-core 3.3 GHz Intel Core i5 and 3 threads, it took 20 minutes to 
-;                          process ~2 months of data. Results will vary. 
+;   DO_MULTITHREAD:        Set this to use multithreading - each packet type processed in parallel. Note: as of 2016/07/25 this is not yet working.
+;                          When run sequentially on a Late 2015 27” 5K iMac with quad-core 3.3 GHz Intel Core i5 and 3 threads, it took 20 minutes to
+;                          process ~2 months of data. Results will vary.
 ;   DEBUG:                 Set this to hit a STOP at the best place to debug multithread issues. Unforunately, multithreading prevents
 ;                          code halting, and any console prints inside the threads. So the code being run in the thread must be called
-;                          separately from the command line to debug it. 
-;                 
+;                          separately from the command line to debug it.
+;
 ; OUTPUTS:
-;   timeArray [structure]: Dates and times interpolated according to packetTimeEmphasis. Structure contains tags: 
+;   timeArray [structure]: Dates and times interpolated according to packetTimeEmphasis. Structure contains tags:
 ;                          yyyymmdd [lonarr]: 4-digit year, 2-digit month, 2-digit day
 ;                          yyyydoy  [lonarr]: 4-digit year, 3-digit day of year
 ;                          hhmmss   [strarr]: 2-digit hour, 2-digit minute, 2-digit second
@@ -61,7 +61,7 @@
 ;   Requires minxss code package
 ;   All inputs must be provided, even if one or more are !NULL
 ;
-; EXAMPLE: 
+; EXAMPLE:
 ;   timeArray = minxss_create_uniform_packet_times(adcs1, adcs2, adcs3, adcs4, hk, sci, outputInterpolatedUnifiedPacket = interpolatedUnifiedPacket, /DO_PACKET_UNIFICATION, /VERBOSE)
 ;
 ; PROCEDURE:
@@ -73,9 +73,9 @@
 ; MODIFICATION HISTORY:
 ;   2015-11-02: James Paul Mason: Wrote program
 ;   2016-07-25: James Paul Mason: Added a new DO_MULTITHREAD keyword. The threads weren't working suddenly so just defaulted to new code that runs sequentially.
-;                                 Also added a new DEBUG keyword to suggest the location for debugging of multithreading stuff. 
-;   2016-09-05: James Paul Mason: Replaced for loop that did timeArray creation with a 10,000x faster method: structure replicate 
-;   2016-12-27: James Paul Mason: Found that the time array was not including the computed yyyydoy input. It was initialized and computed but not populated. Fixed. 
+;                                 Also added a new DEBUG keyword to suggest the location for debugging of multithreading stuff.
+;   2016-09-05: James Paul Mason: Replaced for loop that did timeArray creation with a 10,000x faster method: structure replicate
+;   2016-12-27: James Paul Mason: Found that the time array was not including the computed yyyydoy input. It was initialized and computed but not populated. Fixed.
 ;+
 FUNCTION minxss_create_uniform_packet_times, adcs1, adcs2, adcs3, adcs4, hk, sci, $
                                              fm = fm, packetTimeEmphasis = packetTimeEmphasis, outputInterpolatedUnifiedPacket = outputInterpolatedUnifiedPacket, $
@@ -91,7 +91,7 @@ IF n_params() LT 6 THEN BEGIN
 ENDIF
 
 ; Check that at least one of the input parameters is not !NULL
-IF adcs1 EQ !NULL AND adcs1 EQ !NULL AND adcs1 EQ !NULL AND adcs1 EQ !NULL AND adcs1 EQ !NULL AND adcs1 EQ !NULL AND adcs1 EQ !NULL THEN BEGIN
+IF adcs1 EQ !NULL AND adcs2 EQ !NULL AND adcs3 EQ !NULL AND adcs4 EQ !NULL AND hk EQ !NULL AND sci EQ !NULL THEN BEGIN
   message, /INFO, 'All 6 inputs were !NULL, i.e. nothing to process'
   return, -1
 ENDIF
@@ -168,7 +168,7 @@ IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' Finished convertin
 ;;
 
 IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
-  
+
   ; Write packets to disk because with multithreading IDLBridge can't pass structures or use common blocks
   save, adcs1, FILENAME = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs1Temporary.sav'
   save, adcs2, FILENAME = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs2Temporary.sav'
@@ -176,13 +176,13 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
   save, adcs4, FILENAME = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs4Temporary.sav'
   save, hk, FILENAME = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/hkTemporary.sav'
   save, sci, FILENAME = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/sciTemporary.sav'
-  
+
   IF packetTimeEmphasis EQ 'sci' THEN BEGIN
     tic
-  
+
     ; Create multi-thread object (IDLBridge) to use all but one of the system threads - results in 4x faster processing with 7 threads, SSD
     oBridge = objarr(!cpu.tpool_nthreads - 1 > 1)
-    
+
     FOR threadIndex = 0, oBridge.length - 1 DO BEGIN
       oBridge[threadIndex] = obj_new('IDL_IDLBridge', callback = 'minxss_create_uniform_packet_time_mulithread_callback')
       oBridge[threadIndex].setProperty, userData = 0 ; 0 = free, 1 = busy, 2 = complete
@@ -198,10 +198,10 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
     ; Multi-threaded loop
     WHILE packetsProcessed LT numberOfPacketTypes DO BEGIN
       IF keyword_set(DO_MULTITHREAD) THEN BEGIN
-        
+
         FOR threadIndex = 0, oBridge.length - 1 DO BEGIN
           oBridge[threadIndex].getProperty, userdata = threadStatus
-  
+
           ; Check the status of thread
           SWITCH (threadStatus) OF
             0: BEGIN
@@ -236,7 +236,7 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                   IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' Setting time threshold for interpolation'
                   oBridge[threadIndex]->SetVar, 'timeThresholdSeconds', 300.
                 ENDIF ELSE oBridge[threadIndex]->SetVar, 'timeThresholdSeconds', 60.
-                
+
                 IF keyword_set(DEBUG) THEN BEGIN
                   message, /INFO, JPMsystime() + ' Stopping for debug. You should run:'
                   packetToProcessFilename = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs1Temporary.sav' ; change *temporary as appropriate
@@ -245,7 +245,7 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                   packetInterpolated = minxss_telemetry_interpolate(packetToProcessFilename, timeToInterpolateTo, timeThresholdSeconds, fm = fm)
                   STOP
                 ENDIF
-                
+
                 oBridge[threadIndex]->Execute, "packetInterpolated = minxss_telemetry_interpolate(packetToProcessFilename, timeToInterpolateTo, timeThresholdSeconds, fm = fm)", /NOWAIT
                 nextIndex++
               ENDIF
@@ -300,11 +300,11 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
         ENDFOR ; each thread
       ENDIF ELSE BEGIN ; end multithread, begin sequential
         timeToInterpolateTo = packetTimeStampsSpaceCraftTime
-        
+
         IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' Starting ADCS 1 telemetry interpolation.'
         adcs1Interpolated = minxss_telemetry_interpolate(getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs1Temporary.sav', timeToInterpolateTo, 300., fm = fm, /NO_SAVE)
         packetsProcessed++
-        
+
         IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' Starting ADCS 2 telemetry interpolation.'
         adcs2Interpolated = minxss_telemetry_interpolate(getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs2Temporary.sav', timeToInterpolateTo, 300., fm = fm, /NO_SAVE)
         packetsProcessed++
@@ -324,24 +324,24 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
         IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' sci telemetry interpolation unnecessary since all other packets interpolated to sci.'
         sciInterpolated = sci
         packetsProcessed++
-        
+
       ENDELSE ; end sequential processing (not multithreaded)
-        
+
     ENDWHILE ; still packets to process
 
-    IF keyword_set(VERBOSE) THEN message, /INFO, 'Time to complete interpolation = ' + JPMPrintNumber(toc(), /NO_DECIMALS) + ' seconds' 
+    IF keyword_set(VERBOSE) THEN message, /INFO, 'Time to complete interpolation = ' + JPMPrintNumber(toc(), /NO_DECIMALS) + ' seconds'
   ENDIF ELSE BEGIN ; If packet emphasis is sci, else it's any other emphasis
     ; TODO: Implement interpolation for other packet types
   ENDELSE
-  
+
   unifiedStructure = !NULL
   IF packetTimeEmphasis NE 'sci' THEN BEGIN
     FOR timeIndex = 0, n_elements(packetTimeStampsSpaceCraftTime) - 1 DO BEGIN
-      
+
       ; Strip out redundant tags from all packet types
       adcs1StrippedOneTime = JPMRemoveTags(adcs1Interpolated[timeIndex], ['APID', 'SEQ_FLAG', 'DATA_LENGTH', 'TIME', 'CDH_INFO', 'ADCS_GROUP', 'SPAREBYTE', 'CHECKBYTES', 'SYNCWORD', 'TAI_SECONDS', 'JULIAN_DATE_TAI', 'TIME_VALID', 'ORBIT_TIME'])
-      adcs1StrippedOneTime = JPMRemoveTags(adcs1StrippedOneTime, 'ATTITUDE_FILTER_RESIDUAL1') ; TODO: This shouldn't be in this structure at all, check minxss_make_level0b.pro 
-      adcs1StrippedOneTime = JPMChangeTags(adcs1StrippedOneTime, 'SEQ_COUNT', 'ADCS1_SEQ_COUNT') 
+      adcs1StrippedOneTime = JPMRemoveTags(adcs1StrippedOneTime, 'ATTITUDE_FILTER_RESIDUAL1') ; TODO: This shouldn't be in this structure at all, check minxss_make_level0b.pro
+      adcs1StrippedOneTime = JPMChangeTags(adcs1StrippedOneTime, 'SEQ_COUNT', 'ADCS1_SEQ_COUNT')
       adcs2StrippedOneTime = JPMRemoveTags(adcs2Interpolated[timeIndex], ['APID', 'SEQ_FLAG', 'DATA_LENGTH', 'TIME', 'CDH_INFO', 'ADCS_INFO', 'ADCS_GROUP', 'SPAREBYTE', 'CHECKBYTES', 'SYNCWORD'])
       adcs2StrippedOneTime = JPMChangeTags(adcs2StrippedOneTime, 'SEQ_COUNT', 'ADCS2_SEQ_COUNT')
       adcs3StrippedOneTime = JPMRemoveTags(adcs3Interpolated[timeIndex], ['APID', 'SEQ_FLAG', 'DATA_LENGTH', 'TIME', 'CDH_INFO', 'ADCS_INFO', 'ADCS_GROUP', 'SPAREBYTE', 'CHECKBYTES', 'SYNCWORD'])
@@ -355,32 +355,32 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
       hkStrippedOneTime    = JPMChangeTags(hkStrippedOneTime, 'X123_FAST_COUNT', 'X123_FAST_COUNT_HK')
       hkStrippedOneTime    = JPMChangeTags(hkStrippedOneTime, 'X123_SLOW_COUNT', 'X123_SLOW_COUNT_HK')
       hkStrippedOneTime    = JPMChangeTags(hkStrippedOneTime, 'X123_DET_TEMP', 'X123_DET_TEMP_HK')
-      hkStrippedOneTime    = JPMChangeTags(hkStrippedOneTime, 'X123_BRD_TEMP', 'X123_BRD_TEMP_HK')    
+      hkStrippedOneTime    = JPMChangeTags(hkStrippedOneTime, 'X123_BRD_TEMP', 'X123_BRD_TEMP_HK')
       sciStrippedOneTime   = JPMRemoveTags(sciInterpolated[timeIndex], ['APID', 'SEQ_FLAG', 'DATA_LENGTH', 'TIME', 'CDH_INFO', 'ADCS_INFO', 'ADCS_GROUP', 'SPAREBYTE', 'CHECKBYTES', 'SYNCWORD'])
       sciStrippedOneTime   = JPMChangeTags(sciStrippedOneTime, 'SEQ_COUNT', 'SCI_SEQ_COUNT')
-      
+
       ; Merge structures
       time = timeArray
       unifiedStructureOneTime = create_struct(time[timeIndex], adcs1StrippedOneTime, adcs2StrippedOneTime, adcs3StrippedOneTime, adcs4StrippedOneTime, hkStrippedOneTime, sciStrippedOneTime)
-      
+
       ; Add to array of structures
       unifiedStructure = [unifiedStructure, unifiedStructureOneTime]
     ENDFOR ; timeIndex loop
   ENDIF ELSE BEGIN ; If emphasis not science, else is science emphasis
     FOR timeIndex = 0, n_elements(packetTimeStampsSpaceCraftTime) - 1 DO BEGIN
       IF timeIndex EQ 0 THEN message, /INFO, JPMsystime() + ' There are ' + JPMPrintNumber(n_elements(packetTimeStampsSpaceCraftTime), /NO_DECIMALS) + ' points in time for Level 0D'
-      
+
       ;
       ; Level 0D tag names in order to appear when doing: help, minxsslevel0d, /str
       ;
-      
+
       time = timeArray
-      
+
       ; State and power telemetry
       level0dTags = ['flight_model', 'spacecraft_mode', 'adcs_mode', 'eclipse', 'radio_transmitted', 'radio_received', $
                      'eps_5v_cur', 'eps_5v_volt', 'sps_xps_pwr_3v', 'sps_xps_pwr_a5v', 'sps_xps_pwr_d5v', $
                      'switch_sps', 'switch_adcs', 'switch_battery_heater']
-      
+
       ; Attitude and orbit information
       level0dTags = [level0dTags, 'measured_attitude_valid', $
                      'xact_wheel1_measured_speed', 'xact_wheel2_measured_speed', 'xact_wheel3_measured_speed', $
@@ -388,13 +388,13 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                      'xact_measured_sun_body_vector_x', 'xact_measured_sun_body_vector_y', 'xact_measured_sun_body_vector_z', $
                      'xact_sun_point_angle_error', $
                      'orbit_position_ECI1', 'orbit_position_ECI2', 'orbit_position_ECI3', $
-                     'orbit_position_ECEF1', 'orbit_position_ECEF2', 'orbit_position_ECEF3']                    
-      
+                     'orbit_position_ECEF1', 'orbit_position_ECEF2', 'orbit_position_ECEF3']
+
       ; SPS and XP data
       level0dTags = [level0dTags, 'sps_xps_temperature', 'sps_dark_data_hk', 'sps_dark_data_sci', $
                      'sps_sum_hk', 'sps_xp_integration_time', 'sps_x_hk', 'sps_y_hk', 'sps_data_sci', $
-                     'xps_data_hk', 'xps_data_sci'] 
-      
+                     'xps_data_hk', 'xps_data_sci']
+
       ; X123
       level0dTags = [level0dTags, 'x123_board_temperature', 'x123_detector_temperature', $
                      'x123_accum_time', 'x123_live_time', 'x123_real_time', $
@@ -402,17 +402,17 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                      'x123_gp_count', $
                      'x123_high_voltage', $
                      'x123_radio_flag', $
-                     'x123_spect_len', $ 
+                     'x123_spect_len', $
                      'x123_fast_count', 'x123_slow_count', $
                      'x123_spectrum']
-                     
+
       ; Time
       level0dTags = [level0dTags, 'time']
-      
+
       ; Create implicit eclipse flag based on SPS sum
       spsSumScience = total(sciInterpolated[timeIndex].sps_data, 1)
       IF spsSumScience LT 2E6 THEN eclipse_state = 1 ELSE eclipse_state = 0
-      
+
       ; Do all of the corresponding values in the same order. Be very careful about order here
       level0dValues = list(hkInterpolated[timeIndex].flight_model, sciInterpolated[timeIndex].spacecraft_mode, sciInterpolated[timeIndex].adcs_mode, eclipse_state, hkInterpolated[timeIndex].radio_transmitted, hkInterpolated[timeIndex].radio_received, $
                            hkInterpolated[timeIndex].eps_5v_cur, hkInterpolated[timeIndex].cdh_5v, hkInterpolated[timeIndex].sps_xps_pwr_3v, hkInterpolated[timeIndex].sps_xps_pwr_a5v, hkInterpolated[timeIndex].sps_xps_pwr_d5v, $
@@ -436,15 +436,15 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
                            sciInterpolated[timeIndex].x123_fast_count, sciInterpolated[timeIndex].x123_slow_count, $
                            sciInterpolated[timeIndex].x123_spectrum, $
                            time[timeIndex])
-      
+
       ; Add to array of structures
       temphash = orderedhash(level0dTags, level0dValues)
       unifiedStructure = [unifiedStructure, temphash.ToStruct(MISSING = !VALUES.F_NAN)]
     ENDFOR ; timeIndex loop
   ENDELSE ; Emphasis on sci
-  
+
   outputInterpolatedUnifiedPacket = unifiedStructure
-  
+
   ; Clean up disk
   file_delete, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs1Temporary.sav'
   file_delete, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs2Temporary.sav'
@@ -452,7 +452,7 @@ IF keyword_set(DO_PACKET_UNIFICATION) THEN BEGIN
   file_delete, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/adcs4Temporary.sav'
   file_delete, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/hkTemporary.sav'
   file_delete, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0d/sciTemporary.sav'
-   
+
 ENDIF ; outputInterpolatedUnifiedPacket set
 
 IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' Finished merger of all telemetry to common/unified time'
