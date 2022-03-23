@@ -200,7 +200,7 @@ parameters.uncertainty_abund_fe = -1.0
 parameters.uncertainty_abund_ca = -1.0
 
 if (verbose ne 0) then begin
-	print, '***************** Temperature Fit ***********************'
+	print, '***************** Temperature-1 Fit ***********************'
 	print, '***** Temp-1 = ', parameters.logT
 	print, '***** EM-1   = ', parameters.cor_density
 	print, '***** AF-1   = ', parameters.abundance
@@ -235,7 +235,7 @@ parameters.cor_density = MODEL_DEM * cf_normalize_fit[cf_wmin]
 parameters.abundance = cf_weight[cf_wmin] * CF + (1. - cf_weight[cf_wmin]) * PHOTOF
 
 if (verbose ne 0) then begin
-	print, '***************** Abundance Fit ***********************'
+	print, '***************** Abundance-1 Fit ***********************'
 	print, '***** Temp-1 = ', parameters.logT
 	print, '***** EM-1   = ', parameters.cor_density
 	print, '***** AF-1   = ', parameters.abundance
@@ -580,6 +580,51 @@ parameters.logT_2 = wch_temp[wmin2]
 parameters.cor_density_2 = MODEL_DEM * normalize_fit2[wmin2]
 parameters.photo_density_2 = 0.0
 parameters.abundance_2 = model2_af
+
+
+if (verbose ne 0) then begin
+	print, '***************** Temperature-2 Fit ***********************'
+	print, '***** Temp-2 = ', parameters.logT_2
+	print, '***** EM-2   = ', parameters.cor_density_2
+	print, '***** AF-2   = ', parameters.abundance_2
+endif
+
+;
+;	Version 5:  fit abundance by weighting COR and PHOTO spectra
+;
+cf_weight = findgen(21)*0.05	; 0.0 to 1.0 in 0.05 increments
+num_cf = n_elements(cf_weight)
+cf_normalize_fit2 = fltarr(num_cf)
+cf_chi_fit2 = fltarr(num_cf)
+for k=0,num_cf-1 do begin
+	smch_weighted = cf_weight[k] * smch_cor[wmin2,*] + (1. - cf_weight[k]) * smch_photo[wmin2,*]
+	f_fit = interpol( smch_weighted, wch_energy, e_data2 )
+	normalize_factor = total(f_data2[0:9]) / total(f_fit[0:9])   ; force scaling by first 10 points
+	f_fit *= normalize_factor
+	cf_normalize_fit2[k] = normalize_factor
+	; Reduced chi-squared test
+	cf_chi_fit2[k] = total((abs(f_fit - f_data2)/f_error2)^2.) / (num_fit2-1.)
+endfor
+;
+;	best fit is the one with smallest CHI squared value
+;
+cf_chi2 = min(cf_chi_fit2, cf_wmin2)
+smch_weighted_best2 = cf_weight[cf_wmin2] * smch_cor[wmin2,*] + (1. - cf_weight[cf_wmin2]) * smch_photo[wmin2,*]
+smch_weighted_best2 *= cf_normalize_fit2[cf_wmin2]
+fit_flux[3,*] = smch_weighted_best2  ; total model flux
+fit_flux[1,*] = fit_flux[2,*] + fit_flux[3,*] ; temp-1 model + temp-2 model
+; parameters.logT_2 = wch_temp[wmin2]  ; already determined
+; default CHIANTI model DEM value is 1E27
+parameters.cor_density_2 = MODEL_DEM * cf_normalize_fit2[cf_wmin2]
+parameters.photo_density_2 = 0.0
+parameters.abundance_2 = cf_weight[cf_wmin2] * CF + (1. - cf_weight[cf_wmin2]) * PHOTOF
+
+if (verbose ne 0) then begin
+	print, '***************** Abundance-2 Fit ***********************'
+	print, '***** Temp-2 = ', parameters.logT_2
+	print, '***** EM-2   = ', parameters.cor_density_2
+	print, '***** AF-2   = ', parameters.abundance_2
+endif
 
 PLOT_START:
 if not keyword_set(noplot) then begin

@@ -161,7 +161,7 @@ if (year ne base_year) or keyword_set(reload) then begin
   awidth = aband[0] - aband[1]
   acenter = (aband[0]+aband[1])/2.
   actr_weighted = 4.13   ; 1/E^5 irradiance weighting means low energy more important
-  bband = EFang / [ 1, 8 ]
+  bband = EFang / [ 1., 8 ]
   bwidth = bband[0] - bband[1]
   bcenter = (bband[0]+bband[1])/2.
   bctr_weighted = 2.06  ; 1/E^5 irradiance weighting means low energy more important

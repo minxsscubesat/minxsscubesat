@@ -3,7 +3,8 @@
 ;
 ;	This procedure will model fit the MinXSS X123 spectra using the minxss_goes_2temperature_fit.pro
 ;	This compares plasma temperature dervied from MinXSS L1 spectra and GOES XRS-A/XRS-B ratio
-;	This is similar to minxss_goes_temperature_fit except it does 2-Temperature Fit using
+;
+;	This Level 4 Version is similar to minxss_goes_temperature_fit except it does 2-Temperature Fit using
 ;		minxss_fit_2temperature.pro
 ;
 ;	INPUT
@@ -65,8 +66,8 @@ if fm eq 1 then begin
   date = 20160609L  ; first Science Day in MinXSS-1 mission
   date_end = 20170506L  ; last day of MinXSS-1 mission
 endif else begin
-  date = 20171001L  ; first Science Day in MinXSS-2 mission +++++ to fix
-  date_end = 20230101L  ; last day of MinXSS-2 mission +++++ to fix
+  date = 20181207L  ; first Science Day in MinXSS-2 mission
+  date_end = 20190105L  ; last day of MinXSS-2 mission
 endelse
 
 if (date gt 2030000L) then begin
@@ -134,6 +135,9 @@ if keyword_set(daily) then begin
 	dir_in = dir_fm + 'level3' + slash
 	file_in = 'minxss'+fm_str+'_l3_mission_length.sav'
 	file_out = 'minxss'+fm_str+'_L4daily_2temp_fits.sav'
+	; updated 1/5/2022 to use final version 3.1
+	file_in = 'minxss'+fm_str+'_l3_1day_average_mission_length_v3.1.0dev.sav'
+	file_out = 'minxss'+fm_str+'_L4_1day_2temp_fits_v3.1.0dev.sav'
 endif else begin
 	dir_in = dir_fm + 'level1' + slash
 	file_in = 'minxss'+fm_str+'_l1_mission_length.sav'
@@ -141,39 +145,59 @@ endif else begin
 	; updated 9/10/2017 to use Chris Moore's version of 1-min averages
 	file_in = 'minxss'+fm_str+'_l1_1_minute_mission_length.sav'
 	file_out = 'minxss'+fm_str+'_L4_1_minute_2temp_fits.sav'
+	; updated 1/5/2022 to use final version 3.1
+	file_in = 'minxss'+fm_str+'_l1_mission_length_v3.1.0dev.sav'
+	file_out = 'minxss'+fm_str+'_L4_2temp_fits_ver3.1.0dev.sav'
 	if keyword_set(average) then begin
-		avg_good = [1,2,5,15,60,1440]
+		avg_good = [1,60]
 		wavg=where( avg_good eq long(average), num_avg )
 		if (num_avg ge 1) then begin
 			avg_num = avg_good[wavg[0]]
 			avg_num_str = strtrim(avg_num,2)
+			if (avg_num ge 60) then avg_num_name = strtrim(long(avg_num/60.),2)+'hour' $
+			else avg_num_name = avg_num_str+'minute'
+			dir_in = dir_fm + 'level2' + slash
 			if keyword_set(verbose) then print, '***** Processing ', avg_num_str, ' minute average...'
 			file_in = 'minxss'+fm_str+'_l1_'+avg_num_str+'_minute_mission_length.sav'
 			file_out = 'minxss'+fm_str+'_L4_'+avg_num_str+'_minute_2temp_fits.sav'
+			; updated 1/5/2022 to use final version 3.1
+			file_in = 'minxss'+fm_str+'_l2_'+avg_num_name+'_average_mission_length_v3.1.0dev.sav'
+			file_out = 'minxss'+fm_str+'_L4_'+avg_num_name+'_2temp_fits_ver3.1.0dev.sav'
 		endif
 	endif
 endelse
 
-if verbose ne 0 then print, '*****  Reading MinXSS and GOES data ...'
+if verbose ne 0 then begin
+	print, '*****  Reading MinXSS and GOES data ...'
+	print, 'Input File = ', dir_in+file_in
+endif
 restore, dir_in + file_in   ; restores minxsslevelX and minxsslevelX_meta
 
 if keyword_set(daily) then begin
-	x123_jd = minxsslevel3.time.jd
-	energy = minxsslevel3.energy
+	; Level 3
+	x123_jd = minxsslevel3.x123.time.jd
+	energy = minxsslevel3.x123.energy
 	energy1 = reform(energy[*,0])
-	irradiance = minxsslevel3.irradiance
+	irradiance = minxsslevel3.x123.irradiance
+endif else if keyword_set(average) then begin
+	; Level 2
+	x123_jd = minxsslevel2.x123.time.jd
+	energy = minxsslevel2.x123.energy
+	energy1 = reform(energy[*,0])
+	irradiance = minxsslevel2.x123.irradiance
 endif else begin
-	x123_jd = minxsslevel1_x123.time.jd
-	energy = minxsslevel1_x123.energy
+	; Level 1
+	x123_jd = minxsslevel1.x123.time.jd
+	energy = minxsslevel1.x123.energy
 	energy1 = reform(energy[*,0])
-	irradiance = minxsslevel1_x123.irradiance
+	irradiance = minxsslevel1.x123.irradiance
 endelse
 
   ;
   ;	load GOES XRS data from $minxss_data/ancillary/goes/ IDL save set (file per year)
   ;
   fm_years = [2016, 2017]
-  if (fm eq 2) then fm_years = [2017]
+  if (fm eq 2) then fm_years = [2018,2019]
   num_fm_years = n_elements(fm_years)
   goes_num = num_fm_years * 366L * (24L*60L)   ; one-minute cadence
   goes_len = 0L
@@ -235,14 +259,17 @@ if (doProcess ne 0) then begin
   ; do full Mission processing
   x123_num = n_elements(x123_jd)
   index = indgen(x123_num)
-  if verbose ne 0 then print, '***** Processing data for Full Mission ...'
+  if verbose ne 0 then print, '***** Processing data for Full Mission: '+strtrim(x123_num,2)+' X123 spectra.'
 
   ; if keyword_set(debug) then stop, 'DEBUG: enter .c to continue for processing data. '
-  energy_min = 0.15
+  ; energy_min = 0.15
+  energy_min = 0.5
   energy_max = 12.0
   wenergy = where( (energy1 ge energy_min) and (energy1 lt energy_max), energy_num )
-  x123_fit1 = { jd: 0.0D0, yd: 0.0D0, x123_xrsa: 0.0, x123_xrsb: 0.0, fe_xxv_flux: 0.0, ca_xix_flux: 0.0, $
-  			logT: 0.0, abundance: 0.0, abundance_fe_xxv: 0.0, abundance_ca_xix: 0.0, fit_chi: 0.0, $
+  x123_fit1 = { jd: 0.0D0, yd: 0.0D0, x123_xrsa: 0.0, x123_xrsb: 0.0, $
+  			goes_xrsa: 0.0, goes_xrsb: 0.0, goes_temp: 0.0, $
+  			fe_xxv_flux: 0.0, ca_xix_flux: 0.0, $
+  			logT: 0.0, abundance: 0.0, abundance_ca_xix: 0.0, abundance_fe_xxv: 0.0, fit_chi: 0.0, $
   			uncertainty_abund: 0.0, uncertainty_abund_ca: 0.0, uncertainty_abund_fe: 0.0, $
   			logT_2: 0.0, abundance_2: 0.0, fit_chi_2: 0.0, $
   			cor_density: 0.0D0, photo_density: 0.0D0, cor_density_2: 0.0D0, photo_density_2: 0.0D0, $
@@ -283,6 +310,16 @@ if (doProcess ne 0) then begin
 	minxsslevel4[k].x123_xrsa = total(irradiance[wgxa,index[k]]*x123_band*aphoton2energy)
 	minxsslevel4[k].x123_xrsb = total(irradiance[wgxb,index[k]]*x123_band*bphoton2energy)
   endfor
+
+  ; store GOES results in L4 data structure
+  sptime = minxsslevel4.jd
+  num_sp = n_elements(sptime)
+  goes_xrsa_cmp = interpol( goes_data.xrsa, goes_data.jd, sptime )
+  goes_xrsb_cmp = interpol( goes_data.xrsb, goes_data.jd, sptime )
+  goes_temp_cmp = interpol( goes_data.logTemp, goes_data.jd, sptime )
+  minxsslevel4.goes_xrsa = goes_xrsa_cmp
+  minxsslevel4.goes_xrsb = goes_xrsb_cmp
+  minxsslevel4.goes_temp = goes_temp_cmp
 
   ;
   ;		fit X123 temperature to CHIANTI isothermal models
@@ -329,6 +366,7 @@ if (doProcess ne 0) then begin
   ;  save the fits data as Level 4
   ;
 	print, 'Saving model fit results in ', dir_out+file_out
+	if verbose ne 0 then print, 'Number of X123 spectral fits = ',strtrim(x123_num,2)
 
 	goes_units = [ 'JD = Julian Date', 'YD = YYYYDOY', 'XRSA & XRSB = W/m^2', $
 			'logTemp = log(K)', 'GOES XRS flux is corrected to standard NOAA calibration' ]
@@ -343,11 +381,6 @@ if (doProcess ne 0) then begin
 endif
 
 ;  prepare data for returning "result"
-sptime = minxsslevel4.jd
-num_sp = n_elements(sptime)
-goes_xrsb_cmp = interpol( goes_data.xrsb, goes_data.jd, sptime )
-goes_xrsa_cmp = interpol( goes_data.xrsa, goes_data.jd, sptime )
-
 ; make X123 version of XRS-B by integrating over GOES XRS-B band width
 x123_xrsb_cmp = minxsslevel4.x123_xrsb
 ratio_xrsb = x123_xrsb_cmp / goes_xrsb_cmp
@@ -364,7 +397,6 @@ x123_fe_xxv_flux = minxsslevel4.fe_xxv_flux
 x123_abund_fe_xxv = minxsslevel4.abundance_fe_xxv
 x123_ca_xix_flux = minxsslevel4.ca_xix_flux
 x123_abund_ca_xix = minxsslevel4.abundance_ca_xix
-goes_temp_cmp = interpol( goes_data.logTemp, goes_data.jd, sptime )
 
 ; save "result"
 result = dblarr(11,num_sp)
