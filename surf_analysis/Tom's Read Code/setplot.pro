@@ -1,4 +1,4 @@
-;  
+;
 ;	setplot.pro
 ;
 ;	Set plot font, thickness, and background
@@ -46,6 +46,14 @@ endif else begin
   !p.background = '00FFFFFF'X	; white
   !p.color = 0			; black
 endelse
+
+;
+;	2021 Addition
+;	Set default LABEL_DATE
+;
+pdate=label_date(date_format=['%N-%D','%Y'])
+print, "setplot: Plot with JD dates (MM-DD, YYYY)> "
+print, " >>> plot, x, y, XTICKFORMAT='LABEL_DATE', XTICKUNITS=['Time','Time']"
 
 return
 end
