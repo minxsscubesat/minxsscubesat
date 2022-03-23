@@ -22,7 +22,7 @@ endif
 
 if not keyword_set(fm) then fm=1
 if (fm lt 1) then fm=1
-if (fm gt 2) then fm=2
+if (fm gt 4) then fm=4
 
 if fm eq 1 then begin
 	; FM-1 values
