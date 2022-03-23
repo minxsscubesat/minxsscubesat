@@ -1,11 +1,16 @@
 ;+
+; **************
+;
+;	2022:  DO NOT USE FOR DAXSS PROCESSING BECAUSE DAXSS Level 0B is already merged and sorted
+;
+; **************
 ; NAME:
 ;   daxss_make_level0c.pro
 ;
 ; PURPOSE:
 ;   Read all Level 0B data products, sort by time, and save packets for individual day.
 ;   Note that Level 0B files can have packets from any past day because of downlink playback.
-;   Level 0C files only have packets of a single day. 
+;   Level 0C files only have packets of a single day.
 ;   Optionally creates a single file for the whole mission as well.
 ;
 ; INPUTS:
@@ -46,11 +51,11 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
   ; check for valid input parameters
   ;
   IF yyyymmdd NE !NULL THEN yyyydoy = JPMyyyymmdd2yyyydoy(yyyymmdd, /RETURN_STRING)
-  
+
   IF keyword_set(yyyydoy) THEN BEGIN
     start_yd = long(yyyydoy[0])
     IF n_elements(yyyydoy) GT 1 THEN BEGIN
-      stop_yd = long(yyyydoy[1]) 
+      stop_yd = long(yyyydoy[1])
     ENDIF ELSE BEGIN
       stop_yd = start_yd
     ENDELSE
@@ -103,12 +108,12 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
   for k = 0L, numDays - 1 do begin
     yd = ydArray[k]
     fileCnt = 0L
-    
+
     ;
     ;   2. Read all of the appropriate Level 0B files: all files with date >= YYYYDOY
     ;      minus one day, since L0B is based on local (Mountain) time, but L0C is based on UTC
     ;
-    
+
     for iFile = start_index, numfiles-1 do begin
       ; identify which file can first be read
       fn_parts = daxss_filename_parts(fileNamesArray[iFile])
@@ -176,14 +181,14 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
       dump = JPMAddTagsToStructure(dump, 'time_iso', 'string') & dump.time_iso = JPMjd2iso(dump.time_jd)
       dump = JPMAddTagsToStructure(dump, 'time_human', 'string') & dump.time_human = JPMjd2iso(dump.time_jd, /NO_T_OR_Z)
     ENDIF
-    
+
     ; save the packets now
     total_packets = n_elements(hk) + n_elements(sci) + n_elements(log)
 
     if (total_packets gt 0) then begin
       save, sci, log, dump, FILENAME = full_Filename, /COMPRESS, description = 'DAXSS Level 0C data; Year = ' + strtrim(year, 2) + '; DOY = ' + strtrim(doy, 2) + ' ... FILE GENERATED: ' + JPMsystime()
       wait, 0.5 ; let the filesystem catch up so files are saved in proper time-order
-      
+
       if keyword_set(verbose) then begin
         message, /INFO, 'Saving DAXSS Level 0C sorted packets into ' + outputFilename
         if sci NE !NULL then   print, '    Number of SCI   packets = ' + string(n_elements(sci))
@@ -206,7 +211,7 @@ PRO daxss_make_level0c, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd, $
     sciTemp = !NULL
     logTemp = !NULL
     dumpTemp = !NULL
-    
+
     ; Loop through all the data files and concatenate data
     FOR yyyyDoy = start_yd, stop_yd DO BEGIN
       yyyyDoyString = strmid(strtrim(yyyyDoy, 2), 0, 4) + '_' + strmid(strtrim(yyyyDoy, 2), 4, 3)
