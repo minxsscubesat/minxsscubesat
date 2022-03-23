@@ -56,11 +56,36 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
   if array NE !NULL then array = temporary(array[sort(array.TIME)])
 
   ;
+  ;	get launch time in GPS seconds
+  ;
+  CASE FM OF
+      1: BEGIN
+          timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
+          timeMax = 1180310413.0d0 ; GPS seconds for 1 June 2022
+        END
+      2: BEGIN
+          timeMin = 1227657613.0d0 ; GPS seconds for 3 Dec 2018 00:00:00 UTC
+          timeMax = 1233014413.0d0 ; GPS seconds for 1 Feb 2019
+        END
+      4: BEGIN
+          timeMin = 1328832018.0d0 ; GPS seconds for 14 Feb 2022 00:00:00 UTC
+          timeMax = 1514246413.0d0 ; GPS seconds for 31 Dec 2027
+        END
+      ELSE: BEGIN
+          message, /info, "FM = "+strtrim(fm,2) + " not yet supported.  Times unchanged."
+          timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
+          timeMax = 1514246413.0d0 ; GPS seconds for 31 Dec 2027
+        END
+  ENDCASE
+
+  ;
   ; 2. Task 2: Exclude any data before 2014 (prior to FSW version 8 or later)
   ;
   if (not keyword_set(no_exclude)) AND (array NE !NULL) then begin
-    GPS_SECONDS_2014001 =  1072569613.0D0
-    wgood = where( array.time ge GPS_SECONDS_2014001, numgood)
+    ; GPS_SECONDS_2014001 =  1072569613.0D0
+    ; wgood = where( array.time ge GPS_SECONDS_2014001, numgood)
+    ; use the timeMin from above so unique for each mission
+    wgood = where( array.time ge timeMin AND array.time lt timeMax, numgood)
     if (numgood gt 0) then array = temporary(array[wgood]) ; else leave alone
   endif
 
@@ -70,18 +95,19 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
   IF NOT keyword_set(no_time_correct) THEN BEGIN
     CASE FM OF
       1: BEGIN
-          timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
           timeSetAt = 1147678120.0d0 ; GPS seconds just prior to ground time set (19 May 2016 07:28:23 UTC)
           timeOffset = 7677156.0d0 - 9. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
         END
       2: BEGIN
-          timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
           timeSetAt = 1228116215.0d0 ; GPS seconds just prior to ground time set (06 Dec 2018 07:23:18 UTC)
           timeOffset = 3535.492d0 - 3. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
         END
+      4: BEGIN
+          timeSetAt = 1328832018.0d0 ; GPS seconds just prior to ground time set (14 Feb 2022)
+          timeOffset = 180. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
+        END
       ELSE: BEGIN
           message, /info, "FM = "+strtrim(fm,2) + " not yet supported.  Times unchanged."
-          timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
           timeSetAt = 0d0 ; ENTER AFTER FM2 DEPLOYMENT
           timeOffset = 0d0 ; ENTER AFTER FM2 DEPLOYMENT
         END
