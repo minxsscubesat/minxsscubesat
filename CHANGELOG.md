@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
+* Support for IS1/DAXSS (INSPIRESat-1 / Dual-zone Aperture X-ray Solar Spectrometer AKA MinXSS-3) processing and plotting -- note that these data are encoded as flight model 4 (fm=4). 
 
 ### Changed
 
