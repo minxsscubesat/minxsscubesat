@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Read all Level 0C data products, extract only telemetry points relevant for science, and package with anscillary data
-;   in preparation for Level 1 science product 
+;   in preparation for Level 1 science product
 ;
 ; CATEGORY:
 ;    MinXSS Level 0D
@@ -18,17 +18,17 @@
 ; OPTIONAL INPUTS:
 ;   fm [integer]:       Flight Model number 1 or 2 (default is 2)
 ;   dateRange [dblarr]: Date range to process. Can be single date or date range, e.g., [2016001] or [2016001, 2016030].
-;                       If single date input, then that full day will be processed. If two dates input, processing will be inclusive of the full range. 
-;                       Date formats can be either yyyydoy or yyyymmdd, e.g., [2016152] or [20160601]. 
+;                       If single date input, then that full day will be processed. If two dates input, processing will be inclusive of the full range.
+;                       Date formats can be either yyyydoy or yyyymmdd, e.g., [2016152] or [20160601].
 ;                       Time within a day is ignored here i.e., yyyydoy.fod or yyyymmdd.hhmmmss can be input but time information
-;                       will be ignored. Code always starts from day start, i.e., fod = 0.0. 
+;                       will be ignored. Code always starts from day start, i.e., fod = 0.0.
 ;                       If timeRange is not provided, then code will process all Level0C data.
 ;   version [string]:   Software/data product version to store in filename and internal anonymous structure. Default is '2.0.0'.
 ;
 ; KEYWORD PARAMETERS:
 ;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
 ;   VERBOSE:             Set this to print processing messages
-;   
+;
 ; OUTPUTS:
 ;   IDL .sav files in getenv('minxss_data')/level0d/idlsavesets/
 ;
@@ -41,22 +41,22 @@
 ; RESTRICTIONS:
 ;   Requires full minxss code package
 ;   Requires minxss level0c data in getenv('minxss_data')/level0c
-; 
-; EXAMPLE: 
-;   To process whole mission, just run it with no optional inputs. 
+;
+; EXAMPLE:
+;   To process whole mission, just run it with no optional inputs.
 ;   If you want only a specific day: minxss_make_level0d, dateRange = [20160724]
-;   
+;
 ; PROCEDURE:
 ;   1. Restore the Level 0C mission lenghth file
 ;   2. Interpolate time to have single timestamp for all data
 ;   3. Retrieve and package relevant ancillary data with MinXSS data
 ;   4. Save interpolated, unified array of structures to disk
 ;+
-PRO minxss_make_level0d, fm=fm, dateRange=dateRange, version=version, $ 
+PRO minxss_make_level0d, fm=fm, dateRange=dateRange, version=version, $
                          DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE=VERBOSE
 
 ;;
-; 0. Defaults and validity checks 
+; 0. Defaults and validity checks
 ;;
 
 ; Defaults and validity checks - FM
@@ -70,13 +70,13 @@ IF version EQ !NULL THEN version = '2.0.0'
 ; Defaults and validity checks - dateRange
 dateRangeYYYYDOY = lonarr(2)
 IF dateRange NE !NULL THEN BEGIN
-  
+
   ; Determine if using normal date formatting (i.e., yyyymmdd) and convert to yyyydoy
   IF strlen(strtrim(dateRange[0], 2)) GT 7 THEN BEGIN
     yearDoy1 = JPMyyyymmdd2yyyydoy(double(dateRange[0]))
     IF yearDoy1.doy LT 100 THEN doyString = '0' + strtrim(yearDoy1.doy, 2) ELSE doyString = strtrim(yearDoy1.doy, 2)
     dateRangeYYYYDOY[0] = long(strtrim(yearDoy1.year, 2) + doyString)
-    
+
     IF n_elements(dateRange) EQ 2 THEN BEGIN
       yearDoy2 = JPMyyyymmdd2yyyydoy(double(dateRange[1]))
       IF yearDoy2.doy LT 100 THEN doyString = '0' + strtrim(yearDoy2.doy, 2) ELSE doyString = strtrim(yearDoy2.doy, 2)
@@ -86,11 +86,11 @@ IF dateRange NE !NULL THEN BEGIN
     dateRangeYYYYDOY[0] = dateRange[0]
     IF n_elements(dateRange) EQ 2 THEN dateRangeYYYYDOY[1] = dateRange[1]
   ENDELSE
-  
-  
+
+
   ; If single dateRange input then process that whole day
   IF dateRangeYYYYDOY[1] EQ 0 THEN dateRangeYYYYDOY[1] = dateRangeYYYYDOY[0] + 1L
-  
+
 ENDIF ELSE BEGIN ; endif dateRange ≠ NULL else dateRange not set
   ; If no dateRange input then process mission length
   IF fm EQ 1 THEN BEGIN
@@ -115,11 +115,11 @@ IF file_test(level0cFile) THEN restore, level0cFile
 ; 2. Interpolate time to have single timestamp for all data
 ;;
 
-timeArray = minxss_create_uniform_packet_times(adcs1, adcs2, adcs3, adcs4, hk, sci, fm = fm, packetTimeEmphasis = 'sci', $ 
+timeArray = minxss_create_uniform_packet_times(adcs1, adcs2, adcs3, adcs4, hk, sci, fm = fm, packetTimeEmphasis = 'sci', $
                                                outputInterpolatedUnifiedPacket = interpolatedUnifiedPacket, /DO_PACKET_UNIFICATION, $
                                                VERBOSE = VERBOSE)
 
-;; 
+;;
 ; 3. Retrieve and package relevant ancillary data with MinXSS data
 ;;
 
@@ -133,9 +133,9 @@ unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStruct
 unifiedArrayofStructuresWithNewTags = JPMAddTagsToStructure(unifiedArrayofStructuresWithNewTags, 'SPACECRAFT_IN_SAA', 'float', insertIndex = 38)
 
 ; Get spacecraft location (lon, lat, alt)
-IF fm EQ 1 THEN BEGIN 
-  id_satellite = 41474L 
-ENDIF ELSE IF fm EQ 2 THEN BEGIN 
+IF fm EQ 1 THEN BEGIN
+  id_satellite = 41474L
+ENDIF ELSE IF fm EQ 2 THEN BEGIN
   id_satellite = 43758
 ENDIF ELSE BEGIN
   id_satellite = 25544 ; ISS
@@ -173,7 +173,7 @@ unifiedArrayofStructuresWithNewTags.x123_detector_temperature-= 273.15
 
 
 ; Overwrite flight model number by default.
-; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN. 
+; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN.
 ; We know what level it is though, so just overwrite it unless user does not want this.
 IF NOT keyword_set(DO_NOT_OVERWRITE_FM) THEN BEGIN
   unifiedArrayofStructuresWithNewTags.flight_model = fm
