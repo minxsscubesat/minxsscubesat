@@ -23,7 +23,7 @@ pro minxss_x123_irradiance_wrapper, raw_count_sp, uncertainty_raw_count_sp, irra
 
   if not keyword_set(fm) then fm=1
   if (fm lt 1) then fm=1
-  if (fm gt 2) then fm=2
+  if (fm gt 4) then fm=4
 
 ;  if fm eq 1 then begin
 ;    ; FM-1 values
@@ -56,15 +56,15 @@ if fm eq 1 then begin
   minxss_calibration_file = 'minxss_fm1_response_structure.sav'
   minxss_calibration_file_path = cal_dir + minxss_calibration_file
 restore, minxss_calibration_file_path
-  x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin 
-  energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit 
+  x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
+  energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
 endif else begin
   minxss_calibration_file = 'minxss_fm2_response_structure.sav'
   minxss_calibration_file_path = cal_dir + minxss_calibration_file
   restore, minxss_calibration_file_path
   ; FM-2 values  To-Do  (defined by Chris Moore but not uploaded to dropbox yet!)
-  x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin 
-  energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit 
+  x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
+  energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
 endelse
 
    ;  save energy bins for the return
