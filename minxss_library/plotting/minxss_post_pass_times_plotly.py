@@ -8,15 +8,11 @@ import pandas as pd
 import numpy as np
 plotly.tools.set_credentials_file(username='jmason86', api_key='wvT5wAI0l7q3uCvxT8ny')
 
-ground_stations = ['Boulder', 'Fairbanks']
+ground_stations = ['Boulder', 'Fairbanks', 'Taiwan', 'Singapore', 'India']
 
 for ground_station in ground_stations:
     # Read data
-    if ground_station == 'Boulder':
-        filename = '~/Dropbox/minxss_dropbox/tle/Boulder/passes_latest_BOULDER.csv'
-    elif ground_station == 'Fairbanks':
-        filename = '~/Dropbox/minxss_dropbox/tle/Fairbanks/passes_latest_FAIRBANKS.csv'
-
+    filename = '~/Dropbox/minxss_dropbox/tle/{}/passes_latest_{}.csv'.format(ground_station, ground_station.upper())
     df = pd.read_csv(filename, header=[1])
 
     # Make table on plotly
