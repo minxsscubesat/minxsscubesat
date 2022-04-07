@@ -36,7 +36,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires full daxss code package
-;   Requires daxss merged level0b data in getenv('minxss_data')/fm4/level0b
+;   Requires daxss merged level0c data in getenv('minxss_data')/fm4/level0c
 ;
 ; EXAMPLE:
 ;   To process whole mission, just run it with no optional inputs.
@@ -67,16 +67,13 @@ outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_mission_length_v
 ;;
 ; 1. Restore the Level 0B mission length file
 ;;
-level0bFile = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0b' + path_sep() $
-	+ 'daxss_l0b_merged_*.sav'
-allFiles = file_search( level0bFile, count=num_files)
-if (num_files gt 0) then level0bFile = allFiles[num_files-1]
-IF file_test(level0bFile) THEN BEGIN
-	message, /INFO, 'Restoring Level0B file '+level0bFile
-	; stop, 'DEBUG Level0B file selected...'
-	restore, level0bFile
+level0cFile = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0c' + path_sep() + 'daxss_l0c_all_mission_length_v' + version + '.sav'
+IF file_test(level0cFile) THEN BEGIN
+	message, /INFO, 'Restoring Level0c file '+level0cFile
+	; stop, 'DEBUG Level0c file selected...'
+	restore, level0cFile
 ENDIF ELSE BEGIN
-	message, /INFO, 'ERROR finding DAXSS Level0B merged file.'
+	message, /INFO, 'ERROR finding DAXSS Level0c merged file.'
 	return
 ENDELSE
 

@@ -3,7 +3,7 @@
 ;   daxss_processing
 ;
 ; PURPOSE:
-;   Process DAXSS Level 0B, merged log, and optional level 0D and 1
+;   Process DAXSS Level 0B, Level 0C, and optional level 0D and 1
 ;
 ; INPUTS:
 ;   None
@@ -13,7 +13,7 @@
 ;
 ; KEYWORD PARAMETERS:
 ;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
-;   TO_0B_ONLY: Set this to process up to level 0B only. Defaults to processing all the way to level 1.
+;   TO_0C_ONLY: Set this to process up to level 0B only. Defaults to processing all the way to level 1.
 ;   VERBOSE:    Set to print processing messages
 ;
 ; OUTPUTS:
@@ -29,35 +29,34 @@
 ;   IDL>  daxss_processing, /verbose
 ;
 ;-
-PRO daxss_processing, TO_0B_ONLY = TO_0B_ONLY, COPY_GOES = COPY_GOES, VERBOSE = VERBOSE, $
-				DEBUG = DEBUG
+PRO daxss_processing, TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOSE, DEBUG=DEBUG
 
   TIC	; start internal timer
 
-  IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0A and L0B for the Full Mission'
+  IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0B and L0C for the Full Mission'
 
-  ; First Make Level 0A file using IIST processed Level 0 files
+  ; First Make Level 0B file using IIST processed Level 0 files
   ;	This only can be done on DAXSS Science Data Processing computer (due to GoogleDrive paths)
   spawn, 'hostname', hostname_output
   hostname = strupcase(hostname_output[n_elements(hostname_output)-1])
   if (hostname eq 'MACD3750') then begin
-	; run daxss_make_level0a.pro
-	daxss_make_level0a, verbose=VERBOSE
-    ;  make Level 0B file next - this uses Level 0A binary file
-    daxss_make_level0b, verbose=VERBOSE
+	; run daxss_make_level0b.pro
+	daxss_make_level0b, verbose=VERBOSE
+    ;  make Level 0C file next - this uses Level 0B binary file
+    daxss_make_level0c, verbose=VERBOSE
   endif else begin
-    ; ***** EXAMPLE OF daxss_make_level0b WITHOUT USING Level 0A FILE *****
+    ; ***** EXAMPLE OF daxss_make_level0c WITHOUT USING Level 0B FILE *****
     myPath = getenv('minxss_data')+'/fm4/hydra_tlm/flight'
     myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
     IF keyword_set(verbose) THEN message, /INFO, 'No L0A file made. Number of Hydra files found = '+strtrim(filesCount,2)
-    daxss_make_level0b, telemetryFileNamesArray=myFiles, /verbose
+    daxss_make_level0c, telemetryFileNamesArray=myFiles, /verbose
   endelse
 
-  if keyword_set(debug) THEN stop, 'DEBUG daxss_processing after L0B processing...'
+  if keyword_set(debug) THEN stop, 'DEBUG daxss_processing after L0C processing...'
 
   ; daxss_make_mission_log, /VERBOSE ; TODO: implement this function
 
-  IF ~keyword_set(TO_0B_ONLY) THEN BEGIN
+  IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
     IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0D for full mission'
     daxss_make_level0d_limited, VERBOSE = VERBOSE
 

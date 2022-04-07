@@ -37,7 +37,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires full daxss code package
-;   Requires daxss merged level0b data in getenv('minxss_data')/fm4/level0b
+;   Requires daxss merged level0c data in getenv('minxss_data')/fm4/level0c
 ;
 ; EXAMPLE:
 ;   To process whole mission, just run it with no optional inputs.
@@ -55,6 +55,7 @@ PRO daxss_make_level0d_limited, version=version, VERBOSE=VERBOSE
 ; 0. Defaults and validity checks
 ;;
 fm = 4
+time_offset_sec = -250.D0
 
 ; Defaults and validity checks - FM
 IF version EQ !NULL THEN version = '1.0.0'
@@ -66,23 +67,23 @@ outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_mission_length_v
 ;;
 ; 1. Restore the Level 0B mission length file
 ;;
-level0bFile = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0b' + path_sep() $
-	+ 'daxss_l0b_merged_*.sav'
-allFiles = file_search( level0bFile, count=num_files)
-if (num_files gt 0) then level0bFile = allFiles[num_files-1]
-IF file_test(level0bFile) THEN BEGIN
-	IF keyword_set(VERBOSE) THEN message, /INFO, 'Restoring Level0B file '+level0bFile
-	; stop, 'DEBUG Level0B file selected...'
-	restore, level0bFile
+level0cFile = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0c' + path_sep() $
+	+ 'daxss_l0c_merged_*.sav'
+allFiles = file_search( level0cFile, count=num_files)
+if (num_files gt 0) then level0cFile = allFiles[num_files-1]
+IF file_test(level0cFile) THEN BEGIN
+	IF keyword_set(VERBOSE) THEN message, /INFO, 'Restoring Level0c file '+level0cFile
+	; stop, 'DEBUG Level0c file selected...'
+	restore, level0cFile
 ENDIF ELSE BEGIN
-	message, /INFO, 'ERROR finding DAXSS Level0B merged file.'
+	message, /INFO, 'ERROR finding DAXSS Level0c merged file.'
 	return
 ENDELSE
 
 ;;
 ; 2. Make new daxss_level0d structure
 ;;
-daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_jd', 0.0D0, 'time_yd', 0.0D0, $
+daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_gps', 0.0D0, 'time_jd', 0.0D0, 'time_yd', 0.0D0, $
 					'adcs_mode', 0.0, 'eclipse', 0, $
 					'longitude', 0.0, 'latitude', 0.0, 'altitude', 0.0, $
 					'sun_right_ascension', 0.0, 'sun_declination', 0.0, $
@@ -95,8 +96,12 @@ IF keyword_set(VERBOSE) THEN message, /INFO, 'Processing DAXSS SCI packets: '+st
 ; copy over SCI packet data
 num_sci_tags = N_TAGS(sci[0])
 for ii=0L,num_sci_tags-1 do daxss_level0d.(ii) = sci.(ii)
+
+; Fix the Time Offset in the DAXSS time
+time_gps_fixed = sci.time + time_offset_sec
 ; calculate the JD and YD time conversions
-daxss_level0d.time_jd = gps2jd(sci.time)
+daxss_level0d.time_gps = time_gps_fixed
+daxss_level0d.time_jd = gps2jd(time_gps_fixed)
 daxss_level0d.time_yd = jd2yd(daxss_level0d.time_jd)
 
 ; interpolate the HK ADCS_INFO result

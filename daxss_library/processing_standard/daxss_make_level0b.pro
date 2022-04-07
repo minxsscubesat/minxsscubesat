@@ -3,19 +3,14 @@
 ;   daxss_make_level0b.pro
 ;
 ; PURPOSE:
-;   Reads multiple the stored data files, sorts the data in those files by time, stitches them together and saves them
-;   in the standard DAXSS data structures based on MinXSS (i.e. science, log, and dump). Intended for use
-;   to create daily files, and as such saves as an IDL save set with a yyyy_doy name.
+;   Reads InspireSat-1 Processed Level 0 files (csv format) and make Hydra-like binary file.
+;   This reads Ground Station DAXSS and Beacon files and also SatNOGS beacon file.
 ;
 ; INPUTS:
-;   Must provide one of the optional inputs. They aren't listed as regular inputs because any one isn't more "required" than the other.
+;   None
 ;
 ; OPTIONAL INPUTS:
-;   You MUST specifiy one and only one of these inputs:
-;     telemetryFileNamesArray [strarr]: A string array containing the paths/filenames of the telemetry files to be sorted and stitched.
-;     yyyydoy [long]:       The date in yyyydoy format that you want to process.
-;     yyyymmdd [long]:      The date in yyyymmdd format that you want to process.
-;	  use_csv_file:			Use IIST data processing Level 0 product (CSV file format, merged)
+;   None
 ;
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set this to print out processing messages while running.
@@ -30,161 +25,122 @@
 ;   None.
 ;
 ; RESTRICTIONS:
-;   Requires DAXSS processing suite.
+;   Requires DAXSS processing suite and to be run on MinXSS Data Processing Computer (MacD3750)
 ;
 ; PROCEDURE:
-;   1. Task 1: Concatenate data for all telemetry files.
-;   2. Task 2: Now that all data has been concatenated, sort it by time.
-;   3. Write DAXSS data structures to disk as IDL save file
+;   1. Task 1: Find DAXSS and Beacon CSV Level 0 merged file on GoogleDrive
+;   2. Task 2: Convert those data into binary data (byte array)
+;   3. Write DAXSS Level 0b binary file (to be read by is1_daxss_beacon_read_packets.pro)
 ;
-; NOTE
-;	minxss_make_level0b.pro works for IS-1 DAXSS as MinXSS FM=4
 ;
 ; EXAMPLE USAGE
-;	IDL> myPath = getenv('minxss_data')+'/fm4/hydra_tlm/flight'
-;	IDL> myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
-;	IDL> print, 'Number of files found = ', filesCount
-;	IDL> daxss_make_level0b, telemetryFileNamesArray=myFiles, /verbose
+; IDL> daxss_make_level0b, /verbose
 ;
-;	IDL> ; restore the daxss_l0b_merged_YYYY_DOY.sav file
-;	IDL> daxss_plots_trends, hk
+; This is called by daxss_make_level0b using the use_csv_files option.
 ;
 ; HISTORY
-;	2022-02-27	T. Woods, updated for IS-1 paths
-;	2022-03-16	T. Woods, updated with use_csv_file option to use IIST processed Level 0 CSV file
+; 2022-03-15  T. Woods, updated for IS-1 paths
 ;
 ;+
-PRO daxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, $
-						yyyymmdd = yyyymmdd, use_csv_file=use_csv_file, _extra = _extra, $
-                        VERBOSE = VERBOSE
+PRO daxss_make_level0b, VERBOSE = VERBOSE, DEBUG=DEBUG
 
-  ; Set FM to 4
-  fm = 4
-  flightModelString = 'fm'+strtrim(fm,2)
+;  Defines
+ARRAY_CHUNKS_BYTES = 100000L
+MIN_BYTES = 12L  ; minimum number of bytes for CCSDS packet
 
-  ; Input checks
-  IF telemetryFileNamesArray EQ !NULL AND yyyydoy EQ !NULL AND yyyymmdd EQ !NULL THEN BEGIN
-    ; Assume USE_CSV_FILE as default
-    use_csv_file = 1
-    ; message, /INFO, 'You specified no inputs. Need to provide one of them.'
-    ; message, /INFO, 'USAGE: daxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, yyyymmdd = yyyymmdd'
-    ; return
-  ENDIF
-  if keyword_set(use_csv_file) then begin
-  	  ; First Make Level 0A file using IIST processed Level 0 files
-  	  ;	This only can be done on DAXSS Science Data Processing computer (due to GoogleDrive paths)
-  	  spawn, 'hostname', hostname_output
-  	  hostname = strupcase(hostname_output[n_elements(hostname_output)-1])
-  	  if (hostname eq 'MACD3750') then begin
-  	  	; run daxss_make_level0a.pro
-  	  	daxss_make_level0a, verbose=VERBOSE
-  	  endif else begin
-  	  	message, /INFO, 'WARNING: DAXSS Level 0a file was not re-made !'
-  	  endelse
-  	  merged = 1
-  	  path_L0A = getenv('minxss_data')+path_sep()+flightModelString+path_sep()+'csv_files'+path_sep()
-  	  telemetryFileNamesArray = [ path_L0A + 'daxss_l0a_csv_merged.bin' ]
-  	  numfiles = ( file_test(telemetryFileNamesArray[0]) ? 1 : 0)
-  endif else begin
-	  IF telemetryFileNamesArray NE !NULL THEN BEGIN
-		numfiles = n_elements(telemetryFileNamesArray)
-		merged = 1
-	  ENDIF ELSE merged = 0
-	  IF yyyymmdd NE !NULL THEN yyyydoy = JPMyyyymmdd2yyyydoy(yyyymmdd, /RETURN_STRING)
-	  IF yyyydoy NE !NULL THEN telemetryFileNamesArray = daxss_find_tlm_files(yyyydoy, numfiles=numfiles, verbose=verbose)
-  endelse
-  IF numfiles LT 1 THEN BEGIN
-	message, /INFO, 'No files found for specified input.'
-	return
-  ENDIF
+;
+;   1. Task 1: Find DAXSS and Beacon CSV Level 0 merged file on GoogleDrive
+;
+csv_path='/Users/minxss/My Drive (inspire.lasp@gmail.com)/IS1 On-Orbit Data/Processed data'
+daxssFiles=file_search(csv_path, 'daxss_sci_level_0.csv', count=daxss_count)
+beaconFiles=file_search(csv_path, 'beacon_level_0.csv', count=beacon_count)
+; DsatNogsFiles=file_search(csv_path, 'inspire_satnogs*daxss_sci_level_0.csv', count=satnogs1_count)
+BsatNogsFiles=file_search(csv_path, 'inspire_satnogs*beacon_level_0.csv', count=satnogs2_count)
+if (daxss_count lt 1) or (beacon_count lt 1) then begin
+  message, /info, 'ERROR finding InspireSat-1 CSV Processed Files !!!'
+  return
+endif
+; get the most recent file for DAXSS packets
+fileTime = dblarr(daxss_count)
+for ii=0,daxss_count-1 do fileTime[ii] = FILE_MODTIME(daxssFiles[ii])
+temp = max(fileTime, wmax)
+theDaxssFile = daxssFiles[wmax]
+; get the most recent file for Beacon packets
+fileTime = dblarr(beacon_count)
+for ii=0,beacon_count-1 do fileTime[ii] = FILE_MODTIME(beaconFiles[ii])
+temp = max(fileTime, wmax)
+theBeaconFile = beaconFiles[wmax]
 
-  ; Loop through each telemetry file
-  hk_count = 0L
-  FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
-    filename = telemetryFileNamesArray[i]
-    parsedFilename = ParsePathAndFilename(filename)
-    if not parsedFilename.absolute then filename = getenv('isis_data') + filename
+;
+;   2. Task 2: Convert those data into binary data (byte array)
+;
+bdata = bytarr(ARRAY_CHUNKS_BYTES)
+bdata_total = ARRAY_CHUNKS_BYTES
+bdata_length = 0L
+str = ' '
+if (satnogs2_count ge 1) then begin
+	; get the most recent file for Beacon packets
+	fileTime = dblarr(satnogs2_count)
+	for ii=0,satnogs2_count-1 do fileTime[ii] = FILE_MODTIME(BsatNogsFiles[ii])
+	temp = max(fileTime, wmax)
+	theSatNogsFile = BsatNogsFiles[wmax]
+	allFiles = [ theDaxssFile, theBeaconFile, theSatNogsFile ]
+endif else begin
+	allFiles = [ theDaxssFile, theBeaconFile ]
+endelse
+num_files = n_elements(allFiles)
+bytes_files = lonarr(num_files)
 
-    IF keyword_set(verbose) THEN BEGIN
-      message, /INFO, 'Reading telemetry file ' + JPMPrintNumber(i + 1) + '/' + $
-        JPMPrintNumber(n_elements(telemetryFileNamesArray)) + ': ' +  parsedFilename.Filename
-    ENDIF
+for k=0,num_files-1 do begin
+  ;  process lines of CSV data from CSV file
+  bytes_files[k] = bdata_length
+  openr, lun, allFiles[k], /get_lun
+  while not eof(lun) do begin
+    readf,lun,str
+    ; parse string into bytes
+    str_numbers = STRSPLIT( str, " ,", /extract, count=num_bytes )
+    if (num_bytes ge MIN_BYTES) then begin
+      if (bdata_length + num_bytes) gt bdata_total then begin
+        ; expand bdata for more bytes
+        bdata = [ bdata, bytarr(ARRAY_CHUNKS_BYTES) ]
+        bdata_total += ARRAY_CHUNKS_BYTES
+      endif
+      bdata[bdata_length:bdata_length+num_bytes-1] = byte(uint(str_numbers))
+      bdata_length += num_bytes
+    endif
+  endwhile
+  close, lun
+  free_lun, lun
+  bytes_files[k] = bdata_length - bytes_files[k]
+  if keyword_set(verbose) then message, /INFO, 'Processed '+strtrim(bytes_files[k],2)+$
+      ' bytes for file '+allFiles[k]
+endfor
 
-	; IS1/DAXSS processing has its own reader code
-  	;		use "diag" packets for the "dump" packets for FM4 so compatible with FM 1&2 code
-    is1_daxss_beacon_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, dump=dumpTmp, $
-    	p1sci=p1sciTmp, verbose=verbose, _extra=_extra
+;
+;   3. Write DAXSS Level 0b binary file
+;
+if (bdata_length gt 0) then begin
+  flightModelString = 'fm4'
+  out_path = getenv('minxss_data')+path_sep()+flightModelString+path_sep()+'level0b'+path_sep()
+  out_file = 'daxss_l0b_csv_merged.bin'
+  fullFilename = out_path + out_file
 
-	; Count number of HK packets
-  	IF hkTmp NE !NULL then hk_count += n_elements(hkTmp)
+  IF keyword_set(verbose) THEN message, /INFO, 'Saving ' + strtrim(bdata_length,2) + $
+      ' bytes of data for DAXSS Level 0b packets into ' + fullFilename
 
-    ; Continue loop if no data in telemetry file
-    IF hkTmp EQ !NULL AND sciTmp EQ !NULL AND p1sciTmp EQ !NULL AND logTmp EQ !NULL AND dumpTmp EQ !NULL THEN CONTINUE
+  openw, lun, fullFilename, /get_lun
+  adata = assoc(lun, bytarr(bdata_length))
+  adata[0] = bdata[0:bdata_length-1]
+  close, lun
+  free_lun, lun
+endif else begin
+  if keyword_set(verbose) then message, /INFO, 'ERROR finding any IS-1 / DAXSS data to save for Level 0b.'
+endelse
 
-    ;
-    ; 1. Task 1: Concatenate data for all telemetry files.
-    ;
+if keyword_set(debdaug) then stop, 'DEBUG at end of daxss_make_level0b...'
+;  clear memory
+bdata = 0L
 
-    ; If the flight model is the desired one, save data
-    IF hkTmp NE !NULL AND hk EQ !NULL THEN hk = hkTmp $
-    ELSE IF hkTmp NE !NULL AND hk NE !NULL THEN hk = [hk, hkTmp]
+return
+end
 
-    IF sciTmp NE !NULL AND sci EQ !NULL THEN sci = sciTmp $
-    ELSE IF sciTmp NE !NULL AND sci NE !NULL THEN sci = [sci, sciTmp]
-
-    IF p1sciTmp NE !NULL AND p1sci EQ !NULL THEN p1sci = p1sciTmp $
-    ELSE IF p1sciTmp NE !NULL AND p1sci NE !NULL THEN p1sci = [p1sci, p1sciTmp]
-
-    IF logTmp NE !NULL AND log EQ !NULL THEN log = logTmp $
-    ELSE IF logTmp NE !NULL AND log NE !NULL THEN log = [log, logTmp]
-
-    IF dumpTmp NE !NULL AND dump EQ !NULL THEN dump = dumpTmp $
-    ELSE IF dumpTmp NE !NULL AND dump NE !NULL THEN dump = [dump, dumpTmp]
-  ENDFOR ; loop through telemetry files
-
-  ;
-  ; 2. Task 2: Now that all data has been concatenated, sort it by time.
-  ;
-  IF hk NE !NULL THEN BEGIN
-		minxss_sort_telemetry, hk, fm=fm, verbose=verbose, _extra=_extra
-		hk_count_sort = n_elements(hk)
-		if keyword_set(VERBOSE) then message, /INFO, $
-			'HK total = '+strtrim(hk_count,2)+', HK sorted = '+strtrim(hk_count_sort,2)
-  ENDIF
-
-  IF sci NE !NULL THEN BEGIN
-  		minxss_sort_telemetry, sci, fm=fm, verbose=verbose, _extra=_extra
-  		if keyword_set(VERBOSE) then message, /INFO, $
-			'SCI sorted = '+strtrim(n_elements(sci),2)
-  ENDIF
-  IF log NE !NULL THEN minxss_sort_telemetry, log, fm=fm, verbose=verbose, _extra=_extra
-  IF dump NE !NULL THEN minxss_sort_telemetry, dump, fm=fm, verbose=verbose, _extra=_extra
-  IF p1sci NE !NULL THEN minxss_sort_telemetry, p1sci, fm=fm, verbose=verbose, _extra=_extra
-
-  ; If no YYYYDOY, grab one from the HK packet
-  IF yyyydoy EQ !NULL THEN BEGIN
-      filenameParsed = ParsePathAndFilename(filename)
-	  ; ypos = strpos( filenameParsed.filename, '_' ) + 1
-	  ; yyyy = strmid(filenameParsed.filename, ypos, 4)
-	  ; doy = strmid(filenameParsed.filename, ypos+5, 3)
-	  ; yyyydoy = yyyy + doy  ; strings
-	  jdmax = gps2jd(max(hk.daxss_time))
-	  yyyydoy = long(jd2yd(jdmax))
-  ENDIF
-  yyyydoy = strtrim(yyyydoy, 2)
-
-  ;
-  ; 3. Write DAXSS data structures to disk as IDL save file
-  ;
-  if (merged ne 0) then fileBase = 'daxss_l0b_merged_' else fileBase = 'daxss_l0b_'
-  outputFilename = fileBase + strmid(yyyydoy, 0, 4) + '_' + strmid(yyyydoy, 4, 3)
-  fullFilename = getenv('minxss_data') + path_sep() + flightModelString + path_sep() + 'level0b' $
-		+ path_sep() + outputFilename + '.sav'
-
-  IF keyword_set(verbose) THEN message, /INFO, 'Saving DAXSS sorted packets into ' + fullFilename
-  file_description = 'DAXSS Level 0B data ' + '; Year = '+strmid(yyyydoy, 0, 4) + '; DOY = ' + $
-        strmid(yyyydoy, 4, 3) + ' ... FILE GENERATED: '+ JPMsystime()
-  save, hk, sci, p1sci, log, dump, FILENAME = fullFilename, /COMPRESS, description = file_description
-
-  ; if keyword_set(verbose) then stop, 'DEBUG at end of daxss_make_level0b...'
-END

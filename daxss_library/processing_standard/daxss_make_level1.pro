@@ -358,7 +358,9 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
 
   ; Define the data structures that will be filled in later
   ;minxss-1 x123 science structure
-  level1_x123 = { time: DAXSS_LEVEL0D[0].time, $
+  level1_x123 = { time_gps: DAXSS_LEVEL0D[0].time, $
+    time_jd: 0.0D0, $
+    time_yd: 0.0D0, $
     flight_model: 0, $
     irradiance: fltarr(1024), $
     irradiance_uncertainty: fltarr(1024), $
@@ -511,7 +513,9 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     ; fill the variables in the level1_x123 structure
     ;
     correct_1AU = (DAXSS_LEVEL0D[wsci[k]].earth_sun_distance)^2.
-    minxsslevel1_x123[num_L1].time = DAXSS_LEVEL0D[wsci[k]].time
+    minxsslevel1_x123[num_L1].time_gps = DAXSS_LEVEL0D[wsci[k]].time
+    minxsslevel1_x123[num_L1].time_jd = DAXSS_LEVEL0D[wsci[k]].time_jd
+    minxsslevel1_x123[num_L1].time_yd = DAXSS_LEVEL0D[wsci[k]].time_yd
     minxsslevel1_x123[num_L1].flight_model = DAXSS_LEVEL0D[wsci[k]].flight_model
     minxsslevel1_x123[num_L1].irradiance = x123_irradiance_structure.irradiance*correct_1AU
     minxsslevel1_x123[num_L1].irradiance_uncertainty = x123_irradiance_structure.IRRADIANCE_UNCERTAINTY*correct_1AU
@@ -853,8 +857,8 @@ minxsslevel1_x123_meta = { $
   SPECTRUM_TOTAL_COUNTS_PRECISION: 'X123 Deadtime corrected spectrum uncertainty soley incluting the instrument measurement precision (total spectral counts over the entire time frame), float array[1024]', $
   INTEGRATION_TIME: 'X123 Integration Time', $
   NUMBER_SPECTRA: 'X123 Number of Spectra in the time interval', $
-  X123_FAST_COUNT: 'X123 Fast Counter value', $
-  X123_SLOW_COUNT: 'X123 Slow Counter value: spectral integration of counts over 1024 bins', $
+  X123_FAST_COUNT: 'X123 Fast Counter value (cps)', $
+  X123_SLOW_COUNT: 'X123 Slow Counter value (cps)', $
   SPS_ON: 'SPS power flag (1=ON, 0=OFF)', $
   SPS_SUM: 'SPS signal, saturates at 111K DN', $
   SPS_X: 'SPS X-axis offset from the sun center (NaN if SPS is not in the sun)', $
