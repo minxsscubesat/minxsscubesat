@@ -17,6 +17,8 @@
 ;
 ; KEYWORD PARAMETERS:
 ;	  NO_EXCLUDE: Don't limit TIME to after 2014 (valid packets for FSW version 8 and later)
+;	  NO_TIME_CORRECT:  Don't do time offset correction
+;	  NO_UNIQUE:  Don't do removal of duplicate packets
 ;
 ; OUTPUTS:
 ;   Array sorted by time for the array of structures (return is same as input)
@@ -38,10 +40,11 @@
 ;                           (use /no_time_correct to skip correction) ... added /verbose keyword
 ;
 ;+
-PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=no_time_correct, verbose=verbose
+PRO minxss_sort_telemetry, array, fm=fm, verbose=verbose, debug=debug, $
+				no_exclude=no_exclude, no_unique=no_unique, no_time_correct=no_time_correct
 
   IF n_params() LT 1 THEN BEGIN
-    print, 'USAGE: minxss_sort_telemetry, in_out_array [, /no_exclude]'
+    print, 'USAGE: minxss_sort_telemetry, in_out_array, fm=fm [, /no_exclude, /no_unique, /no_time_correct]'
     return
   ENDIF
 
@@ -55,13 +58,20 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
   ;
   if array NE !NULL then array = temporary(array[sort(array.TIME)])
 
+  ; Also remove duplicate packets (ones with same time)
+  if NOT keyword_set(no_unique) then begin
+  	if array NE !NULL then begin
+  		array = array[UNIQ(array.TIME)]
+  	endif
+  endif
+
   ;
   ;	get launch time in GPS seconds
   ;
   CASE FM OF
       1: BEGIN
           timeMin = 1135641617.0d0 ; GPS seconds for 1 Jan 2016 00:00:00 UTC
-          timeMax = 1180310413.0d0 ; GPS seconds for 1 June 2022
+          timeMax = 1180310413.0d0 ; GPS seconds for 1 June 2017
         END
       2: BEGIN
           timeMin = 1227657613.0d0 ; GPS seconds for 3 Dec 2018 00:00:00 UTC
@@ -77,10 +87,13 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
           timeMax = 1514246413.0d0 ; GPS seconds for 31 Dec 2027
         END
   ENDCASE
+  ; limit time to current time
+  if (timeMax gt systime(/julian)) then timeMax = jd2gps(systime(/julian))
 
   ;
   ; 2. Task 2: Exclude any data before 2014 (prior to FSW version 8 or later)
   ;
+  if keyword_set(debug) then stop, 'DEBUG minxss_sort_telemetry before EXCLUDE check...'
   if (not keyword_set(no_exclude)) AND (array NE !NULL) then begin
     ; GPS_SECONDS_2014001 =  1072569613.0D0
     ; wgood = where( array.time ge GPS_SECONDS_2014001, numgood)
@@ -88,6 +101,7 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
     wgood = where( array.time ge timeMin AND array.time lt timeMax, numgood)
     if (numgood gt 0) then array = temporary(array[wgood]) ; else leave alone
   endif
+  if keyword_set(debug) then stop, 'DEBUG minxss_sort_telemetry after EXCLUDE check...'
 
   ;
   ; 3. Task 3: Correct timestamps after deployment, before setting spacecraft time
@@ -104,7 +118,7 @@ PRO minxss_sort_telemetry, array, no_exclude=no_exclude, fm=fm, no_time_correct=
         END
       4: BEGIN
           timeSetAt = 1328832018.0d0 ; GPS seconds just prior to ground time set (14 Feb 2022)
-          timeOffset = 180. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
+          timeOffset = 250. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
         END
       ELSE: BEGIN
           message, /info, "FM = "+strtrim(fm,2) + " not yet supported.  Times unchanged."

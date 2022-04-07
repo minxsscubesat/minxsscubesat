@@ -58,13 +58,23 @@ if fm eq 1 then begin
 restore, minxss_calibration_file_path
   x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
   energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
-endif else begin
+endif else if fm eq 2 then begin
   minxss_calibration_file = 'minxss_fm2_response_structure.sav'
   minxss_calibration_file_path = cal_dir + minxss_calibration_file
   restore, minxss_calibration_file_path
-  ; FM-2 values  To-Do  (defined by Chris Moore but not uploaded to dropbox yet!)
+  ; FM-2 values  -  T. Woods 12/2021  based on Moore's calibration paper
   x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
   energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
+endif else if fm eq 4 then begin
+  minxss_calibration_file = 'minxss_fm4_response_structure.sav'
+  minxss_calibration_file_path = cal_dir + minxss_calibration_file
+  restore, minxss_calibration_file_path
+  ; FM-4 values - T. Woods 3/2022   based on Schwab+Sewell DAXSS calibration paper
+  x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
+  energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
+endif else begin
+	message,/INFO, 'ERROR with FM number not being 1, 2, or 4.'
+	stop, 'DEBUG ...'
 endelse
 
    ;  save energy bins for the return

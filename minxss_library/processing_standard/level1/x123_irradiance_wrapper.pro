@@ -26,20 +26,27 @@ if (fm gt 4) then fm=4
 
 if fm eq 1 then begin
 	; FM-1 values
-	x123_energy_bins_kev = findgen(1024) * 0.02930
-	energy_bins_offset = -0.13
 	minxss_calibration_file = 'minxss_fm1_response_structure.sav'
-endif else begin
-	; FM-2 values  To-Do  (NOT DEFINED YET !!!!)
-	x123_energy_bins_kev = findgen(1024) * 0.02930
-	energy_bins_offset = -0.13
+endif else if fm eq 2 then begin
+	; FM-2 values
 	minxss_calibration_file = 'minxss_fm2_response_structure.sav'
+endif else if fm eq 4 then begin
+	; FM-2 values
+	minxss_calibration_file = 'minxss_fm4_response_structure.sav'
+endif else begin
+	message, /INFO, 'ERROR for FM number not being 1, 2, or 4'
+	stop, 'DEBUG ...'
 endelse
 
 ;  add path for the calibration file
 cal_dir = getenv('minxss_data')+'/calibration/'
 minxss_calibration_file = cal_dir + minxss_calibration_file
+
+restore, minxss_calibration_file
+
 ;  save energy bins for the return
+x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
+energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
 ebins = x123_energy_bins_kev + energy_bins_offset
 
 ;
