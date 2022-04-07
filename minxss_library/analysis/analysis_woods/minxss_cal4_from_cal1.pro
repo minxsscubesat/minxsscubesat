@@ -5,6 +5,8 @@
 ;
 ;	12/06/2021	Tom Woods:  See the WORD document "MinXSS_2_calibration_update_2021_12_06.docx"
 ;	12/20/2021  Tom Woods:  Update with new energy offset comparing FM2 QS to DAXSS-2018
+;	2/20/2022	Tom Woods:  FM4 Ver1: Make IS-1 DAXSS (MinXSS-4) calibration file
+;	3/24/2022	Tom Woods:  FM4 Ver2: Update with correct units for daxss_response_final.sav "response"
 ;
 ;	.run minxss_cal4_from_cal1.pro
 ;
@@ -24,7 +26,9 @@ mdr1 = minxss_detector_response
 daxss_response_file='/Users/twoods/Dropbox/minxss_dropbox/data/calibration/daxss_response_final.sav'
 restore, daxss_response_file   ; energy, response
 dax_energy = energy
-dax_response = response
+dax_response = response   ; 3/24/2022: units are cm^2 * keV  (effective_area_cm^2 * bin_size_keV)
+dax_bin_size = 0.0199706
+dax_effective_area = response / dax_bin_size
 
 ;
 ;	make comparison plots of DAXSS to MinXSS-1
@@ -48,18 +52,18 @@ read, 'Next Plot ? ', ans
 
 minxss1_response = minxss_detector_response.X123_EFFECTIVE_AREA
 plot, energy_ev[wgd]/1000., minxss1_response[wgd], $
-		xrange=[0,10], xs=1, yrange=[1E-5,max(minxss1_response[wgd])*30], ys=1, /ylog, $
+		xrange=[0,10], xs=1, yrange=[1E-5,max(dax_effective_area)], ys=1, /ylog, $
 		xtitle='Energy (keV)', ytitle='Effective Area'
-oplot, dax_energy, dax_response, color=cc[3]
+oplot, dax_energy, dax_effective_area, color=cc[3]
 read, 'Next Plot ? ', ans
 
-ratio_response = interpol( dax_response, dax_energy, energy_ev/1000.) / minxss1_response
+ratio_response = interpol( dax_effective_area, dax_energy, energy_ev/1000.) / minxss1_response
 plot, energy_ev[wgd]/1000., ratio_response[wgd], $
-		xrange=[0,10], xs=1, yrange=[1,30.], ys=1, $
+		xrange=[0,10], xs=1, yrange=[0,80.]*10., ys=1, $
 		xtitle='Energy (keV)', ytitle='IS1-DAXSS / MinXSS-1 Effective Area'
 oplot, [4,4], !y.crange, line=2
 temp = min(abs(ENERGY_EV-4000.),w4kev)
-xyouts, 4.2, ratio_response[w4kev]+3., string(ratio_response[w4kev],format='(F4.1)')+' @ 4keV', charsize=2.5
+xyouts, 4.2, ratio_response[w4kev]+100., string(ratio_response[w4kev],format='(F5.1)')+' @ 4keV', charsize=2.5
 read, 'Next Plot ? ', ans
 
 ; stop, 'DEBUG comparison plots...'
@@ -74,7 +78,7 @@ minxss_detector_response.VERSION_DATE = '2022-03-05'
 ;  Flight Model number
 minxss_detector_response.FLIGHT_MODEL = 'FM4'
 ;  Energy scale for Ground Calibrations
-minxss_detector_response.X123_ENERGY_GAIN_KEV_PER_BIN  = 0.0199706
+minxss_detector_response.X123_ENERGY_GAIN_KEV_PER_BIN  = dax_bin_size
 ;  Energy Offset for Ground Calibrations
 minxss_detector_response.X123_ENERGY_OFFSET_KEV = -0.00579901
 ;  Energy Offset for on-orbit solar spectra
@@ -111,7 +115,8 @@ minxss_detector_response.X123_APERTURE_GEOMETRIC_AREA = !pi * (0.0813/2.)^2
 	be_trans_energy = interpol( reform(be_trans[1,*]), reform(be_trans[0,*]), minxss_detector_response.PHOTON_WAVELENGTH )
 ;  DAXSS has special dual-zone aperture so use DAXSS_RESPONSE function as:
 ;		x123_spectral_efficiency = DAXSS_RESPONSE / NOMINAL_AREA
-	DAXSS_RESPONSE = interpol( dax_response, dax_energy, minxss_detector_response.PHOTON_ENERGY )
+;		3/24/2022: Changed in next line from using dax_response to dax_effective_area
+	DAXSS_RESPONSE = interpol( dax_effective_area, dax_energy, minxss_detector_response.PHOTON_ENERGY )
 minxss_detector_response.X123_SPECTRAL_EFFICIENCY = $
 	DAXSS_RESPONSE / minxss_detector_response.X123_APERTURE_GEOMETRIC_AREA
 ; X123_BE_FIT_SPECTRAL_EFFICIENCY is same thing as X123_SPECTRAL_EFFICIENCY
@@ -122,11 +127,11 @@ minxss_detector_response.X123_EFFECTIVE_AREA = DAXSS_RESPONSE
 ;
 ;	Save new (Version 1) FM4 calibration data results
 ;
-cal4_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm4_response_structure_Ver1.sav'
+cal4_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm4_response_structure_Ver2.sav'
 print, ' '
 print, 'Saving MinXSS-4 (DAXSS) Calibration file into ', cal4_file
 print, ' '
-print, '*****  AFTER validating the new MinXSS-4 calibration data, you can rename *_Ver1.sav to just *.sav'
+print, '*****  AFTER validating the new MinXSS-4 calibration data, you can rename *_Ver2.sav to just *.sav'
 print, ' '
 save, minxss_detector_response, file=cal4_file
 
