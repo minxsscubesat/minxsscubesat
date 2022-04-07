@@ -46,6 +46,7 @@
 ;									that correspond to LOG, DUMP, and SCI packets for DAXSS.
 ;	2022-02-16  Tom Woods		Added option to read the IS-1 beacons as the "HK" packets
 ;	2022-02-28  Tom Woods		Added option to save SCI packets group #1 (incomplete packets)
+;	2022-03-25	Tom Woods		Fixed the ADCS data in Beacon (missed a 8-bit flag for ADCS)
 ;
 ;+
 pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
@@ -235,10 +236,12 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   	sband_pa_curr: 0.0, sband_pa_volt: 0.0, sband_rf_pwr: 0.0, sband_pa_temp: 0.0, $
   	sband_top_temp: 0.0, sband_bottom_temp: 0.0, $
   	adcs_cmd_accept: 0, adcs_cmd_fail: 0, adcs_time: 0.0D0, adcs_info: 0, $
+  	adcs_att_valid: 0, adcs_refs_valid: 0, adcs_time_valid: 0, adcs_mode_sun: 0, $
+  	adcs_recom_sun_pt: 0, adcs_sun_pt_state: 0, $
   	adcs_star_temp: 0.0, adcs_wheel_temp1: 0.0, adcs_wheel_temp2: 0.0, adcs_wheel_temp3: 0.0, $
 	adcs_digi_bus_volt: 0.0, adcs_sun_vec1: 0.0, adcs_sun_vec2: 0.0, adcs_sun_vec3: 0.0, $
 	adcs_wheel_sp1: 0.0, adcs_wheel_sp2: 0.0, adcs_wheel_sp3: 0.0, $
-	adcs_body_rt1: 0.0, adcs_body_rt2: 0.0, adcs_body_rt3: 0.0, $
+	adcs_body_rt1: 0.0D0, adcs_body_rt2: 0.0D0, adcs_body_rt3: 0.0D0, $
 	beacon_pad1: 0UL, beacon_pad2: 0UL, beacon_pad3: 0UL, daxss_time: 0UL, $
 	daxss_cmd_opcode: 0, daxss_cmd_accept: 0, daxss_cmd_fail: 0, $
 	daxss_cdh_enables: 0UL, daxss_cdh_temp: 0.0, $
@@ -906,30 +909,73 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   		  hk_struct1.adcs_time = (ulong(data[pindex+98]) + ishft(ulong(data[pindex+99]),8) $
              	 + ishft(ulong(data[pindex+100]),16) + ishft(ulong(data[pindex+101]),24))
   		  hk_struct1.adcs_info = uint(data[pindex+102])
-  		  hk_struct1.adcs_star_temp = fix(data[pindex+103]) * 0.8 + 0.  ; Temp (C)
-  		  hk_struct1.adcs_wheel_temp1 = (long(data[pindex+104]) + ishft(long(data[pindex+105]),8)) * 0.005 + 0.0
-  		  hk_struct1.adcs_wheel_temp2 = (long(data[pindex+106]) + ishft(long(data[pindex+107]),8)) * 0.005 + 0.0
-  		  hk_struct1.adcs_wheel_temp3 = (long(data[pindex+108]) + ishft(long(data[pindex+109]),8)) * 0.005 + 0.0
-  		  hk_struct1.adcs_digi_bus_volt = (long(data[pindex+110]) + ishft(long(data[pindex+111]),8)) * 0.005 + 0.0
-  		  hk_struct1.adcs_sun_vec1 = (long(data[pindex+112]) + ishft(long(data[pindex+113]),8)) * 0.0001 + 0.0
-  		  hk_struct1.adcs_sun_vec2 = (long(data[pindex+114]) + ishft(long(data[pindex+115]),8)) * 0.0001 + 0.0
-  		  hk_struct1.adcs_sun_vec3 = (long(data[pindex+116]) + ishft(long(data[pindex+117]),8)) * 0.0001 + 0.0
-  		  hk_struct1.adcs_wheel_sp1 = (long(data[pindex+118]) + ishft(long(data[pindex+119]),8)) * 0.4 + 0.0
-  		  hk_struct1.adcs_wheel_sp2 = (long(data[pindex+120]) + ishft(long(data[pindex+121]),8)) * 0.4 + 0.0
-  		  hk_struct1.adcs_wheel_sp3 = (long(data[pindex+122]) + ishft(long(data[pindex+123]),8)) * 0.4 + 0.0
 
-  		  hk_struct1.adcs_body_rt1 = (ulong(data[pindex+124]) + ishft(ulong(data[pindex+125]),8) $
+  		  ; 3/25/2022: missed having the ADCS flags defined
+		  hk_struct1.adcs_att_valid = ishft((hk_struct1.adcs_info AND '80'X), -7)
+		  hk_struct1.adcs_refs_valid = ishft((hk_struct1.adcs_info AND '40'X), -6)
+		  hk_struct1.adcs_time_valid = ishft((hk_struct1.adcs_info AND '20'X), -5)
+		  hk_struct1.adcs_mode_sun = ishft((hk_struct1.adcs_info AND '10'X), -4)
+		  hk_struct1.adcs_recom_sun_pt = ishft((hk_struct1.adcs_info AND '08'X), -3)
+		  hk_struct1.adcs_sun_pt_state = (hk_struct1.adcs_info AND '07'X)
+		  ; 3/25/2022:  End of addition for adcs_info bit values
+
+		  ; 3/25/2022: Fix signed numbers for ADCS data
+
+		  temp = long(data[pindex+103])
+		  if (temp ge 128) then temp = temp - 256L
+  		  hk_struct1.adcs_star_temp = temp * 0.8 + 0.  ; Temp (C)
+  		  temp = (long(data[pindex+104]) + ishft(long(data[pindex+105]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_wheel_temp1 =  temp * 0.005 + 0.0
+  		  temp = (long(data[pindex+106]) + ishft(long(data[pindex+107]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_wheel_temp2 = temp * 0.005 + 0.0
+  		  temp = (long(data[pindex+108]) + ishft(long(data[pindex+109]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_wheel_temp3 = temp * 0.005 + 0.0
+  		  temp = (long(data[pindex+110]) + ishft(long(data[pindex+111]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_digi_bus_volt = temp * 0.005 + 0.0
+
+  		  temp = (long(data[pindex+112]) + ishft(long(data[pindex+113]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_sun_vec1 = temp * 1.E-4 + 0.0
+  		  temp = (long(data[pindex+114]) + ishft(long(data[pindex+115]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_sun_vec2 = temp * 1.E-4 + 0.0
+  		  temp = (long(data[pindex+116]) + ishft(long(data[pindex+117]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_sun_vec3 = temp * 1.E-4 + 0.0
+  		  temp = (long(data[pindex+118]) + ishft(long(data[pindex+119]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_wheel_sp1 = temp * 0.4 + 0.0
+  		  temp = (long(data[pindex+120]) + ishft(long(data[pindex+121]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_wheel_sp2 = temp * 0.4 + 0.0
+  		  temp = (long(data[pindex+122]) + ishft(long(data[pindex+123]),8))
+  		  if (temp ge 32768L) then temp = temp - 65536L
+  		  hk_struct1.adcs_wheel_sp3 = temp * 0.4 + 0.0
+
+  		  temp = (ulong(data[pindex+124]) + ishft(ulong(data[pindex+125]),8) $
              	 + ishft(ulong(data[pindex+126]),16) + ishft(ulong(data[pindex+127]),24))
-  		  hk_struct1.adcs_body_rt2 = (ulong(data[pindex+128]) + ishft(ulong(data[pindex+129]),8) $
+  		  if (temp ge 2147483648UL) then temp = temp - 4294967296.0D0
+  		  hk_struct1.adcs_body_rt1 = temp
+  		  temp = (ulong(data[pindex+128]) + ishft(ulong(data[pindex+129]),8) $
              	 + ishft(ulong(data[pindex+130]),16) + ishft(ulong(data[pindex+131]),24))
-  		  hk_struct1.adcs_body_rt3 = (ulong(data[pindex+132]) + ishft(ulong(data[pindex+133]),8) $
+  		  if (temp ge 2147483648UL) then temp = temp - 4294967296.0D0
+  		  hk_struct1.adcs_body_rt2 = temp
+  		  temp = (ulong(data[pindex+132]) + ishft(ulong(data[pindex+133]),8) $
              	 + ishft(ulong(data[pindex+134]),16) + ishft(ulong(data[pindex+135]),24))
+  		  if (temp ge 2147483648UL) then temp = temp - 4294967296.0D0
+  		  hk_struct1.adcs_body_rt3 = temp
+
   		  hk_struct1.beacon_pad1 = (ulong(data[pindex+136]) + ishft(ulong(data[pindex+137]),8) $
              	 + ishft(ulong(data[pindex+138]),16) + ishft(ulong(data[pindex+139]),24))
   		  hk_struct1.beacon_pad2 = (ulong(data[pindex+140]) + ishft(ulong(data[pindex+141]),8) $
              	 + ishft(ulong(data[pindex+142]),16) + ishft(ulong(data[pindex+143]),24))
   		  hk_struct1.beacon_pad3 = (ulong(data[pindex+144]) + ishft(ulong(data[pindex+145]),8) $
              	 + ishft(ulong(data[pindex+146]),16) + ishft(ulong(data[pindex+147]),24))
+
   		  hk_struct1.daxss_time = (ulong(data[pindex+148]) + ishft(ulong(data[pindex+149]),8) $
              	 + ishft(ulong(data[pindex+150]),16) + ishft(ulong(data[pindex+151]),24))
 		  ; hk "time" reference is daxss_time
