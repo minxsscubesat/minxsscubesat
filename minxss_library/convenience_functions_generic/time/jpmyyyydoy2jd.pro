@@ -40,7 +40,7 @@ utc = doy2utc(doyInput, yyyyInput)
 jd = anytim2jd(utc)
 jd = double(jd.int + jd.frac)
 
-IF strlen(yyyyDoy) GT 12 THEN BEGIN
+IF strlen(yyyyDoy) GT 7 THEN BEGIN
   hhInput = strtrim(strmid(strtrim(yyyyDoy, 2), 7, 2), 2)
   mmInput = strtrim(strmid(strtrim(yyyyDoy, 2), 9, 2), 2)
   ssInput = strtrim(strmid(strtrim(yyyyDoy, 2), 11, 2), 2)
