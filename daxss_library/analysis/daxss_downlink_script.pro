@@ -57,9 +57,13 @@ if n_params() lt 1 then begin
 endif ELSE BEGIN
   ; Convert DOY input (if provided) to ISO
   yyyydoy = strtrim(yyyydoy, 2)
-  hh = strmid(strtrim(hh, 2), 0, 2)
-  IF mm EQ !NULL THEN mm = '00' ELSE mm = strmid(strtrim(mm, 2), 0, 2)
-  IF ss EQ !NULL THEN ss = '00' ELSE ss = strmid(strtrim(ss, 2), 0, 2)
+  IF hh LT 10 THEN hh = '0' + strmid(strtrim(hh, 2), 0, 1) ELSE hh = strmid(strtrim(hh, 2), 0, 2)
+  IF mm EQ !NULL THEN mm = '00' ELSE BEGIN
+    IF mm LT 10 THEN mm = '0' + strmid(strtrim(mm, 2), 0, 1) ELSE mm = strmid(strtrim(mm, 2), 0, 2)
+  ENDELSE
+  IF ss EQ !NULL THEN ss = '00' ELSE BEGIN
+    IF ss LT 10 THEN ss = '0' + strmid(strtrim(ss, 2), 0, 1) ELSE ss = strmid(strtrim(ss, 2), 0, 2)
+  ENDELSE
   time_iso = jpmjd2iso(JPMyyyyDoy2JD(yyyydoy + hh + mm + ss))
 ENDELSE
 IF saveloc EQ !NULL THEN BEGIN
@@ -86,12 +90,12 @@ restore, theFiles[-1]
 ;   3. Task 3: Calculate and output the range for the data downlink
 ;
 time_iso_temp = time_iso ; So time_iso will not go to !NULL when calling JPMiso2jd
-centerJD = JPMiso2jd(time_iso_temp)
-if centerJD lt min(hk.time_jd) then begin
+jd_center = JPMiso2jd(time_iso_temp)
+if jd_center lt min(hk.time_jd) then begin
 	print, 'ERROR: Input Time is not in time range for InspireSat-1 mission !'
 	return
 endif
-jd_range = centerJD + [-1. * minutes_before_flare/1440., minutes_after_flare/1440.]
+jd_range = jd_center + [-1. * minutes_before_flare/1440., minutes_after_flare/1440.]
 scid_range = daxss_extrapolate_sd_offset(hk.time_jd, hk.sd_write_scid, jd_range)
 hk_range = daxss_extrapolate_sd_offset(hk.time_jd, hk.sd_write_beacon, jd_range)
 print, ' '
