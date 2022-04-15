@@ -34,9 +34,8 @@
 ;
 ; PROCEDURE:
 ;   1. Task 1: Find / read latest DAXSS Level 0C merged data product
-;   2. Task 2: Interpolate SD_WRITE_SCID for input time
-;   3. Task 3: Calculate and output the range for the data downlink
-;	  4. Task 4: Write Hydra Script for downlink  (TBD)
+;   2. Task 2: Calculate and output the range for the data downlink
+;	  3. Task 3: Write Hydra Script for downlink
 ;
 ; HISTORY
 ;	2022-03-08	T. Woods, identify SD_WRITE_SCID offsets for given time
@@ -58,9 +57,9 @@ if n_params() lt 1 then begin
 endif ELSE BEGIN
   ; Convert DOY input (if provided) to ISO
   yyyydoy = strtrim(yyyydoy, 2)
-  hh = strtrim(hh, 2)
-  IF mm EQ !NULL THEN mm = '00'
-  IF ss EQ !NULL THEN ss = '00'
+  hh = strmid(strtrim(hh, 2), 0, 2)
+  IF mm EQ !NULL THEN mm = '00' ELSE mm = strmid(strtrim(mm, 2), 0, 2)
+  IF ss EQ !NULL THEN ss = '00' ELSE ss = strmid(strtrim(ss, 2), 0, 2)
   time_iso = jpmjd2iso(JPMyyyyDoy2JD(yyyydoy + hh + mm + ss))
 ENDELSE
 IF saveloc EQ !NULL THEN BEGIN
@@ -84,24 +83,17 @@ if keyword_set(VERBOSE) then print, 'Reading file ', theFiles[fileCount-1], ' ..
 restore, theFiles[-1]
 
 ;
-;   2. Task 2: Interpolate SD_WRITE_SCID for input time
-;		convert hk.daxss_time from GPS time to JD
-;		and convert input time to JD
-;
-hkjd = gps2jd( hk.daxss_time )
-
-;
 ;   3. Task 3: Calculate and output the range for the data downlink
 ;
 time_iso_temp = time_iso ; So time_iso will not go to !NULL when calling JPMiso2jd
 centerJD = JPMiso2jd(time_iso_temp)
-if centerJD lt min(hkjd) then begin
+if centerJD lt min(hk.time_jd) then begin
 	print, 'ERROR: Input Time is not in time range for InspireSat-1 mission !'
 	return
 endif
 jd_range = centerJD + [-1. * minutes_before_flare/1440., minutes_after_flare/1440.]
-scid_range = daxss_extrapolate_sd_offset(hkjd, hk.sd_write_scid, jd_range)
-hk_range = daxss_extrapolate_sd_offset(hkjd, hk.sd_write_beacon, jd_range)
+scid_range = daxss_extrapolate_sd_offset(hk.time_jd, hk.sd_write_scid, jd_range)
+hk_range = daxss_extrapolate_sd_offset(hk.time_jd, hk.sd_write_beacon, jd_range)
 print, ' '
 print, 'SD-card SCID range is ', jpmprintnumber(scid_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(scid_range[1], /NO_DECIMALS), ' for ', time_iso
 print, 'SD-card HK (Beacon) range is ', jpmprintnumber(hk_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(hk_range[1], /NO_DECIMALS), ' for ', time_iso
