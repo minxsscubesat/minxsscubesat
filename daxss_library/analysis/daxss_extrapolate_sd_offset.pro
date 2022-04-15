@@ -39,7 +39,11 @@ ind = where(shifted LT 2 AND shifted GT 0)
 jds = jds[ind]
 sd_pointers = sd_pointers[ind]
 
-fit_range_indices = where(jds GE jds[-100] AND jds LE jds[-2]) ; Last 100 points extrapolation method (excluding the final point which as of 2022-03-24 is an erroneous point in 2024)
+; TODO: handle SD pointer rollover (e.g., at ~2e6 for SCID)
+fit_range_indices = where(jds GE jds_to_extrapolate[0]-1 AND jds LE jds_to_extrapolate[1]+1, n_indices) ; 2 days centered around the user inputted times to interpolate
+IF n_indices EQ 0 THEN BEGIN 
+  fit_range_indices = where(jds GE jds[-100] AND jds LE jds[-1]) ; Last 100 points extrapolation method
+ENDIF 
 fit_params = linfit(jds[fit_range_indices], sd_pointers[fit_range_indices])
 
 ;scid_range = interpol( hk.sd_write_scid, hkjd, theJD ) ; Original interpolation method
