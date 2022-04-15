@@ -10,11 +10,13 @@
 ;	  HH, MM, SS	Optional input for Hours, Minutes, Seconds
 ;
 ;	OPTIONAL INPUTS:
-;	  time_iso [string]: Timestamp in ISO8601 UTC format, e.g., 2022-03-23T14:19:20Z.
-;	                     Can also be "human" format, leaving out the T and Z; e.g., 2022-03-23 14:19:20
-;	                     Can specify instead of yyyydoy, hh, mm, ss.
-;	  saveloc [string]:  The path to save the output script to. Defaults to './'
-;	  class [string]:    The flare class (or really any string you want) to be included in the filename, if any. 
+;	  time_iso [string]:            Timestamp in ISO8601 UTC format, e.g., 2022-03-23T14:19:20Z.
+;	                                Can also be "human" format, leaving out the T and Z; e.g., 2022-03-23 14:19:20
+;	                                Can specify instead of yyyydoy, hh, mm, ss.
+;	  saveloc [string]:             The path to save the output script to. Defaults to './'
+;	  class [string]:               The flare class (or really any string you want) to be included in the filename, if any.
+;	  minutes_before_flare [float]: The number of minutes before the flare that you want downlinked. Default is 5.
+;	  minutes_after_flare [float]:  The number of minutes after the flare that you want downlinked. Default is 10.
 ;
 ; KEYWORD PARAMETERS:
 ;   /uhf		Calculate Downlink length appropriate for UHF (default)
@@ -43,10 +45,11 @@
 ;
 ;+
 PRO daxss_downlink_script, yyyydoy, hh, mm, ss, $
-                           time_iso=time_iso, saveloc=saveloc, class=class, $
+                           time_iso=time_iso, saveloc=saveloc, class=class, minutes_before_flare=minutes_before_flare, minutes_after_flare=minutes_after_flare, $
                            UHF=UHF, SBAND=SBAND, $
                            scid_range=scid_range, verbose=verbose
 
+; Defaults
 if n_params() lt 1 then begin
   IF time_iso EQ !NULL THEN BEGIN
 	 print, 'USAGE: daxss_downlink_script, yyyydoy, hh, mm, ss, time_iso=time_iso, /uhf, /sband, /verbose'
@@ -63,14 +66,14 @@ ENDELSE
 IF saveloc EQ !NULL THEN BEGIN
   saveloc = './'
 ENDIF
-
-
+IF minutes_before_flare EQ !NULL THEN minutes_before_flare = 5.
+IF minutes_after_flare EQ !NULL THEN minutes_after_flare = 10.
 
 ;
 ;   1. Task 1: Find / read latest DAXSS Level 0C merged data product
 ;
 dpath = getenv('minxss_data') + '/fm4/level0c/'
-dfile0c = 'daxss_l0c_merged_20*.sav'
+dfile0c = 'daxss_l0c_all_mission_length_*.sav'
 theFiles = file_search( dpath + dfile0c, count=fileCount )
 if (fileCount lt 1) then begin
 	print, 'ERROR: DAXSS Level 0C file not found.'
@@ -89,23 +92,16 @@ hkjd = gps2jd( hk.daxss_time )
 
 ;
 ;   3. Task 3: Calculate and output the range for the data downlink
-;		Add time centered on the input time
-;			UHF: 5 minutes = 300 sec * 2 packets/sec = 600 total packets
-;			S-BAND: 5 minutes = 300 sec * 100 packets/sec = 30000L total packets
 ;
-if keyword_set(SBAND) then total_packets = 300L * 100L $
-else total_packets = 300L * 2L
-half_total = total_packets/2L
-half_time = (300./3600./24.D0) / 2.
 time_iso_temp = time_iso ; So time_iso will not go to !NULL when calling JPMiso2jd
 centerJD = JPMiso2jd(time_iso_temp)
 if centerJD lt min(hkjd) then begin
 	print, 'ERROR: Input Time is not in time range for InspireSat-1 mission !'
 	return
 endif
-theJD = centerJD + [-1.*half_time, half_time]
-scid_range = daxss_extrapolate_sd_offset(hkjd, hk.sd_write_scid, theJD)
-hk_range = daxss_extrapolate_sd_offset(hkjd, hk.sd_write_beacon, theJD)
+jd_range = centerJD + [-1. * minutes_before_flare/1440., minutes_after_flare/1440.]
+scid_range = daxss_extrapolate_sd_offset(hkjd, hk.sd_write_scid, jd_range)
+hk_range = daxss_extrapolate_sd_offset(hkjd, hk.sd_write_beacon, jd_range)
 print, ' '
 print, 'SD-card SCID range is ', jpmprintnumber(scid_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(scid_range[1], /NO_DECIMALS), ' for ', time_iso
 print, 'SD-card HK (Beacon) range is ', jpmprintnumber(hk_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(hk_range[1], /NO_DECIMALS), ' for ', time_iso
