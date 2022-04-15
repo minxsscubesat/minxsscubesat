@@ -48,6 +48,12 @@
 ;   2. Interpolate time to have single timestamp for all data
 ;   3. Retrieve and package relevant ancillary data with DAXSS data
 ;   4. Save interpolated, unified array of structures to disk
+;
+; HISTORY:
+;   2022-02-16   Tom Woods   Original Code to make a limited version of L0D
+;							as IS1 doesn't have ADCS / HK packets very often
+;	2022-04-11	Tom Woods	Fixed the L0C file name for reading for processing
+;
 ;+
 PRO daxss_make_level0d_limited, version=version, VERBOSE=VERBOSE
 
@@ -68,7 +74,7 @@ outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_mission_length_v
 ; 1. Restore the Level 0B mission length file
 ;;
 level0cFile = getenv('minxss_data') + path_sep() + 'fm' + strtrim(fm, 2) + path_sep() + 'level0c' + path_sep() $
-	+ 'daxss_l0c_merged_*.sav'
+	+ 'daxss_l0c_all_mission_length_v' + version + '.sav'
 allFiles = file_search( level0cFile, count=num_files)
 if (num_files gt 0) then level0cFile = allFiles[num_files-1]
 IF file_test(level0cFile) THEN BEGIN
@@ -83,7 +89,7 @@ ENDELSE
 ;;
 ; 2. Make new daxss_level0d structure
 ;;
-daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_gps', 0.0D0, 'time_jd', 0.0D0, 'time_yd', 0.0D0, $
+daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_gps', 0.0D0, 'time_jd', 0.0D0, 'time_yd', 0.0D0, 'time_iso', '', 'time_human', '', $
 					'adcs_mode', 0.0, 'eclipse', 0, $
 					'longitude', 0.0, 'latitude', 0.0, 'altitude', 0.0, $
 					'sun_right_ascension', 0.0, 'sun_declination', 0.0, $
@@ -97,12 +103,12 @@ IF keyword_set(VERBOSE) THEN message, /INFO, 'Processing DAXSS SCI packets: '+st
 num_sci_tags = N_TAGS(sci[0])
 for ii=0L,num_sci_tags-1 do daxss_level0d.(ii) = sci.(ii)
 
-; Fix the Time Offset in the DAXSS time
-time_gps_fixed = sci.time + time_offset_sec
 ; calculate the JD and YD time conversions
-daxss_level0d.time_gps = time_gps_fixed
-daxss_level0d.time_jd = gps2jd(time_gps_fixed)
+daxss_level0d.time_gps = sci.time_gps
+daxss_level0d.time_jd = sci.time_jd
 daxss_level0d.time_yd = jd2yd(daxss_level0d.time_jd)
+daxss_level0d.time_iso = sci.time_iso
+daxss_level0d.time_human = sci.time_human
 
 ; interpolate the HK ADCS_INFO result
 ;  +++++ Quick Test with linear interpolation: really need to pick closest point value (????)

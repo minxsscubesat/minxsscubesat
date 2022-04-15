@@ -63,6 +63,7 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   fm = 4
   flightModelString = 'fm'+strtrim(fm,2)
   IF version EQ !NULL THEN version = '1.0.0'
+  time_offset_sec = -250.D0 ; This offset was discovered when comparing DAXSS data to GOES peaks and rising edges
   
 
   ; Input checks
@@ -165,13 +166,35 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   ;  Allow same time values in the p1sci packets, so use the /no_unique option
   IF p1sci NE !NULL THEN minxss_sort_telemetry, p1sci, fm=fm, verbose=verbose, /no_unique, _extra=_extra
 
+  ; Handle time offset in data
+  hk = JPMAddTagsToStructure(hk, 'time_gps', 'double')
+  hk = JPMAddTagsToStructure(hk, 'time_jd', 'double')
+  hk = JPMAddTagsToStructure(hk, 'time_iso', 'string')
+  hk = JPMAddTagsToStructure(hk, 'time_human', 'string')
+  sci = JPMAddTagsToStructure(sci, 'time_jd', 'double')
+  sci = JPMAddTagsToStructure(sci, 'time_gps', 'double')
+  sci = JPMAddTagsToStructure(sci, 'time_iso', 'string')
+  sci = JPMAddTagsToStructure(sci, 'time_human', 'string')
+  p1sci = JPMAddTagsToStructure(p1sci, 'time_gps', 'double')
+  p1sci = JPMAddTagsToStructure(p1sci, 'time_jd', 'double')
+  p1sci = JPMAddTagsToStructure(p1sci, 'time_iso', 'string')
+  p1sci = JPMAddTagsToStructure(p1sci, 'time_human', 'string')
+  hk.time_gps = hk.time + time_offset_sec
+  hk.time_jd = gps2jd(hk.time_gps)
+  hk.time_iso = jpmjd2iso(hk.time_jd)
+  hk.time_human = jpmjd2iso(hk.time_jd, /NO_T_OR_Z)
+  sci.time_gps = sci.time + time_offset_sec
+  sci.time_jd = gps2jd(sci.time_gps)
+  sci.time_iso = jpmjd2iso(sci.time_jd)
+  sci.time_human = jpmjd2iso(sci.time_jd, /NO_T_OR_Z)
+  p1sci.time_gps = p1sci.time + time_offset_sec
+  p1sci.time_jd = gps2jd(p1sci.time_gps)
+  p1sci.time_iso = jpmjd2iso(p1sci.time_jd)
+  p1sci.time_human = jpmjd2iso(p1sci.time_jd, /NO_T_OR_Z)
+
+
   ; If no YYYYDOY, grab one from the HK packet
   IF yyyydoy EQ !NULL THEN BEGIN
-      ; filenameParsed = ParsePathAndFilename(filename)
-	  ; ypos = strpos( filenameParsed.filename, '_' ) + 1
-	  ; yyyy = strmid(filenameParsed.filename, ypos, 4)
-	  ; doy = strmid(filenameParsed.filename, ypos+5, 3)
-	  ; yyyydoy = yyyy + doy  ; strings
 	  jdmax = gps2jd(max(hk.daxss_time)) < systime(/julian)
 	  yyyydoy = long(jd2yd(jdmax))
   ENDIF
