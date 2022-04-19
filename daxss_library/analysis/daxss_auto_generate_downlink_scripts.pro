@@ -43,7 +43,7 @@ max_server_attempts = 10
 num_server_errors = 0
 
 ; Get the events from yesterday
-event_filename = 'ftp://ftp.swpc.noaa.gov/pub/indices/events/ + filename
+event_filename = 'ftp://ftp.swpc.noaa.gov/pub/indices/events/' + filename
 
 catch, error_status
 
