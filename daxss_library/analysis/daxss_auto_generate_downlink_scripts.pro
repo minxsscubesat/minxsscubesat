@@ -78,11 +78,19 @@ ENDIF
 times = events.time_max[flare_indices]
 class = strmid(events.particulars[flare_indices], 0, 4)
 
-; Construct timestamp for each flare and generate downlink script
+; Construct timestamp for each flare, generate downlink script, and add to a CSV log
 FOR i = 0, nflares - 1 DO BEGIN
   time_iso = events_date + 'T' + strmid(times[i], 0, 2) + ':' + strmid(times[i], 2, 2) + ':00Z'
   daxss_downlink_script, time_iso=time_iso, saveloc=saveloc, class=class[i]
+  openu, lun, saveloc + 'daxss_flare_list.txt', /GET_LUN, /APPEND 
+  printf, lun, time_iso + ',' + class[i]
+  free_lun, lun
 ENDFOR
+
+; Sort the flare list in case it gets out of order
+flare_list = read_csv(saveloc + 'daxss_flare_list.txt', record_start=1)
+sort_indices = sort(flare_list.field1)
+write_csv, saveloc + 'daxss_flare_list.txt', flare_list.field1[sort_indices], flare_list.field2[sort_indices], header=['flare_peak_time_iso', 'flare_class']
 
 file_delete, events_filename
 END
