@@ -9,7 +9,9 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   saveloc [string]: The path to save the scripts to. Default is "~/" (home). 
+;   date_iso [string]: The date you want to look for flares in ISO format (yyyy-mm-dd), e.g., '2022-04-10'.
+;                      If no value is provided, assume yesterday.
+;   saveloc [string]:  The path to save the scripts to. Default is "~/" (home). 
 ;
 ; KEYWORD PARAMETERS:
 ;   None
@@ -26,17 +28,22 @@
 ; EXAMPLE:
 ;   Just run it! 
 ;-
-PRO daxss_auto_generate_downlink_scripts, saveloc=saveloc
+PRO daxss_auto_generate_downlink_scripts, date_iso=date_iso, saveloc=saveloc
   
 ; Defaults
 IF saveloc EQ !NULL THEN BEGIN
   saveloc = '~/'
 ENDIF
+IF date_iso EQ !NULL THEN BEGIN
+  filename = 'yesterday.txt'
+ENDIF ELSE BEGIN
+  filename = strmid(date_iso, 0, 4) + strmid(date_iso, 5, 2) + strmid(date_iso, 8, 2) + 'events.txt'
+ENDELSE
 max_server_attempts = 10
 num_server_errors = 0
 
 ; Get the events from yesterday
-event_filename = 'ftp://ftp.swpc.noaa.gov/pub/indices/events/yesterday.txt'
+event_filename = 'ftp://ftp.swpc.noaa.gov/pub/indices/events/ + filename
 
 catch, error_status
 
