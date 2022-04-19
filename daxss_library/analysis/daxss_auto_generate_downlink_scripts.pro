@@ -56,8 +56,11 @@ ENDELSE
 
 restore, getenv('minxss_code') + '/daxss_library/analysis/goes_event_ascii_template.sav'
 events = read_ascii(events_filename, template=goes_template)
-; Can't figure out how to read the first line of the text file using readf, so making an assumption about the date and how this is going to be run: 
-yesterday_date = strmid(jpmjd2iso(JPMiso2jd(JPMsystime(/UTC)) - 1), 0, 10)
+openr, lun, events_filename, /GET_LUN
+header = strarr(3)
+readf, lun, header
+close, lun
+events_date = strmid(header[2], 7, 4) + '-' + strmid(header[2], 12, 2) + '-' + strmid(header[2], 15, 2)
 
 ; Filter for just flares
 flare_indices = where(events.type EQ 'XRA', nflares)
@@ -70,7 +73,7 @@ class = strmid(events.particulars[flare_indices], 0, 4)
 
 ; Construct timestamp for each flare and generate downlink script
 FOR i = 0, nflares - 1 DO BEGIN
-  time_iso = yesterday_date + 'T' + strmid(times[i], 0, 2) + ':' + strmid(times[i], 2, 2) + ':00Z'
+  time_iso = events_date + 'T' + strmid(times[i], 0, 2) + ':' + strmid(times[i], 2, 2) + ':00Z'
   daxss_downlink_script, time_iso=time_iso, saveloc=saveloc, class=class[i]
 ENDFOR
 
