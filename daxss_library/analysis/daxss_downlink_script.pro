@@ -40,7 +40,7 @@
 ; HISTORY
 ;	2022-03-08	T. Woods, identify SD_WRITE_SCID offsets for given time
 ;	2022-03-23  James Paul Mason: Added time_iso optional input.
-;	2022-03-24  James Paul Mason: Updated extrapolation method to use linfit of last 100 points. Also added Hydra script generation. 
+;	2022-03-24  James Paul Mason: Updated extrapolation method to use linfit of last 100 points. Also added Hydra script generation.
 ;
 ;+
 PRO daxss_downlink_script, yyyydoy, hh, mm, ss, $
@@ -96,8 +96,10 @@ if jd_center lt min(hk.time_jd) then begin
 	return
 endif
 jd_range = jd_center + [-1. * minutes_before_flare/1440., minutes_after_flare/1440.]
-scid_range = daxss_extrapolate_sd_offset(hk.time_jd, hk.sd_write_scid, jd_range)
-hk_range = daxss_extrapolate_sd_offset(hk.time_jd, hk.sd_write_beacon, jd_range)
+hk_jd = hk.time_jd  ; daxss_extrapolate_sd_offset() modifies the hk_jd variable
+scid_range = daxss_extrapolate_sd_offset(hk_jd, hk.sd_write_scid, jd_range)
+hk_jd = hk.time_jd  ; daxss_extrapolate_sd_offset() modifies the hk_jd variable
+hk_range = daxss_extrapolate_sd_offset(hk_jd, hk.sd_write_beacon, jd_range)
 print, ' '
 print, 'SD-card SCID range is ', jpmprintnumber(scid_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(scid_range[1], /NO_DECIMALS), ' for ', time_iso
 print, 'SD-card HK (Beacon) range is ', jpmprintnumber(hk_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(hk_range[1], /NO_DECIMALS), ' for ', time_iso
@@ -118,8 +120,8 @@ free_lun, lun
 
 ; Populate the values in the script
 filledscript = string(scriptbytes)
-filledscript = strreplace(filledscript, ['<THKstartSector>', '<THKstopSectorOffsetFromStart>', '<TSCIstartSector>', '<TSCIstopSectorOffsetFromStart>'], $
-                          strtrim(long([hk_range[0], (hk_range[1] - hk_range[0]), scid_range[0], (scid_range[1] - scid_range[0])]),2))
+filledscript = strreplace(filledscript, ['<THKstartSector>', '<THKstopSectorOffsetFromStart>', '<TSCIstartSector>'], $
+                          strtrim(long([hk_range[0], (hk_range[1] - hk_range[0]), scid_range[0]]),2))
 
 ; Write the file to disk
 new_file = 'playback_flare_' + time_iso
