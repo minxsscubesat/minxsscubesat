@@ -89,7 +89,7 @@ ENDELSE
 ;;
 ; 2. Make new daxss_level0d structure
 ;;
-daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_gps', 0.0D0, 'time_jd', 0.0D0, 'time_yd', 0.0D0, 'time_iso', '', 'time_human', '', $
+daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_yd', 0.0D0, $
 					'adcs_mode', 0.0, 'eclipse', 0, $
 					'longitude', 0.0, 'latitude', 0.0, 'altitude', 0.0, $
 					'sun_right_ascension', 0.0, 'sun_declination', 0.0, $
