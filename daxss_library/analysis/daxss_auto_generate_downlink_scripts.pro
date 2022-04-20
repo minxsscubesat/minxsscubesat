@@ -88,9 +88,12 @@ FOR i = 0, nflares - 1 DO BEGIN
 ENDFOR
 
 ; Sort the flare list in case it gets out of order
-flare_list = read_csv(saveloc + 'daxss_flare_list.txt', record_start=1)
-sort_indices = sort(flare_list.field1)
-write_csv, saveloc + 'daxss_flare_list.txt', flare_list.field1[sort_indices], flare_list.field2[sort_indices], header=['flare_peak_time_iso', 'flare_class']
+restore, getenv('minxss_code') + '/daxss_library/analysis/flare_list_csv_template.sav'
+flare_list = read_ascii(saveloc + 'daxss_flare_list.txt', template=flare_list_template)
+sort_indices = sort(flare_list.peak_flare_time_iso)
+flare_list.peak_flare_time_iso = flare_list.peak_flare_time_iso[sort_indices]
+flare_list.flare_class = flare_list.flare_class[sort_indices]
+write_csv_pp, saveloc + 'daxss_flare_list.txt', flare_list, /TITLESFROMFIELDS, /NOQUOTE
 
 file_delete, events_filename
 END
