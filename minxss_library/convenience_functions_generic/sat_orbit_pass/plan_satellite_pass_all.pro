@@ -26,6 +26,8 @@ plan_satellite_pass,'Parker',/no_update, /no_orbit, verbose=verbose
 
 print, 'PROCESSING pass plans for INDIA...'
 plan_satellite_pass,'India',/no_update, /no_orbit, verbose=verbose
+	print, '  *** Also Generate IS1 Ephemeris Script ***'
+	make_is1_set_ephemeris_script,/latest,/verbose
 
 print, 'PROCESSING pass plans for SINGAPORE...'
 plan_satellite_pass,'Singapore',/no_update, /no_orbit, verbose=verbose
