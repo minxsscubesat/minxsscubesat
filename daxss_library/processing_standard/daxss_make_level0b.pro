@@ -51,7 +51,7 @@ MIN_BYTES = 12L  ; minimum number of bytes for CCSDS packet
 ;
 ;   1. Task 1: Find DAXSS and Beacon CSV Level 0 merged file on GoogleDrive
 ;
-csv_path='/Users/minxss/My Drive (inspire.lasp@gmail.com)/IS1 On-Orbit Data/Processed data'
+csv_path='/Users/minxss/My Drive (inspire.lasp@gmail.com)/IS1 On-Orbit Data/Processed data/Decoded_Packets_*/'
 daxssFiles=file_search(csv_path, 'daxss_sci_level_0.csv', count=daxss_count)
 beaconFiles=file_search(csv_path, 'beacon_level_0.csv', count=beacon_count)
 ; DsatNogsFiles=file_search(csv_path, 'inspire_satnogs*daxss_sci_level_0.csv', count=satnogs1_count)
@@ -60,16 +60,9 @@ if (daxss_count lt 1) or (beacon_count lt 1) then begin
   message, /info, 'ERROR finding InspireSat-1 CSV Processed Files !!!'
   return
 endif
-; get the most recent file for DAXSS packets
-fileTime = dblarr(daxss_count)
-for ii=0,daxss_count-1 do fileTime[ii] = FILE_MODTIME(daxssFiles[ii])
-temp = max(fileTime, wmax)
-theDaxssFile = daxssFiles[wmax]
-; get the most recent file for Beacon packets
-fileTime = dblarr(beacon_count)
-for ii=0,beacon_count-1 do fileTime[ii] = FILE_MODTIME(beaconFiles[ii])
-temp = max(fileTime, wmax)
-theBeaconFile = beaconFiles[wmax]
+; get the most recent files
+theDaxssFile = daxssFiles[-1]
+theBeaconFile = beaconFiles[-1]
 
 ;
 ;   2. Task 2: Convert those data into binary data (byte array)
