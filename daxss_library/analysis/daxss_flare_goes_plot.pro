@@ -1,7 +1,7 @@
 ;
 ;	daxss_flare_goes_plot.pro
 ;
-;	Plot DAXSS Level 1 irradiance intgrated for the GOES 1-8 Angstrom band along with GOES XRS data
+;	Plot DAXSS Level 1 irradiance integrated for the GOES 1-8 Angstrom band along with GOES XRS data
 ;
 ;	INPUT
 ;		date		YYYYMMDD or YYYYDOY format (not required if /ALL is provided)
