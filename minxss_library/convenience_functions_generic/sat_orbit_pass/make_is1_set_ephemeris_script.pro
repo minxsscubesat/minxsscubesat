@@ -6,6 +6,7 @@
 ; INPUTS
 ;   yr, mo, day, hr, mn, sec     UTC Date/Time for ephemeris calculation (usually middle of pass)
 ;   script_path                 Optional input (default is it uses $TLE_dir/India/scripts/)
+;	/latest						Option to make latest ephemeris script
 ;   /verbose
 ;
 ; OUTPUT
@@ -134,17 +135,25 @@ verbose = 1
   date_str = string(long(yr),format='(I04)') + string(long(mo),format='(I02)') + string(long(day),format='(I02)') + $
         '_' + string(long(hr),format='(I02)') + string(long(mn),format='(I02)') + 'UT'
   new_file = 'is1_set_ephemeris_' + date_str + '.prc'
-  if keyword_set(latest) then begin
-    new_file = 'is1_set_ephemeris_latest.prc'
-    if keyword_set(verbose) then print, '  Latest Ephemeris is for ', date_str
-  endif
   filename = path_name+slash+new_file
   print, 'Saving New Ephemeris script in ', filename
   openw, lun, filename, /get_lun
   printf, lun, filledscript
   close, lun
   free_lun, lun
+  ;
+  ;	also save "latest" file if so requested
+  if keyword_set(latest) then begin
+    new_file2 = 'is1_set_ephemeris_latest.prc'
+	filename2 = path_name+slash+new_file2
+	print, 'Saving "Latest" Ephemeris script in ', filename2
+	openw, lun, filename2, /get_lun
+	printf, lun, filledscript
+	close, lun
+	free_lun, lun
+  endif
 
+  ; do not copy to Boulder Hydra as IS1 operations are not at LASP
   ; scripts_dir = getenv('Dropbox_root_dir')+slash+'Hydra'+slash+'MinXSS'+slash
   ; scripts_Boulder = scripts_dir + 'HYDRA_FM-2_Boulder' + slash + 'Scripts' + slash
   ; print, '*** Also saving this into ', scripts_Boulder
