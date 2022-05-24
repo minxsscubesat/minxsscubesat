@@ -327,7 +327,8 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
         mtitle=''
         IF (num_col GT 1) AND (i EQ 1) THEN mtitle=title2
         IF (page_count GT 1) AND (i EQ 0) THEN mtitle=title1 + strtrim(k+1,2)
-        plotobj[i] = plot(ptime, temp_data, '*-', TITLE = mtitle, /CURRENT, LAYOUT = [num_col, num_row, i+1], MARGIN = [0.2, 0.15, 0.05, 0.1], CLIP = 0, $
+        plotobj[i] = plot(ptime, temp_data, '*-', TITLE = mtitle, /CURRENT, CLIP = 0, $
+        				  LAYOUT = [num_col, num_row, i+1], MARGIN = [0.2, 0.15, 0.05, 0.1], $
                           XRANGE = xrange, XTITLE = xtitle, $
                           YRANGE = yrange, YTITLE = extra_str + plot_names[indices[pnum]])
         ax = plotobj[i].axes
@@ -340,7 +341,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     ENDFOR
     ;
     ; write this page of plots to PDF file
-    ;    
+    ;
     IF keyword_set(pdf) THEN BEGIN
       catch, errorStatus
       IF errorStatus NE 0 THEN BEGIN
@@ -350,7 +351,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
         catch, /CANCEL
         BREAK
       ENDIF
-      
+
       IF k LT (page_count-1) THEN plotobj[0].Save, pdf_dir + pdf_file, RESOLUTION = 150, /APPEND $
       ELSE                        plotobj[0].Save, pdf_dir + pdf_file, RESOLUTION = 150, /APPEND, /CLOSE
     ENDIF
