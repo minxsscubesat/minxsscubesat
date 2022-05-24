@@ -40,6 +40,7 @@
 ;
 ; HISTORY
 ; 2022-03-15  T. Woods, updated for IS-1 paths
+; 2022-05-11  T. Woods, updated to also read the daxss_memdump CSV files
 ;
 ;+
 PRO daxss_make_level0b, VERBOSE = VERBOSE, DEBUG=DEBUG
@@ -53,6 +54,7 @@ MIN_BYTES = 12L  ; minimum number of bytes for CCSDS packet
 ;
 csv_path='/Users/minxss/My Drive (inspire.lasp@gmail.com)/IS1 On-Orbit Data/Processed data/Decoded_Packets_*/'
 daxssFiles=file_search(csv_path, 'daxss_sci_level_0.csv', count=daxss_count)
+daxssDumpFiles = file_search(csv_path, 'daxss_memdump_level_0.csv', count=daxss_dump_count)
 beaconFiles=file_search(csv_path, 'beacon_level_0.csv', count=beacon_count)
 ; DsatNogsFiles=file_search(csv_path, 'inspire_satnogs*daxss_sci_level_0.csv', count=satnogs1_count)
 BsatNogsFiles=file_search(csv_path, 'inspire_satnogs*beacon_level_0.csv', count=satnogs2_count)
@@ -61,8 +63,32 @@ if (daxss_count lt 1) or (beacon_count lt 1) then begin
   return
 endif
 ; get the most recent files
-theDaxssFile = daxssFiles[-1]
-theBeaconFile = beaconFiles[-1]
+daxssFilesTime = dblarr(daxss_count)
+for ii=0L,daxss_count-1 do daxssFilesTime[ii] = file_modtime( daxssFiles[ii] )
+temp = max(daxssFilesTime,wmax)
+theDaxssFile = daxssFiles[wmax]
+if keyword_set(verbose) then message, /INFO, "Reading CSV file-1: " + theDaxssFile
+
+daxssDumpFilesTime = dblarr(daxss_dump_count)
+for ii=0L,daxss_dump_count-1 do daxssDumpFilesTime[ii] = file_modtime( daxssDumpFiles[ii] )
+temp = max(daxssDumpFilesTime,wmax)
+theDaxssDumpFile = daxssDumpFiles[wmax]
+if keyword_set(verbose) then message, /INFO, "Reading CSV file-2: " + theDaxssDumpFile
+
+beaconFilesTime = dblarr(beacon_count)
+for ii=0L,beacon_count-1 do beaconFilesTime[ii] = file_modtime( beaconFiles[ii] )
+temp = max(beaconFilesTime,wmax)
+theBeaconFile = beaconFiles[wmax]
+if keyword_set(verbose) then message, /INFO, "Reading CSV file-3: " + theBeaconFile
+
+if (satnogs2_count ge 1) then begin
+	; get the most recent file for Beacon packets
+	satFileTime = dblarr(satnogs2_count)
+	for ii=0L,satnogs2_count-1 do satFileTime[ii] = FILE_MODTIME(BsatNogsFiles[ii])
+	temp = max(satFileTime, wmax)
+	theSatNogsFile = BsatNogsFiles[wmax]
+	if keyword_set(verbose) then message, /INFO, "Reading CSV file-4: " + theSatNogsFile
+endif
 
 ;
 ;   2. Task 2: Convert those data into binary data (byte array)
@@ -72,14 +98,9 @@ bdata_total = ARRAY_CHUNKS_BYTES
 bdata_length = 0L
 str = ' '
 if (satnogs2_count ge 1) then begin
-	; get the most recent file for Beacon packets
-	fileTime = dblarr(satnogs2_count)
-	for ii=0,satnogs2_count-1 do fileTime[ii] = FILE_MODTIME(BsatNogsFiles[ii])
-	temp = max(fileTime, wmax)
-	theSatNogsFile = BsatNogsFiles[wmax]
-	allFiles = [ theDaxssFile, theBeaconFile, theSatNogsFile ]
+	allFiles = [ theDaxssFile, theDaxssDumpFile, theBeaconFile, theSatNogsFile ]
 endif else begin
-	allFiles = [ theDaxssFile, theBeaconFile ]
+	allFiles = [ theDaxssFile, theDaxssDumpFile, theBeaconFile ]
 endelse
 num_files = n_elements(allFiles)
 bytes_files = lonarr(num_files)
