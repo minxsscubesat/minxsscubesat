@@ -104,3 +104,5 @@ minxss_library/processing_standard/level1/Photon_Flux_Estimate_MinXSS-1_X123_Mea
 surf_analysis/SURF_FLUX_XRS2.dat
 surf_analysis/SURF_FLUX_XRS1.dat
 surf_analysis/SURF_FLUX_GOES.dat
+code_with_fm original_do_NOT_use.txt
+code_with_fm.txt
