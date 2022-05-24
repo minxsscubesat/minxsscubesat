@@ -46,6 +46,14 @@ IF n_indices EQ 0 THEN BEGIN
 ENDIF 
 fit_params = linfit(jds[fit_range_indices], sd_pointers[fit_range_indices])
 
+; Handle cases where the prediction just can't be made because the SD offset is all over the place
+derivative = deriv(float(sd_pointers[fit_range_indices]))
+downward_indices = where(derivative LT 0, count)
+IF count GT 0 THEN BEGIN
+  message, /INFO, 'The SD offsets appear to be fluctuating randomly with ' + JPMPrintNumber(count, /NO_DECIMALS) + ' decreases in the data. Skipping this event.'
+  return, !VALUES.F_NAN
+ENDIF
+
 ;scid_range = interpol( hk.sd_write_scid, hkjd, theJD ) ; Original interpolation method
 
 return, long(fit_params[0] + fit_params[1] * jds_to_extrapolate)

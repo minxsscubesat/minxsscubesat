@@ -43,12 +43,13 @@
 ;	2022-03-24  James Paul Mason: Updated extrapolation method to use linfit of last 100 points. Also added Hydra script generation.
 ;
 ;+
-PRO daxss_downlink_script, yyyydoy, hh, mm, ss, $
+PRO daxss_downlink_script, yyyydoy_in, hh_in, mm_in, ss_in, $
                            time_iso=time_iso, saveloc=saveloc, class=class, minutes_before_flare=minutes_before_flare, minutes_after_flare=minutes_after_flare, $
                            UHF=UHF, SBAND=SBAND, $
-                           scid_range=scid_range, verbose=verbose
+                           scid_range=scid_range, verbose=verbose, debug=debug
 
 ; Defaults
+if keyword_set(debug) then verbose=1
 if n_params() lt 1 then begin
   IF time_iso EQ !NULL THEN BEGIN
 	 print, 'USAGE: daxss_downlink_script, yyyydoy, hh, mm, ss, time_iso=time_iso, /uhf, /sband, /verbose'
@@ -56,14 +57,13 @@ if n_params() lt 1 then begin
   ENDIF
 endif ELSE BEGIN
   ; Convert DOY input (if provided) to ISO
-  yyyydoy = strtrim(yyyydoy, 2)
-  IF hh LT 10 THEN hh = '0' + strmid(strtrim(hh, 2), 0, 1) ELSE hh = strmid(strtrim(hh, 2), 0, 2)
-  IF mm EQ !NULL THEN mm = '00' ELSE BEGIN
-    IF mm LT 10 THEN mm = '0' + strmid(strtrim(mm, 2), 0, 1) ELSE mm = strmid(strtrim(mm, 2), 0, 2)
-  ENDELSE
-  IF ss EQ !NULL THEN ss = '00' ELSE BEGIN
-    IF ss LT 10 THEN ss = '0' + strmid(strtrim(ss, 2), 0, 1) ELSE ss = strmid(strtrim(ss, 2), 0, 2)
-  ENDELSE
+  yyyydoy = strtrim(long(yyyydoy_in), 2)
+  if hh_in EQ !NULL then hh_in = 12
+  IF hh_in LT 10 THEN hh = '0' + strmid(strtrim(hh_in, 2), 0, 1) ELSE hh = strmid(strtrim(hh_in, 2), 0, 2)
+  IF mm_in EQ !NULL THEN mm_in = 0
+  IF mm_in LT 10 THEN mm = '0' + strmid(strtrim(mm_in, 2), 0, 1) ELSE mm = strmid(strtrim(mm_in, 2), 0, 2)
+  IF ss_in EQ !NULL THEN ss_in = 0
+  IF ss_in LT 10 THEN ss = '0' + strmid(strtrim(ss_in, 2), 0, 1) ELSE ss = strmid(strtrim(ss_in, 2), 0, 2)
   time_iso = jpmjd2iso(JPMyyyyDoy2JD(yyyydoy + hh + mm + ss))
 ENDELSE
 IF saveloc EQ !NULL THEN BEGIN
@@ -100,6 +100,7 @@ hk_jd = hk.time_jd  ; daxss_extrapolate_sd_offset() modifies the hk_jd variable
 scid_range = daxss_extrapolate_sd_offset(hk_jd, hk.sd_write_scid, jd_range)
 hk_jd = hk.time_jd  ; daxss_extrapolate_sd_offset() modifies the hk_jd variable
 hk_range = daxss_extrapolate_sd_offset(hk_jd, hk.sd_write_beacon, jd_range)
+IF finite(scid_range) EQ [0] THEN return
 print, ' '
 print, 'SD-card SCID range is ', jpmprintnumber(scid_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(scid_range[1], /NO_DECIMALS), ' for ', time_iso
 print, 'SD-card HK (Beacon) range is ', jpmprintnumber(hk_range[0], /NO_DECIMALS), ' to ', JPMPrintNumber(hk_range[1], /NO_DECIMALS), ' for ', time_iso
@@ -134,7 +135,7 @@ close, lun
 free_lun, lun
 
 
-if keyword_set(VERBOSE) then begin
+if keyword_set(DEBUG) then begin
 	stop, 'DEBUG daxss_downlink_script ...'
 endif
 
