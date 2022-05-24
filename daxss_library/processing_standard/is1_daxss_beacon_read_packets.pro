@@ -47,11 +47,12 @@
 ;	2022-02-16  Tom Woods		Added option to read the IS-1 beacons as the "HK" packets
 ;	2022-02-28  Tom Woods		Added option to save SCI packets group #1 (incomplete packets)
 ;	2022-03-25	Tom Woods		Fixed the ADCS data in Beacon (missed a 8-bit flag for ADCS)
+;	2022-04-23	Tom Woods		Added option to save SCI packets group #2 (incomplete packets)
 ;
 ;+
 pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
-						p1sci=p1sci, hexdump=hexdump, fm=fm, $
-						VERBOSE=VERBOSE, DEBUG=DEBUG, _extra=_extra
+						p1sci=p1sci, p2sci=p2sci, hexdump=hexdump, fm=fm, $
+						VERBOSE=VERBOSE, DEBUG=DEBUG, DIR_LOG=DIR_LOG, _extra=_extra
 
   ; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
   junk = temporary(sci)
@@ -80,6 +81,8 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   endif else doDebug = 0
 
   inputType = ''
+  doLogWriteFile = 0
+
   IF size(input, /TYPE) EQ 7 THEN BEGIN
     inputType = 'file'
     fileOpened = 0
@@ -97,6 +100,21 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
       fileOpened = 0
       on_ioerror, NULL
     endif else goto, exit_read
+    ; prepare for DAXSS_READ log file if VERBOSE and DIR_LOG is set
+    if keyword_set(verbose) AND keyword_set(DIR_LOG) then begin
+    	pslash = strpos( input, path_sep(), /REVERSE_SEARCH )
+    	if (pslash ge 0) then input_file_name = strmid(input, pslash+1, strlen(input)-pslash-1) $
+    	else input_file_name = input
+    	log_file = 'daxss_read_log_' + strcompress(input_file_name, /REMOVE_ALL) + '.txt'
+    	pslash2 = strpos( DIR_LOG, path_sep(), /REVERSE_SEARCH )
+    	if (pslash2 ne (strlen(DIR_LOG)-1)) then DIR_LOG += path_sep()
+    	openw, log_lun, DIR_LOG+log_file, /get_lun
+    	printf, log_lun, systime() + " : is1_daxss_beacon_read_packets() Log File Opened : " + $
+    				DIR_LOG+log_file
+    	printf, log_lun, " Packet Time         :       Message "
+    	printf, log_lun, "-------------------- : ---------------------------------------------------------"
+    	doLogWriteFile = 1
+    endif
   ENDIF ELSE BEGIN
     inputType = 'bytarr'
     data = input ; input provided was a file name else input was already bytarr
@@ -182,6 +200,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   X123_DATA_MAX = X123_SPECTRUM_LENGTH + X123_HEADER_LENGTH
   sci_count = 0L
   p1sci_count = 0L
+  p2sci_count = 0L
   sci_raw_count = 0L
   sci_err_count = 0L
   sci_struct1 = { apid: 0.0, seq_flag: 0B, seq_count: 0.0, data_length: 0L, time: 0.0D0,  $
@@ -210,6 +229,13 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
     x123_read_errors: 0, x123_radio_flag: 0,  x123_write_errors: 0, spare_errors: 0, $
     x123_cmp_info: 0L, x123_spect_len: 0, $
     x123_group_count: 0, x123_spectrum: lonarr(X123_SPECTRUM_BINS), $
+    checkbytes: 0L, SyncWord: 0.0, $
+    checkbytes_calculated: 0L, checkbytes_valid: 1B  }
+
+  ;  SCI other packet type (not packet 1)
+  sci_struct2 = { apid: 0.0, seq_flag: 0B, seq_count: 0.0, data_length: 0L, time: 0.0D0,  $
+    cdh_info: 0U, cmd_last_opcode: 0, $
+    x123_group_count: 0, x123_data: bytarr(X123_OTHER_LENGTH), $
     checkbytes: 0L, SyncWord: 0.0, $
     checkbytes_calculated: 0L, checkbytes_valid: 1B  }
 
@@ -515,16 +541,22 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
         ;
         ;  ************************
         ;  Science (Sci) Packet (if user asked for it)
+        ;
+        ;		2022-04-23:  New Science Packet Processing Flow (T. Woods)
+        ;		Check Packet ID
+        ;			Check Packet fits into File Data Length
+        ;			    Check the checksum
+        ;				Check if Sequence Flag is #1
+        ;					Start new packet (trash old incomplete packet)
+        ;					Store SCI and SCI1 packets
+        ;					Process packet IF Sequence Flag is #2
+        ;				ELSE  (Sequence Flag is not #1)
+        ;					Check if group counter is correct value (else trash incomplete packet)
+        ;					Process packet IF Sequence Flag is #2
         ;  ************************
         ;
         if arg_present(sci) and ((pindex+PACKET_LEN_SCI+7) le data_length) then begin
-
-          sci_struct1.apid = packet_id_full  ; keep Playback bit in structure
-          sci_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
-          ; keep partial set of linked packets if first packet
-          sci_keep_it = ((sci_struct1.seq_flag eq 1) OR (sci_struct1.seq_flag eq 3))
-          sci_struct1.data_length = packet_length
-
+		  ;  Check the checksum (only does error count if calculated and file checksums do not agree)
           pkt_expectedCheckbytes = fletcher_checkbytes(data[pindex:pindex+249])
           pkt_expectedCheckbytes = long(pkt_expectedCheckbytes[0]) + ishft(long(pkt_expectedCheckbytes[1]),8)
           pkt_actualCheckbytes = long(data[pindex+250]) + ishft(long(data[pindex+251]),8)
@@ -533,29 +565,46 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
           	sci_err_count += 1
           ENDIF
 
+		  ; special check for first SCI packet
+		  if (sci_lastSeqCount eq 0) AND (sci_count eq 0) then sci_lastSeqCount = packet_seq_count - 1
+
+		  sci_seq_flags = ishft(long(data[pindex+2] AND 'C0'X),-6)
 		  if keyword_set(debug) then begin
-		  	print, "SCI PACKET SEQ Flag = " + strtrim(fix(sci_struct1.seq_flag),2)
-		  	if ((sci_struct1.seq_flag AND '01'X) eq 1) then BEGIN
-		  	  print, '    Group #1 Count='+strtrim((long(data[pindex+170]) + $
+		  	sci_str = "SCI PACKET SEQ Flag = " + strtrim(fix(sci_seq_flags),2)
+		  	if ((sci_seq_flags AND '01'X) eq 1) then BEGIN
+		  	  print, sci_str + ', Group #1 Count='+strtrim((long(data[pindex+170]) + $
 		  	  				ishft(long(data[pindex+171]),8)),2)
 		  	endif else BEGIN
-		  	  print, '    Group # '+strtrim((long(data[pindex+14]) + $
+		  	  print, sci_str + ', Group # '+strtrim((long(data[pindex+14]) + $
 		  					ishft(long(data[pindex+15]),8)) ,2)
 		  	endelse
-		  	stop, 'STOPPED to DEBUG SCI Packet...'
+		  	if (debug gt 1) then stop, 'STOPPED to DEBUG SCI Packet...'
 		  endif
 
-          if ((sci_struct1.seq_flag AND '01'X) eq 1) then begin
-            IF (sciPacketIncomplete) AND keyword_set(verbose) THEN BEGIN
-            	message, /info, "Missed end of last packet (seqCount = "+strtrim(sci_lastSeqCount,2)+")"
-				sci_err_count += 1
-			ENDIF
-
+          if ((sci_seq_flags AND '01'X) eq 1) then begin
             ;  this is the first science packet (can be up to 14 packets)
 
+			; Start new packet (trash old incomplete packet)
+            IF (sciPacketIncomplete ne 0) THEN BEGIN
+            	if keyword_set(verbose) then BEGIN
+            		message, /info, "Missed end of last packet (seqCount = " $
+            								+strtrim(sci_lastSeqCount,2)+")"
+            		if (doLogWriteFile ne 0) then printf, log_lun, $
+            				jpmjd2iso(gps2jd(packet_time)) + " : " + $
+            				"Missed end of last packet (seqCount = "+strtrim(sci_lastSeqCount,2)+")"
+            	endif
+				sci_err_count += 1
+			ENDIF
             ; Set a "busy" flag so we know we're in the middle of reading a science packet,
             ; which could be more than one transmittal packet
             sciPacketIncomplete = 1
+
+        	; Store SCI and SCI1 packets
+        	sci_struct1.apid = packet_id_full  ; keep Playback bit in structure
+			sci_struct1.seq_flag = sci_seq_flags
+			; keep partial set of linked packets if first packet into sci_struct1 else store in sci_struct2
+			sci_keep_it = ((sci_struct1.seq_flag eq 1) OR (sci_struct1.seq_flag eq 3))
+			sci_struct1.data_length = packet_length
 
             sci_struct1.time = packet_time
             sci_struct1.seq_count = packet_seq_count
@@ -563,6 +612,9 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
 
             sci_struct1.checkbytes = pkt_actualCheckbytes
             sci_struct1.checkbytes_calculated = pkt_expectedCheckbytes
+            ; Validate the checksum
+            sci_struct1.checkbytes_valid = sci_struct1.checkbytes EQ sci_struct1.checkbytes_calculated
+
             sci_struct1.SyncWord = (long(data[pindex-2]) + ishft(long(data[pindex-1]),8))  ;none
 
             sci_struct1.cdh_info = (long(data[pindex+12])) ;None
@@ -692,6 +744,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
             ;     + ishft(long(data[pindex+(83+(ii*3))]),8) $
             ;         + ishft(long(data[pindex+(84+(ii*3))]),16))
             ; endfor
+
             ;
             ; Store Raw Spectrum Data and see if need to decompress it after last packet
             ;
@@ -703,59 +756,100 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
             for ii=0,X123_FIRST_LENGTH-1 do sci_raw_data[ii] = data[pindex+172+ii]
             sci_raw_count = X123_FIRST_LENGTH
 
-			;
-			;  KEEP as Group #1 SCI packet
-			;
-			sci_struct1.x123_spectrum = x123_decompress( sci_raw_data, sci_raw_count, $
+	        ; Process packet IF Sequence Flag is #2 just for the p1sci[] storage
+	        if ((sci_seq_flags AND '10'X) eq 2) then begin
+				sci_struct1.x123_spectrum = x123_decompress( sci_raw_data, sci_raw_count, $
 					sci_struct1.x123_cmp_info, sci_struct1.x123_spect_len )
+				; clear flag for incomplete SCI packet
+				; sciPacketIncomplete = 0   ; flag will be cleared below
+			endif
+
+			;
+			;  KEEP as special Group #1 SCI packets
+			;
             if (p1sci_count eq 0) then p1sci = replicate(sci_struct1, N_CHUNKS) else $
                 if p1sci_count ge n_elements(p1sci) then p1sci = [p1sci, replicate(sci_struct1, N_CHUNKS)]
             p1sci[p1sci_count] = sci_struct1
 			p1sci_count += 1L
+
 			; stop, 'DEBUG SCI Group #1 packet ...'
 
           endif else begin
             ;  this is other (not first) science packet (can be up to 14 packets)
 
-            ; Set a "busy" flag so we know we're in the middle of reading a science packet,
-            ; which could be more than one transmittal packet
-            sciPacketIncomplete = 1
+			; Error if incomplete packet flag is NOT set
+            IF (sciPacketIncomplete eq 0) THEN BEGIN
+            	if keyword_set(verbose) then begin
+            		message, /info, "SCI Packet #1 is missing (seqCount = " $
+            									+strtrim(packet_seq_count,2)+")"
+            		if (doLogWriteFile ne 0) then printf, log_lun, $
+            					jpmjd2iso(gps2jd(packet_time)) + " : " + $
+            					"SCI Packet #1 is missing (seqCount = "+strtrim(packet_seq_count,2)+")"
+            	endif
+				sci_err_count += 1
+			ENDIF
 
-            ;sci_struct1.time = packet_time
-            ;sci_struct1.checksum = long(data[pindex+248]) + ishft(long(data[pindex+249]),8)
-            sci_struct1.x123_group_count = (long(data[pindex+14]) + ishft(long(data[pindex+15]),8))  ;none
+        	; Store SCI2 packet info
+        	sci_struct2.apid = packet_id_full  ; keep Playback bit in structure
+			sci_struct2.seq_flag = sci_seq_flags
+			sci_struct2.data_length = packet_length
+
+            sci_struct2.time = packet_time
+            sci_struct2.seq_count = packet_seq_count
+            ;  Check that Sequence Count is in the right order
+            nextSeqCount = sci_lastSeqCount+1
+            if (nextSeqCount ge '4000'X) then nextSeqCount = 0L
+            if (packet_seq_count ne nextSeqCount) then begin
+            	if keyword_set(verbose) then begin
+            		message, /info, "SCI Sequence Count is out of order: seqCount=" $
+            									+strtrim(packet_seq_count,2)+" but expected " $
+            									+strtrim(nextSeqCount,2)
+            		if (doLogWriteFile ne 0) then printf, log_lun, $
+            					jpmjd2iso(gps2jd(packet_time)) + " : " + $
+								"SCI Sequence Count is out of order: seqCount=" $
+            									+strtrim(packet_seq_count,2)+" but expected " $
+            									+strtrim(nextSeqCount,2)
+            	endif
+            	IF keyword_set(debug) THEN stop, 'DEBUG SCI missing packet error...'
+            	sciPacketIncomplete = 0 ; abort for this packet
+				sci_err_count += 1
+            endif
+            sci_lastSeqCount = packet_seq_count
+
+            sci_struct2.checkbytes = pkt_actualCheckbytes
+            sci_struct2.checkbytes_calculated = pkt_expectedCheckbytes
+            ; Validate the checksum
+            sci_struct2.checkbytes_valid = sci_struct2.checkbytes EQ sci_struct2.checkbytes_calculated
+
+            sci_struct2.SyncWord = (long(data[pindex-2]) + ishft(long(data[pindex-1]),8))
+
+            sci_struct2.cdh_info = (long(data[pindex+12])) ;None
+			sci_struct2.cmd_last_opcode = (long(data[pindex+13]))   ; none
+
+            sci_struct2.x123_group_count = (long(data[pindex+14]) + ishft(long(data[pindex+15]),8))
             sci_struct1.checkbytes += pkt_actualCheckbytes
             sci_struct1.checkbytes_calculated += pkt_expectedCheckbytes
 
+			for ii=0,X123_OTHER_LENGTH-1 do sci_struct2.x123_data[ii] = data[pindex+16+ii]
+
             ; Store Raw Spectrum Data and see if need to decompress it after last packet
-            ;
-            IF (packet_seq_count EQ ((sci_lastSeqCount + 1) mod 2L^14)) THEN BEGIN
-              sci_lastSeqCount = packet_seq_count
+            IF (sciPacketIncomplete ne 0) THEN BEGIN
               sci_packetCounter += 1
 
-              SpecIndex = (sci_struct1.x123_group_count-1)*X123_OTHER_LENGTH + X123_FIRST_LENGTH
+              SpecIndex = (sci_struct2.x123_group_count-1)*X123_OTHER_LENGTH + X123_FIRST_LENGTH
               if (n_elements(sci_raw_data) ne 0) and (SpecIndex ge 0) and (SpecIndex lt X123_DATA_MAX) then begin
-                if pindex+16+X123_OTHER_LENGTH lt n_elements(data) then begin
+                if (pindex+16+X123_OTHER_LENGTH) lt data_length then begin
                   for ii=0,X123_OTHER_LENGTH-1 do begin
                     if ((SpecIndex+ii) lt X123_DATA_MAX) then sci_raw_data[SpecIndex+ii] = data[pindex+16+ii]
                   endfor
                   sci_raw_count += X123_OTHER_LENGTH
                 endif else begin
-                	message, /info, "Science packet too short! WTF?"
+                	message, /info, "Science packet too short for the data file!"
                 	sci_err_count += 1
+                	sciPacketIncomplete = 0
                 endelse
               endif else sciPacketIncomplete = 0
             ENDIF ELSE BEGIN
-              IF keyword_set(verbose) THEN BEGIN
-              	message, /info, "Gap in science packet sequence counter (expected "$
-              		+strtrim(sci_lastSeqCount + 1,2)+", saw "+strtrim(packet_seq_count,2)+$
-              		", Group Flag=" + strtrim(ishft(long(data[pindex+2] AND 'C0'X),-6),2)+$
-              		", Group Count="+ strtrim(fix(data[pindex+14]),2)+$
-              		") -- trashing current packet! at SCI index "+strtrim(sci_count,2)
-              	sci_err_count += 1
-              	; stop, 'DEBUG SCI missing packet error...'
-              ENDIF
-              IF keyword_set(debug) THEN stop, 'DEBUG SCI missing packet error...'
               ;
               ;	attempt to fill in the missing packet if compression is OFF
               ;
@@ -765,13 +859,13 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
                   ;  store this packet's data
               	  SpecIndex = (sci_struct1.x123_group_count-1)*X123_OTHER_LENGTH + X123_FIRST_LENGTH
 				  if (n_elements(sci_raw_data) ne 0) and (SpecIndex ge 0) and (SpecIndex lt X123_DATA_MAX) then begin
-					if pindex+16+X123_OTHER_LENGTH lt n_elements(data) then begin
+					if (pindex+16+X123_OTHER_LENGTH) lt data_length then begin
 					  for ii=0,X123_OTHER_LENGTH-1 do begin
 						if ((SpecIndex+ii) lt X123_DATA_MAX) then sci_raw_data[SpecIndex+ii] = data[pindex+16+ii]
 					  endfor
 					  sci_raw_count += X123_OTHER_LENGTH
 					endif else begin
-						message, /info, "Science packet too short! WTF?"
+						message, /info, "Science packet too short for the data file!!"
 						sci_err_count += 1
 					endelse
 				  endif
@@ -782,42 +876,56 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
               sci_packetCounter += 1
             ENDELSE
 
+			;
+			;  KEEP as special Group #2 SCI packets
+			;
+            if (p2sci_count eq 0) then p2sci = replicate(sci_struct2, N_CHUNKS) else $
+                if p2sci_count ge n_elements(p2sci) then p2sci = [p2sci, replicate(sci_struct2, N_CHUNKS)]
+            p2sci[p2sci_count] = sci_struct2
+			p2sci_count += 1L
+
+			; stop, 'DEBUG SCI Group #2 packet ...'
+
           endelse
 
           ;
           ;   Check if it is last linked packet and if so, then decompress and store
           ;
-          if ((sci_struct1.seq_flag AND '02'X) eq 2) then begin
+          if (sciPacketIncomplete ne 0) AND ((sci_seq_flags AND '02'X) eq 2) then begin
 
             if (sci_packetCounter EQ sci_numPacketsExpected) then begin
-              sci_struct1.x123_spectrum = x123_decompress( sci_raw_data, sci_raw_count, sci_struct1.x123_cmp_info, sci_struct1.x123_spect_len )
+              sci_struct1.x123_spectrum = x123_decompress( sci_raw_data, sci_raw_count, $
+              						sci_struct1.x123_cmp_info, sci_struct1.x123_spect_len )
               ; Validate the checksum
               sci_struct1.checkbytes_valid = sci_struct1.checkbytes EQ sci_struct1.checkbytes_calculated
+              ; Store the SCI complete packet
               if (sci_count eq 0) then sci = replicate(sci_struct1, N_CHUNKS) else $
                 if sci_count ge n_elements(sci) then sci = [sci, replicate(sci_struct1, N_CHUNKS)]
               sci[sci_count] = sci_struct1
               sci_count += 1
-              ; Done with this packet so reset the counters
-              sci_packetCounter = 0
-              sci_numPacketsExpected = -1
             endif else begin
               IF keyword_set(verbose) THEN BEGIN
               	message, /info, "Missing packet in group (saw " $
-              		+strtrim(sci_packetCounter,2)+", expected "+strtrim(sci_numPacketsExpected,2)+$
-              		") -- trashing packet! at SCI index "+strtrim(sci_count,2)
-              	sci_err_count += 1
+              		+strtrim(sci_packetCounter,2)+" packets, expected "+strtrim(sci_numPacketsExpected,2)+$
+              		") -- trashing SCI packet at SCI index "+strtrim(sci_count,2)
+              	if (doLogWriteFile ne 0) then printf, log_lun, $
+              		jpmjd2iso(gps2jd(packet_time)) + " : " + $
+					"Missing packet in group (saw " $
+              			+strtrim(sci_packetCounter,2)+" packets, expected "+strtrim(sci_numPacketsExpected,2)+$
+              			") -- trashing SCI packet at SCI index "+strtrim(sci_count,2)
               ENDIF
+              sci_err_count += 1
               IF keyword_set(debug) THEN stop, 'DEBUG SCI missing packet error...'
-              ; Done with this packet so reset the counters
-              sci_packetCounter = 0
-              sci_numPacketsExpected = -1
             endelse
 
+			; Done with this packet so reset the counters
+            sci_packetCounter = 0
+            sci_numPacketsExpected = -1
             ; Unset "busy" flag since the science packet is now complete
             sciPacketIncomplete = 0
-
           endif
-        endif
+
+        endif  ; END for check SCI packet fits into data file length
 
           ; If we are here and science packet is still incomplete, and sci_count = 0, set sci = -1 as a flag
           ; @TODO: If at least one science packet has been read, try to save partial packet
@@ -1097,6 +1205,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   if arg_present(dump) and n_elements(dump) ne 0 then dump = dump[0:dump_count-1]
   if arg_present(hk) and n_elements(hk) ne 0 then hk = hk[0:hk_count-1]
   if arg_present(p1sci) and n_elements(p1sci) ne 0 then p1sci = p1sci[0:p1sci_count-1]
+  if arg_present(p2sci) and n_elements(p2sci) ne 0 then p2sci = p2sci[0:p2sci_count-1]
 
   ; Determine flight model from SCI data, or -1 if no SCI data found
   fm = 0 & timeIndex = 0
@@ -1129,22 +1238,48 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   if keyword_set(verbose) then begin
     print, '*** daxss_read_packets finished:'
     if (log_count gt 0) then  print, 'Number of LOG  Packets = ', log_count
+    if (dump_count gt 0) then print, 'Number of DUMP Packets = ', dump_count
     if (sci_count gt 0) then  print, 'Number of SCI  Packets = ', sci_count,  ' and number of errors = ', sci_err_count
     if (p1sci_count gt 0) then  print, 'Number of SCI-1  Packets = ', p1sci_count
-    if (dump_count gt 0) then print, 'Number of DUMP Packets = ', dump_count
+    if (p2sci_count gt 0) then  print, 'Number of SCI-2  Packets = ', p2sci_count
     if (hk_count gt 0) then   print, 'Number of HK-Beacon Packets = ', hk_count
- endif
+
+    if (doLogWriteFile ne 0) then begin
+		printf, log_lun, "***** is1_daxss_beacon_read_packets() finished ***** "
+		printf, log_lun, "Number of LOG  Packets = " + strtrim(log_count,2)
+		printf, log_lun, "Number of DUMP Packets = " + strtrim(dump_count,2)
+		printf, log_lun, "Number of SCI  Packets = " + strtrim(sci_count,2)
+		printf, log_lun, "    number of SCI    errors  = " + strtrim(sci_err_count,2)
+		printf, log_lun, "    number of SCI-1  Packets = " + strtrim(p1sci_count,2)
+		printf, log_lun, "    number of SCI-2  Packets = " + strtrim(p2sci_count,2)
+		printf, log_lun, "Number of HK-Beacon Packets = " + strtrim(hk_count,2)
+	endif
+  endif
+
+  exit_log_close:
+  if (doLogWriteFile ne 0) then begin
+    printf, log_lun, systime() + ' : end for is1_daxss_beacon_read_packets().'
+  	close, log_lun
+  	free_lun, log_lun
+  	doLogWriteFile = 0
+  endif
+
+  if keyword_set(DEBUG) then stop, 'DEBUG at end of is1_daxss_beacon_read_packets.pro ...'
 
   return    ; end of reading packets
 
   exit_read:
   ; Exit Point on File Open or Read Error
-  if keyword_set(verbose) then print, 'ERROR reading file: ', input
+  if keyword_set(verbose) then begin
+  	print, 'ERROR reading file: ', input
+  	if (doLogWriteFile ne 0) then printf, log_lun, 'ERROR reading file: ' + input
+  endif
   if (fileOpened ne 0) then begin
     close, lun
     free_lun, lun
   endif
   on_ioerror, NULL
+  goto, exit_log_close
 
   return
 end
