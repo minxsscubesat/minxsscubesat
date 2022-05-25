@@ -38,6 +38,7 @@
 ;   2015/01/31: Tom Woods: Version that works for any array of structures with TIME tag
 ;   2016/05/22: Amir Caspi: Include FM keyword and correction for inaccurate spacecraft time during early commissioning
 ;                           (use /no_time_correct to skip correction) ... added /verbose keyword
+;	2022/05/24: Tom Woods: Updated so IS1-DAXSS is FM3 instead of FM4
 ;
 ;+
 PRO minxss_sort_telemetry, array, fm=fm, verbose=verbose, debug=debug, $
@@ -77,7 +78,7 @@ PRO minxss_sort_telemetry, array, fm=fm, verbose=verbose, debug=debug, $
           timeMin = 1227657613.0d0 ; GPS seconds for 3 Dec 2018 00:00:00 UTC
           timeMax = 1233014413.0d0 ; GPS seconds for 1 Feb 2019
         END
-      4: BEGIN
+      3: BEGIN
           timeMin = 1328832018.0d0 ; GPS seconds for 14 Feb 2022 00:00:00 UTC
           timeMax = 1514246413.0d0 ; GPS seconds for 31 Dec 2027
         END
@@ -116,7 +117,7 @@ PRO minxss_sort_telemetry, array, fm=fm, verbose=verbose, debug=debug, $
           timeSetAt = 1228116215.0d0 ; GPS seconds just prior to ground time set (06 Dec 2018 07:23:18 UTC)
           timeOffset = 3535.492d0 - 3. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
         END
-      4: BEGIN
+      3: BEGIN
           timeSetAt = 1328832018.0d0 ; GPS seconds just prior to ground time set (14 Feb 2022)
           timeOffset = 250. ; Estimated offset from deployment time to real time (VERIFY AFTER PLAYBACK!! -- ASSUMES beacon prior to timeset wasn't missed)
         END

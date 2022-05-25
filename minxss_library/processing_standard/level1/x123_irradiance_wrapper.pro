@@ -12,6 +12,7 @@
 ;
 ;	HISTORY
 ;	2016-06-23	T. Woods  Original Code
+;	2024-05-24	T. Woods  Updated IS-1 DAXSS to being FM3 instead of FM4
 ;
 pro x123_irradiance_wrapper, raw_count_sp, irradiance_sp, result=result, fm=fm, debug=debug
 
@@ -22,7 +23,7 @@ endif
 
 if not keyword_set(fm) then fm=1
 if (fm lt 1) then fm=1
-if (fm gt 4) then fm=4
+if (fm gt 3) then fm=3
 
 if fm eq 1 then begin
 	; FM-1 values
@@ -30,11 +31,11 @@ if fm eq 1 then begin
 endif else if fm eq 2 then begin
 	; FM-2 values
 	minxss_calibration_file = 'minxss_fm2_response_structure.sav'
-endif else if fm eq 4 then begin
-	; FM-2 values
-	minxss_calibration_file = 'minxss_fm4_response_structure.sav'
+endif else if fm eq 3 then begin
+	; FM-3 (IS1-DAXSS) values
+	minxss_calibration_file = 'minxss_fm3_response_structure.sav'
 endif else begin
-	message, /INFO, 'ERROR for FM number not being 1, 2, or 4'
+	message, /INFO, 'ERROR for FM number not being 1, 2, or 3'
 	stop, 'DEBUG ...'
 endelse
 

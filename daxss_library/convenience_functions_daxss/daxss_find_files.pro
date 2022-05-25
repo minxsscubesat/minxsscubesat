@@ -3,9 +3,9 @@
 ;   daxss_find_files.pro
 ;
 ; PURPOSE:
-;   Find DAXSS files for given level and date, 
+;   Find DAXSS files for given level and date,
 ;   then return an array of strings of those file names with full path.
-;   Assumes that $minxss_data is defined (setenv for Unix/Mac). 
+;   Assumes that $minxss_data is defined (setenv for Unix/Mac).
 ;
 ; INPUTS:
 ;   level [string]: Data product level string: '0', '0B', '0C', '1', '2', '3', '4'
@@ -115,10 +115,11 @@ FUNCTION daxss_find_files, level, yyyydoy = yyyydoy, yyyymmdd = yyymmdd, $
     endelse
 
     ;
-    ; 1. Call IDL's file_search procedure with specified level and date in $minxss_data/fm4/levelYY/
+    ; 1. Call IDL's file_search procedure with specified level and date in $minxss_data/fm3/levelYY/
+    ;			Changed from fm4 to fm3 on 5/24/2022, TW
     ;
-    search_dir = getenv('minxss_data') + '/fm4'
-    search_dir += '/' + 'leve' + strlevel + '/'
+    search_dir = getenv('minxss_data') + path_sep() + 'fm3'
+    search_dir += path_sep() + 'leve' + strlevel + path_sep()
     search_name = 'daxss' + '_' + strlevel + '_' + strdate + '.*'
     if keyword_set(verbose) then begin
       message, /INFO, 'Search for ' + search_name + ' files in directory ' + search_dir

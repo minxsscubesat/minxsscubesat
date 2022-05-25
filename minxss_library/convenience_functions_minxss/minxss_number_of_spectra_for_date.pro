@@ -30,7 +30,7 @@
 ; MODIFICATION HISTORY:
 ;   2016-12-28: James Paul Mason: Wrote script.
 ;-
-FUNCTION minxss_number_of_spectra_for_date, date, ouptutJd = outputJd, $
+FUNCTION minxss_number_of_spectra_for_date, date, ouptutJd = outputJd, fm=fm, $
                                             LEVEL0C = LEVEL0C
 
 ; Input validty check and conversion
@@ -40,16 +40,17 @@ ENDIF ELSE $
 IF isa(date, 'long') THEN BEGIN
   inputDateYyyyDoy = date
 ENDIF
+IF fm EQ !NULL THEN fm = 3
 
 ; Restore the data
 IF keyword_set(LEVEL0C) THEN BEGIN
-  restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav
+  restore, getenv('minxss_data') + '/' + strtrim(fm, 2) + '/level0c/minxss1_l0c_all_mission_length.sav
   packetTimeYYYYDOY_FOD = jd2yd(sci.time_jd)
   yyyydoy = long(packetTimeYYYYDOY_FOD)
   ;yyyydoy = JPMjd2yyyydoy(sci.time_jd)
   jd = sci.time_jd
 ENDIF ELSE BEGIN
-  restore, getenv('minxss_data') + '/fm1/level1/minxss1_l1_mission_length.sav'
+  restore, getenv('minxss_data') + '/' + strtrim(fm, 2) + '/level1/minxss1_l1_mission_length.sav'
   yyyydoy = minxsslevel1.time.yyyydoy
   jd = minxsslevel1.time.jd
 ENDELSE 

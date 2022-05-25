@@ -44,10 +44,10 @@
 ;   3. Write DAXSS data structures to disk as IDL save file
 ;
 ; NOTE
-;	minxss_make_level0c.pro works for IS-1 DAXSS as MinXSS FM=4
+;	minxss_make_level0c.pro works for IS-1 DAXSS as MinXSS FM=3
 ;
 ; EXAMPLE USAGE
-;	IDL> myPath = getenv('minxss_data')+'/fm4/hydra_tlm/flight'
+;	IDL> myPath = getenv('minxss_data')+'/fm3/hydra_tlm/flight'
 ;	IDL> myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
 ;	IDL> print, 'Number of files found = ', filesCount
 ;	IDL> daxss_make_level0c, telemetryFileNamesArray=myFiles, /verbose
@@ -65,7 +65,7 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
                         			VERBOSE=VERBOSE, DEBUG=DEBUG, extra = _extra
 
   ; Defaults
-  fm = 4
+  fm = 3	; changed from FM4 to FM3 on 5/24/2022, TW
   flightModelString = 'fm'+strtrim(fm,2)
   IF version EQ !NULL THEN version = '1.0.0'
   IF keyword_set(DEBUG) then VERBOSE = 1
@@ -123,7 +123,7 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
     ENDIF
 
 	; IS1/DAXSS processing has its own reader code
-  	;		use "diag" packets for the "dump" packets for FM4 so compatible with FM 1&2 code
+  	;		use "diag" packets for the "dump" packets for FM3 so compatible with FM 1&2 code
   	; NEW 5/11/2022:  add DIR_LOG option to log the SCI packet issues
   	if keyword_set(verbose) then DIR_LOG = getenv('minxss_data') + path_sep() + $
   			flightModelString + path_sep() + 'log' + path_sep() + 'daxss_read' + path_sep()

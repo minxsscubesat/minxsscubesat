@@ -58,7 +58,7 @@ FUNCTION daxss_telemetry_interpolate, packetToProcessFilename, timeToInterpolate
 ;;
 ; 0. Defaults and validity checks
 ;;
-fm=4
+fm=3    ; changed from FM4 to FM3 on 5/24/2022, TW
 
 IF n_params() LT 3 THEN BEGIN
   print, 'USAGE: outputY = daxss_telemetry_interpolate(inputY, inputTime, timeToInterpolateTo, timeThresholdSeconds = timeThresholdSeconds'

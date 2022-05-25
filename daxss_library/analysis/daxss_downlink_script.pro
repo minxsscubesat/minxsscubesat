@@ -74,8 +74,9 @@ IF minutes_after_flare EQ !NULL THEN minutes_after_flare = 10.
 
 ;
 ;   1. Task 1: Find / read latest DAXSS Level 0C merged data product
+;		Changed from fm4 to fm3 on 5/24/2022, TW
 ;
-dpath = getenv('minxss_data') + '/fm4/level0c/'
+dpath = getenv('minxss_data') + path_sep() + 'fm3' + path_sep() + 'level0c' + path_sep()
 dfile0c = 'daxss_l0c_all_mission_length_*.sav'
 theFiles = file_search( dpath + dfile0c, count=fileCount )
 if (fileCount lt 1) then begin

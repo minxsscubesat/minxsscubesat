@@ -10,7 +10,7 @@
 ;	********************************
 ;
 ;	INPUT
-;		fm			Option to specify FM 1 or 2, default is 1
+;		fm			Option to specify FM 1,2, 3. Default is 3
 ;		add_pass	Option to add manual pass with start_JD and end_JD
 ;
 ;	OUTPUT
@@ -36,9 +36,7 @@ end
 pro minxss_pass_timer, fm=fm, add_pass=add_pass, debug=debug, verbose=verbose
 
 if keyword_set(debug) then verbose = 1
-if not keyword_set(fm) then fm=1
-if fm lt 1 then fm = 1
-if fm gt 2 then fm = 2
+if not keyword_set(fm) then fm=3
 
 
 ;

@@ -134,7 +134,7 @@ endfor
 ;   3. Write DAXSS Level 0b binary file
 ;
 if (bdata_length gt 0) then begin
-  flightModelString = 'fm4'
+  flightModelString = 'fm3'   ; changed from FM4 to FM3 on 5/24/2022, TW
   out_path = getenv('minxss_data')+path_sep()+flightModelString+path_sep()+'level0b'+path_sep()
   out_file = 'daxss_l0b_csv_merged.bin'
   fullFilename = out_path + out_file

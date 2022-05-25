@@ -23,19 +23,7 @@ pro minxss_x123_irradiance_wrapper, raw_count_sp, uncertainty_raw_count_sp, irra
 
   if not keyword_set(fm) then fm=1
   if (fm lt 1) then fm=1
-  if (fm gt 4) then fm=4
-
-;  if fm eq 1 then begin
-;    ; FM-1 values
-;    x123_energy_bins_kev = findgen(1024) * 0.02930
-;    energy_bins_offset = -0.13
-;    minxss_calibration_file = 'minxss_fm1_response_structure.sav'
-;  endif else begin
-;    ; FM-2 values  To-Do  (NOT DEFINED YET !!!!)
-;    x123_energy_bins_kev = findgen(1024) * 0.02930
-;    energy_bins_offset = -0.13
-;    minxss_calibration_file = 'minxss_fm2_response_structure.sav'
-;  endelse
+  if (fm gt 3) then fm=3
 
 
 ;
@@ -65,11 +53,11 @@ endif else if fm eq 2 then begin
   ; FM-2 values  -  T. Woods 12/2021  based on Moore's calibration paper
   x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
   energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
-endif else if fm eq 4 then begin
-  minxss_calibration_file = 'minxss_fm4_response_structure.sav'
+endif else if fm eq 3 then begin
+  minxss_calibration_file = 'minxss_fm3_response_structure.sav'
   minxss_calibration_file_path = cal_dir + minxss_calibration_file
   restore, minxss_calibration_file_path
-  ; FM-4 values - T. Woods 3/2022   based on Schwab+Sewell DAXSS calibration paper
+  ; FM-3 values - T. Woods 3/2022   based on Schwab+Sewell DAXSS calibration paper
   x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
   energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
 endif else begin

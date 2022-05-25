@@ -132,7 +132,7 @@ FOREACH yyyydoy, yyyydoysArray DO BEGIN
   ;
   ;   1. Call IDL's file_search procedure with specified level and date in $minxss_data/fmX/levelYY/
   ;
-  IF fm EQ 3 THEN BEGIN
+  IF fm EQ 0 THEN BEGIN
     flightModelString = 'fs' + strtrim(fm, 2)
   ENDIF ELSE BEGIN
     flightModelString = 'fm' + strtrim(fm, 2)

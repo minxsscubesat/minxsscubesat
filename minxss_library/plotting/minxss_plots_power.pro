@@ -88,7 +88,6 @@ endif else begin
 endelse
 
 if not keyword_set(fm) then fm = 1
-if (fm lt 1) or (fm gt 2) then fm = 1
 
 ;
 ;	2. Find (read) the data if necessary

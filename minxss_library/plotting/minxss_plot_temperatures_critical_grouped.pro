@@ -29,17 +29,18 @@
 ; MODIFICATION HISTORY:
 ;   2017-06-01: James Paul Mason: Wrote script.
 ;-
-PRO minxss_plot_temperatures_critical_grouped, saveloc = saveloc
+PRO minxss_plot_temperatures_critical_grouped, saveloc = saveloc, fm=fm
 
 ; Defaults
 IF saveloc EQ !NULL THEN BEGIN
   saveloc = './'
 ENDIF
+IF fm EQ !NULL THEN fm = 2
 fontSize = 16
 margin = [0.25, 0.21, 0.1, 0.1]
 
 ; Restore the level 0c data
-restore, getenv('minxss_data') + '/fm2/level0c/minxss2_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/minxss' + strtrim(fm, 2) + '_l0c_all_mission_length.sav'
 
 ; Create plot
 w = window(DIMENSIONS = [1000, 1600])

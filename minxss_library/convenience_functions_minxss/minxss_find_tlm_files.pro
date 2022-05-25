@@ -125,28 +125,6 @@ IF fm EQ 2 THEN BEGIN
 ENDIF 
 ; End FM-2 data
 
-; Flatsat data (FM3)
-IF fm EQ 3 THEN BEGIN
-  ; Add telemetry from Boulder for FM-2 if available
-  IF getenv('hydra_data_flatsat') NE '' THEN BEGIN
-    filesTmp = file_search(getenv('hydra_data_flatsat'), search_name, count = countTmp)
-    IF countTmp NE 0 THEN BEGIN
-      file_list = [file_list, filesTmp]
-      count = count + countTmp
-    ENDIF
-  ENDIF
-  
-  ;Add lab data if available
-  IF getenv('hydra_data_lab_minxss2') NE '' THEN BEGIN
-    filesTmp = file_search(getenv('hydra_data_lab_minxss2'), search_name, count = countTmp)
-    IF countTmp NE 0 THEN BEGIN
-      file_list = [file_list, filesTmp]
-      count = count + countTmp
-    ENDIF
-  ENDIF
-ENDIF
-; End FM-3
-
 IF NOT keyword_set(NOHAM) THEN BEGIN
   ; Add telemetry from HAM operators
   IF getenv('ham_data') NE '' THEN BEGIN

@@ -31,10 +31,9 @@
 ; MODIFICATION HISTORY:
 ;   2017-04-27: James Paul Mason: Wrote script.
 ;-
-PRO minxss_make_spectrum_movie, timeRange = timeRange, dimensions = dimensions, $
+PRO minxss_make_spectrum_movie, timeRange = timeRange, dimensions = dimensions, fm=fm, $
                                 PREFLARE_SUBTRACT = PREFLARE_SUBTRACT, DARK_BACKGROUND = DARK_BACKGROUND
 
-; Defaults
 ; Defaults
 IF timeRange NE !NULL THEN BEGIN
   IF typename(timeRange[0]) EQ 'STRING' THEN BEGIN
@@ -50,6 +49,7 @@ ENDIF ELSE BEGIN
   foregroundBlackOrWhite = 'black'
   backgroundColor = 'white'
 ENDELSE
+IF fm EQ !NULL THEN fm = 1
 
 ; Setup
 dataloc = '/Users/' + getenv('username') + '/Dropbox/Research/Data/EVE-GOES-MinXSS/'
@@ -64,7 +64,7 @@ bitrate = 1e7
 vidStream = movieObject.AddVideoStream(xsize, ysize, fps, BIT_RATE = bitrate)
 
 ; Restore data
-restore, getenv('minxss_data') + 'fm1/level1/minxss1_l1_mission_length.sav'
+restore, getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length.sav'
 
 ;
 ; Loop through the MinXSS spectra and plot

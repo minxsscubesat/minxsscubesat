@@ -50,12 +50,7 @@ PRO minxss_make_mission_log, fm=fm, VERBOSE=VERBOSE
 ;
 IF ~keyword_set(fm) THEN BEGIN
   fm = 1
-  IF keyword_set(verbose) THEN message, /info, "WARNING: flight model not specified, defaulting to FM = 1..."
 ENDIF
-if (fm gt 3) or (fm lt 1) then begin
-  print, "ERROR: minxss_make_mission_log needs a valid 'fm' value.  FM can be 1 or 2 or 3."
-  return
-endif
 
 start_year = 2016
 if (fm eq 2) then start_year = 2017
@@ -75,11 +70,7 @@ fileNamesArray = fileNamesArray[k]
 ;
 ; open the Mission-long LOG file
 ;
-if fm eq 3 then begin
-  log_dir = getenv('minxss_data') + '/fs'+strtrim(fm,2)+'/log/'
-endif else begin
-  log_dir = getenv('minxss_data') + '/fm'+strtrim(fm,2)+'/log/'
-endelse
+log_dir = getenv('minxss_data') + '/fm'+strtrim(fm,2)+'/log/'
 log_file = 'minxss' + strtrim(fm,2) + '_mission_log.txt'
 if keyword_set(verbose) then begin
    message, /info, 'minxss_make_mission_log: LOG file = ' + log_dir+log_file

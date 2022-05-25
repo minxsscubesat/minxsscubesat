@@ -12,7 +12,7 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   None
+;   fm [integer]: Flight model number. Default is 2.
 ;
 ; KEYWORD PARAMETERS:
 ;   None
@@ -33,10 +33,12 @@
 ; MODIFICATION HISTORY:
 ;   2016-10-19: James Paul Mason: Wrote script.
 ;-
-PRO minxss_plot_xact_power_vs_temperature
+PRO minxss_plot_xact_power_vs_temperature, fm=fm
+
+IF fm EQ !NULL THEN fm = 2
 
 ; Load data
-restore, '/Users/' + getenv('username') + '/Dropbox/minxss_dropbox/data/fm2/level0c/minxss2_l0c_all_tvac.sav'
+restore, '/Users/' + getenv('username') + '/Dropbox/minxss_dropbox/data/fm' + strtrim(fm, 2) + '/level0c/minxss' + strtrim(fm, 2) + '_l0c_all_tvac.sav'
 
 ; Find out when the battery heater was on and mask out those data from everything
 ; Also filter for the other enable flags I have access to 

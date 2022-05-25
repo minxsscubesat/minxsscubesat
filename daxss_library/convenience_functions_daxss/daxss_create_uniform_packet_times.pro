@@ -82,7 +82,7 @@ FUNCTION daxss_create_uniform_packet_times,  hk, sci, $
 ;;
 ; 0. Defaults and validity checks
 ;;
-fm = 4    ; only FM number for  DAXSS
+fm = 3    ; only FM number for  DAXSS  (changed from 4 to 3 on 5/24/2022, TW)
 
 ; Check that all parameters were passed in
 IF n_params() LT 2 THEN BEGIN

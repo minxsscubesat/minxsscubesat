@@ -8,22 +8,22 @@
 ;
 ;	INPUTS
 ;		level [string]: Level name: '0C', '0D', '1', '2', '3', '4'
-;		
-; OPTIONAL INPUTS: 
+;
+; OPTIONAL INPUTS:
 ;   fm [integer]:     Flight model number (default is 1)
 ;   version [string]: The version tag to put in the output filename and internal anonymous structure. Default is '2.0.0'
-;   
+;
 ; KEYWORD PARAMETERS:
 ;		VERBOSE: Set to print processing messages
 ;		DEBUG:	 Set to trigger stop points for debugging
 ;
 ;	OUTPUTS
 ;		None
-;		
+;
 ;	OPTIONAL OUTPUTS:
 ;	  None
-;	  
-;	RESTRICTIONS: 
+;
+;	RESTRICTIONS:
 ;	  Metadata file corresponding to the input level must exist
 ;
 ;	PROCEDURE
@@ -43,10 +43,14 @@ level_name = strtrim(strupcase(level),2)
 IF version EQ !NULL THEN version = '2.0.0'
 
 IF fm EQ !NULL THEN fm = 1
+if fm lt 1 then fm = 1
+if fm gt 3 then fm = 3
 IF fm EQ 1 THEN BEGIN
   mission_start_date = '2016-05-16'
 ENDIF ELSE IF fm EQ 2 THEN BEGIN
   mission_start_date = '2018-12-03'
+ENDIF ELSE IF fm EQ 3 THEN BEGIN
+  mission_start_date = '2022-02-14'
 ENDIF
 fm = strtrim(fm, 2)
 
@@ -62,7 +66,7 @@ dir_metadata = dir_data + 'metadata' + slash
 ;
 ;	1.  Setup directory and file names based on Level name provided
 ;
-SETUP: 
+SETUP:
 case level_name of
 	'0C':	begin
 			indir = dir_data + 'level0c' + slash
@@ -128,7 +132,7 @@ case level_name of
 			write_netcdf, minxsslevel0d, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
-  '1': begin   
+  '1': begin
 	   minxsslevel1 = minxss_flatten_structure_for_netcdf(minxsslevel1)
 		 write_netcdf, minxsslevel1, indir + outfile, status, $
 				           path=dir_metadata, att_file=attfile, /clobber

@@ -36,7 +36,7 @@
 ;
 ; RESTRICTIONS:
 ;   Requires full daxss code package
-;   Requires daxss merged level0c data in getenv('minxss_data')/fm4/level0c
+;   Requires daxss merged level0c data in getenv('minxss_data')/fm3/level0c
 ;
 ; EXAMPLE:
 ;   To process whole mission, just run it with no optional inputs.
@@ -55,7 +55,7 @@ PRO daxss_make_level0d, version=version, $
 ; 0. Defaults and validity checks
 ;;
 
-fm = 4
+fm = 3    ; Changed from FM4 to FM3 on 5/24/2022, TW
 
 ; Defaults and validity checks - FM
 IF version EQ !NULL THEN version = '1.0.0'

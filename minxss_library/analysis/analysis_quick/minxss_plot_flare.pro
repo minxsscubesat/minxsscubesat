@@ -39,11 +39,13 @@
 ;	HISTORY
 ;		6/20/16  Tom Woods
 ;
-pro minxss_plot_flare, doy, result, reload=reload, year=year, eps=eps, nolines=nolines, $
+pro minxss_plot_flare, doy, result, fm=fm, reload=reload, year=year, eps=eps, nolines=nolines, $
 				raw_counts=raw_counts, oplot2013=oplot2013, nogoes=nogoes, debug=debug, $
 				lowlimit=lowlimit, nowait=nowait
 
 common minxss_data0c, hkdoy, hk, scidoy, sci, log, goes_doy, goes_xrsa, goes_xrsb, sunrise, sunset, base_year
+
+IF fm EQ !NULL THEN fm = 1
 
 ;  option for CURSOR, /nowait for some computers (e.g. Mac IDLDE)
 doNOWAIT = 0
@@ -494,8 +496,8 @@ if (loopcnt eq 0) then begin
 	;
 	;	now convert the results to irradiance units
 	;
-	x123_irradiance_wrapper, sp_pre, irr_pre, result=result1, fm=1, debug=debug
-	x123_irradiance_wrapper, sp_peak, irr_peak, result=result2, fm=1, debug=debug
+	x123_irradiance_wrapper, sp_pre, irr_pre, result=result1, fm=fm, debug=debug
+	x123_irradiance_wrapper, sp_peak, irr_peak, result=result2, fm=fm, debug=debug
 
 	result= [ result1, result2 ]
   endelse

@@ -19,9 +19,9 @@
 ;						          If yyyydoy or yyyymmdd is not provided, then process for all days
 ;   yyyymmdd [long]:  Optional input of yyyymmdd date to find telemetry files with that date, instead of yyyydoy.
 ;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0'.
-;   
+;
 ; KEYWORD PARAMETERS:
-;   VERBOSE:             Set this to print processing messages 
+;   VERBOSE:             Set this to print processing messages
 ;   MAKE_MISSION_LENGTH: Set this to create a mission length file
 ;   MERGE_ONLY:          Set this to skip the reprocessing and go straight to merging the mission length file
 ;
@@ -47,6 +47,9 @@
 ;   4. Sort the selected packets by time of day
 ;	  5. Save the sorted packets (file per day)
 ;
+;	UPDATES
+;	5/24/2022	Changed FM=3 to FM=0 for the FlatSat (FS0), T. Woods
+;
 ;+
 PRO minxss_make_level0c, fm=fm, yyyydoy=yyyydoy, yyyymmdd=yyyymmdd, version=version, $
                          VERBOSE=VERBOSE, MAKE_MISSION_LENGTH=MAKE_MISSION_LENGTH, MERGE_ONLY=MERGE_ONLY
@@ -55,8 +58,8 @@ PRO minxss_make_level0c, fm=fm, yyyydoy=yyyydoy, yyyymmdd=yyyymmdd, version=vers
 ;	Defaults
 ;
 IF fm EQ !NULL THEN fm = 2
-if (fm gt 3) or (fm lt 1) then begin
-  message, /INFO, "ERROR: minxss_make_level0c needs a valid 'fm' value. FM can be 1, 2, or 3."
+if (fm gt 2) or (fm lt 0) then begin
+  message, /INFO, "ERROR: minxss_make_level0c needs a valid 'fm' value. FM can be 1, 2, or 0 for FlatSat."
   return
 endif
 IF yyyymmdd NE !NULL THEN yyyydoy = JPMyyyymmdd2yyyydoy(yyyymmdd, /RETURN_STRING)
@@ -85,7 +88,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
       start_yd = 2018337
       stop_yd = long(jd2yd(systime(/julian))+0.5)
     END
-    3: BEGIN ; FlatSat
+    0: BEGIN ; FlatSat
       start_yd = 2018185
       stop_yd = long(jd2yd(systime(/julian))+0.5)
     END
@@ -134,7 +137,7 @@ for k=0L,numDays-1 do begin
 
 ;    if (fn_parts.yyyydoy lt yd) then start_index = iFile + 1 else begin
     IF (fn_parts.yyyydoy LT (yd - 1)) THEN CONTINUE ELSE BEGIN
-    	
+
     	; Null out all variables before reading new ones in to avoid stale data propagation
     	hk = !NULL
     	sci = !NULL
@@ -145,7 +148,7 @@ for k=0L,numDays-1 do begin
     	adcs2 = !NULL
     	adcs3 = !NULL
     	adcs4 = !NULL
-    	
+
     	; Restore data
     	restore, fileNamesArray[iFile]
     	fileCnt += 1
@@ -156,7 +159,7 @@ for k=0L,numDays-1 do begin
     	;  ERROR:  some playbacks don't have HK packets (just SCI packets sometimes)
     	;  FIX:  just check that HK on any day has correct FM number
     	;    Tom Woods 9/3/2016
-    	;    
+    	;
     	; IF hk NE !NULL THEN minxss_sort_packets, hk, yd, fm   ;  ERROR Code
     	;
     	;    FIX starts here
@@ -166,7 +169,7 @@ for k=0L,numDays-1 do begin
     	  IF (numgood LE 0) THEN BEGIN
     	    hk = !NULL
     	    IF keyword_set(verbose) THEN print, 'No HK Packets for FM = ', strtrim(fm,2), ' in ', fileNamesArray[iFile]
-    	  ENDIF 
+    	  ENDIF
     	ENDIF
     	;  end of FIX
 
@@ -206,12 +209,12 @@ for k=0L,numDays-1 do begin
     	if adcs3 NE !NULL then if all_adcs3 NE !NULL then all_adcs3 = [all_adcs3, adcs3] else all_adcs3 = adcs3
     	if adcs4 NE !NULL then if all_adcs4 NE !NULL then all_adcs4 = [all_adcs4, adcs4] else all_adcs4 = adcs4
     endelse
-  
+
     IF sci NE !NULL THEN BEGIN
       tags = tag_names(sci)
       IF where(strmatch(tags, 'time_jd', /FOLD_CASE) EQ 1) NE -1 THEN STOP
     ENDIF
-    
+
   endfor
 
   if keyword_set(verbose) then begin
@@ -243,8 +246,8 @@ for k=0L,numDays-1 do begin
   else if strlen(doy_str) eq 2 then doy_str = '0' + doy_str
   str_yd = strtrim(year,2) + '_' + doy_str
   outputFilename = 'minxss'+strtrim(fm,2)+'_l0c_'+str_yd
-  IF FM EQ 3 THEN BEGIN
-    flightModelString = 'fs' + strtrim(fm, 2)
+  IF FM EQ 0 THEN BEGIN
+    flightModelString = 'fs0'
   ENDIF ELSE BEGIN
     flightModelString = 'fm' + strtrim(fm, 2)
   ENDELSE
@@ -261,7 +264,7 @@ for k=0L,numDays-1 do begin
   if all_adcs3 NE !NULL then adcs3 = all_adcs3 else adcs3 = !NULL & all_adcs3 = !NULL
   if all_adcs4 NE !NULL then adcs4 = all_adcs4 else adcs4 = !NULL & all_adcs4 = !NULL
 
-  ; Add all the times you can think of, including human readable, to each packet type 
+  ; Add all the times you can think of, including human readable, to each packet type
   IF hk NE !NULL THEN BEGIN
     hk = JPMAddTagsToStructure(hk, 'time_jd') & hk.time_jd = gps2jd(hk.time)
     hk = JPMAddTagsToStructure(hk, 'time_iso', 'string') & hk.time_iso = JPMjd2iso(hk.time_jd)
@@ -298,7 +301,7 @@ for k=0L,numDays-1 do begin
 
   ;  save the packets now
   total_packets = n_elements(hk) + n_elements(sci) + n_elements(log)
-  
+
   if (total_packets gt 0) then begin
 	  save, hk, sci, log, adcs1, adcs2, adcs3, adcs4, diag, image, FILENAME = full_Filename, /compress, description = 'MinXSS Level 0C data ... FM = '+strtrim(fm,2)+'; Year = '+strtrim(year,2)+'; DOY = '+strtrim(doy,2)+' ... FILE GENERATED: '+systime()
 	  wait, 0.5 ; let the filesystem catch up so files are saved in proper time-order
@@ -329,13 +332,13 @@ endfor
 ; Compile into mission length saveset for each type of data
 MERGE_ONLY:
 IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
-  if fm eq 3 then begin
-    dataPath = getenv('minxss_data') + '/fs' + strtrim(fm, 2) + '/level0c/'
+  if fm eq 0 then begin
+    dataPath = getenv('minxss_data') + '/fs0' + '/level0c/'
   endif else begin
     dataPath = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/'
   endelse
-  
-  ; Prepare for concatenation 
+
+  ; Prepare for concatenation
   hkTemp = !NULL
   sciTemp = !NULL
   logTemp = !NULL
@@ -345,12 +348,12 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   adcs2Temp = !NULL
   adcs3Temp = !NULL
   adcs4Temp = !NULL
-  
+
   ; Loop through all the data files and concatenate data
   FOR yyyyDoy = start_yd, stop_yd DO BEGIN
     yyyyDoyString = strmid(strtrim(yyyyDoy, 2), 0, 4) + '_' + strmid(strtrim(yyyyDoy, 2), 4, 3)
     dataFile = 'minxss' + strtrim(fm, 2) + '_l0c_' + yyyyDoyString + '.sav'
-    
+
     IF ~file_test(dataPath + dataFile) THEN CONTINUE
 
     ; Kill any old variables because we don't want them to persist!
@@ -376,7 +379,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
     adcs3Temp = [adcs3Temp, adcs3]
     adcs4Temp = [adcs4Temp, adcs4]
   ENDFOR
-  
+
   ; Transfer concatenated data to normal names
   hk = temporary(hkTemp)
   sci = temporary(sciTemp)
@@ -387,7 +390,7 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   adcs2 = temporary(adcs2Temp)
   adcs3 = temporary(adcs3Temp)
   adcs4 = temporary(adcs4Temp)
-  
+
   ; Save mission length file
   save, hk, sci, log, diag, image, adcs1, adcs2, adcs3, adcs4, filename=dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'all_mission_length_v' + version + '.sav', /COMPRESS
 
@@ -398,8 +401,8 @@ IF keyword_set(MAKE_MISSION_LENGTH) THEN BEGIN
   if (adcs2 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs2_latest.csv', adcs2, HEADER = tag_names(adcs2)
   if (adcs3 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs3_latest.csv', adcs3, HEADER = tag_names(adcs3)
   if (adcs4 NE !NULL) then write_csv, dataPath + 'minxss' + strtrim(fm, 2) + '_l0c_' + 'adcs4_latest.csv', adcs4, HEADER = tag_names(adcs4)
-  
-  
+
+
   ; Export to netCDF
   IF adcs1 NE !NULL AND adcs2 NE !NULL AND adcs3 NE !NULL AND adcs4 NE !NULL AND sci NE !NULL and hk NE !NULL THEN BEGIN
     minxss_make_netcdf, '0c', fm=fm, version=version

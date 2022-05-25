@@ -69,10 +69,11 @@ PRO daxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direct
   ; Defaults
   if keyword_set(debug) then verbose=1
 
-  if not keyword_set(fm) then fm=4    ; Default Flight Model (FM) for DAXSS is FM4
-  ;  only allow FM-4
-  if (fm lt 4) then fm=4
-  if (fm gt 4) then fm=4
+  ; Default Flight Model (FM) for DAXSS is FM3 (was FM4, changed 5/24/2022, TW)
+  if not keyword_set(fm) then fm=3
+  ;  only allow FM-3
+  if (fm lt 3) then fm=3
+  if (fm gt 3) then fm=3
 
   fm_str = strtrim(fm,2)
   if keyword_set(verbose) then begin
@@ -85,7 +86,7 @@ PRO daxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direct
   ; Constants
   seconds_per_day = 60.0*60.0*24.0D0
 
-  if fm eq 4 then LOW_LIMIT_DEFAULT = 15.0 $
+  if fm eq 3 then LOW_LIMIT_DEFAULT = 15.0 $
   else LOW_LIMIT_DEFAULT = 15.0  ; for FM-X ???
   if not keyword_set(low_limit) then low_limit = LOW_LIMIT_DEFAULT
   ; if keyword_set(verbose) then print, '     low_limit = ', low_limit
@@ -298,7 +299,7 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     sps_dark4 = 40. + 0.*sps_temp
     sps_type = 1.0	; N-on-P
   endif else begin
-     ; *********   ASSUMES FM-4 *************
+     ; *********   ASSUMES FM-3 *************
     sps_x_factor = 4.45    ; 1/2 FOV degrees
     sps_y_factor = 4.45
     sps_gain1 = 1.0      ; fC/DN ???? not applicable for FM-4
@@ -341,15 +342,15 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
   endelse
 
-  if fm eq 4 then begin
+  if fm eq 3 then begin
     ; FM-1 values
-    minxss_calibration_file = 'minxss_fm4_response_structure.sav'
+    minxss_calibration_file = 'minxss_fm3_response_structure.sav'
     minxss_calibration_file_path = cal_dir + minxss_calibration_file
     restore, minxss_calibration_file_path
     nominal_x123_energy_bins_kev = findgen(1024) * minxss_detector_response.x123_energy_gain_kev_per_bin
     energy_bins_offset = minxss_detector_response.x123_energy_offset_kev_orbit
   endif else begin
-    message, /INFO, 'ERROR with Flight Model not being FM4'
+    message, /INFO, 'ERROR with Flight Model not being FM3'
     STOP, 'DEBUG  daxss_make_level1.pro ...'
   endelse
 
@@ -361,6 +362,7 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
   level1_x123 = { time_gps: DAXSS_LEVEL0D[0].time, $
     time_jd: 0.0D0, $
     time_yd: 0.0D0, $
+    time_iso: '', $
     flight_model: 0, $
     irradiance: fltarr(1024), $
     irradiance_uncertainty: fltarr(1024), $
@@ -516,6 +518,7 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     minxsslevel1_x123[num_L1].time_gps = DAXSS_LEVEL0D[wsci[k]].time
     minxsslevel1_x123[num_L1].time_jd = DAXSS_LEVEL0D[wsci[k]].time_jd
     minxsslevel1_x123[num_L1].time_yd = DAXSS_LEVEL0D[wsci[k]].time_yd
+    minxsslevel1_x123[num_L1].time_iso = DAXSS_LEVEL0D[wsci[k]].time_iso
     minxsslevel1_x123[num_L1].flight_model = DAXSS_LEVEL0D[wsci[k]].flight_model
     minxsslevel1_x123[num_L1].irradiance = x123_irradiance_structure.irradiance*correct_1AU
     minxsslevel1_x123[num_L1].irradiance_uncertainty = x123_irradiance_structure.IRRADIANCE_UNCERTAINTY*correct_1AU
@@ -871,45 +874,6 @@ minxsslevel1_x123_meta = { $
   EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
   CORRECT_AU: 'Earth-Sun Distance correction factor' $
 }
-
-; XP information structure
-; minxsslevel1_xp_meta = { $
-;  Title: 'MinXSS Level 1 Data Product corrected', $
-;  Source: 'MinXSS SOC at LASP / CU', $
-;  Mission: 'MinXSS-'+fm_str, $
-;  Data_product_type: 'MinXSS Level 1', $
-;  VERSION: version, $
-;  Calibration_version: cal_version, $
-;  Description: 'Calibrated MinXSS X123 science data corrected to 1-AU', $
-;  History: [ '2016/07/30: Tom Woods: Updated with meta-data, latest Level 0D, and 1-AU correction', $
-;  '2016/07/25: Tom Woods: Original Level 1 code for first version of Level 0D', '2017/06/23: Chris Moore: added first-order deadtime correction, XP data'], $
-;  Filename: outfile, $
-;  Date_generated: JPMsystime(), $
-;  TIME_struct: 'Time structure for different date/time formats', $
-;  TIME_struct_ISO: 'Time in ISO text format', $
-;  TIME_struct_HUMAN: 'Time in Human-readable text format', $
-;  TIME_struct_YYYYMMDD: 'Time in Year-Month-Day long integer format', $
-;  TIME_struct_YYYYDOY: 'Time in Year Day-Of-Year (DOY) long integer format', $
-;  TIME_struct_HHMMSS: 'Time in Hour-Minute-Second text format', $
-;  TIME_struct_SOD: 'Time in Seconds of Day (SOD) long integer format', $
-;  TIME_struct_FOD: 'Time in Fraction of Day (FOD) double format', $
-;  TIME_struct_JD: 'Time in Julian Date double format', $
-;  TIME_struct_spacecraftgpsformat: 'Time recorded by spacecraft in GPS Seconds double format', $
-;  INTERVAL_START_TIME_JD: 'Start Time of the Interval in which the data is averaged in Julian Date double format', $
-;  INTERVAL_END_TIME_JD: 'End Time of the Interval in which the data is averaged in Julian Date double format', $
-;  INTERVAL_START_TIME_HUMAN: 'Start Time of the Interval in which the data is averaged in Human format - Calendar Date', $
-;  INTERVAL_END_TIME_HUMAN: 'End Time of the Interval in which the data is averaged in Human format - Calendar Date', $
-;  FLIGHT_MODEL: 'MinXSS Flight Model integer (1 or 2)', $
-;  SIGNAL_FC: 'XP background subtracted (dark diode) signal in units of femtocoulombs per second (fc/s -> fA), float array[1024]', $
-;  signal_fc_accuracy: 'XP signal uncertainty including the 10% SURF accuracy (cps), float array[1024]', $
-;  signal_fc_precision: 'XP signal uncertainty soley incluting the instrument measurement precision (cps), float array[1024]', $
-;  signal_fc_stddev: 'XP signal standard deviation of the float array[1024]', $
-;  INTEGRATION_TIME: 'X123 Integration Time accumulated over the', $
-;  ;XP_FC_X123_ESTIMATED: 'XP signal estimated from the measured X123 spectra in units of femtocoulombs per second (fc/s -> fA), double array', $
-;  ;XP_FC_X123_ESTIMATED_UNCERTAINTY: 'XP signal uncertainty of the estimated XP signal from the measured X123 spectra, double array', $
-;  ;FRACTIONAL_DIFFERENCE_XP_FC_X123_ESTIMATED: 'Fractional difference between the actual measured XP signal and the estimated XP signal from the measured X123 spectra, double array', $
-;  NUMBER_XP_SAMPLES: 'XP number of samples' $
-; }
 
 ; Overwrite flight model number by default.
 ; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN. Level 1 replaces this NaN with 0.

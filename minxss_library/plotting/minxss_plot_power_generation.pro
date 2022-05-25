@@ -9,7 +9,7 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   saveloc [string]: The path to save the plot. Default is current directory. 
+;   fm [integer]: The flight model number. 
 ;
 ; KEYWORD PARAMETERS:
 ;   None
@@ -29,7 +29,9 @@
 ; MODIFICATION HISTORY:
 ;   2017-05-14: James Paul Mason: Wrote script.
 ;-
-PRO minxss_plot_power_generation
+PRO minxss_plot_power_generation, fm=fm
+
+IF fm EQ !NULL THEN fm = 1
 
 ; Defaults
 IF saveloc EQ !NULL THEN BEGIN
@@ -38,7 +40,7 @@ ENDIF
 fontSize = 16
 
 ; Restore the level 0c data
-restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/minxss' + strtrim(fm, 2) + '_l0c_all_mission_length.sav'
 
 ; Combine voltage and current for power and sum panels for total power
 totalPower = hk.EPS_SA1_VOLT * hk.EPS_SA1_CUR / 1e3 + $

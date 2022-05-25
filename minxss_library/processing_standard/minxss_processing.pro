@@ -46,7 +46,7 @@ IF start_date EQ !NULL THEN start_date = jd2yd(systime(/JULIAN) - 5.)
 IF end_date EQ !NULL THEN end_date = jd2yd(systime(/JULIAN) + 1.)
 IF fm EQ !NULL THEN fm = 2
 IF fm GE 3 THEN BEGIN
-  message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS.' 
+  message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS. If you are looking to process INSPIRESat-1/DAXSS data, see daxss_processing.' 
   return
 ENDIF
 IF version EQ !NULL THEN version = '2.0'

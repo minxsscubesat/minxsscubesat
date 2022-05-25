@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
-* Support for IS1/DAXSS (INSPIRESat-1 / Dual-zone Aperture X-ray Solar Spectrometer AKA MinXSS-3) processing and plotting -- note that these data are encoded as flight model 4 (fm=4). 
+* Support for IS1/DAXSS (INSPIRESat-1 / Dual-zone Aperture X-ray Solar Spectrometer AKA MinXSS-3) processing and plotting -- note that these data are encoded as flight model 4 (fm=4) initially and then changed to be fm=3.
 
 ### Changed
 
@@ -22,10 +22,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [v3.1.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v3.1.0)
 
 ### Added
-* MinXSS-2 level 1 data are now available, which (necessarily) includes our calibration! 
+* MinXSS-2 level 1 data are now available, which (necessarily) includes our calibration!
 * Flare catalog generation code (minxss_make_flare_catalog.pro)
 * `version` optional input to `minxss_make_level0c`, `minxss_make_level0d`, and `minxss_make_level1` to specify what string will be appended to the output filenames and internal data structure in the corresponding fields
-* `cal_version` optional input to `minxss_make_level` to specify which calibration version should be applied 
+* `cal_version` optional input to `minxss_make_level` to specify which calibration version should be applied
 * `version` optional input to `minxss_make_level2` and `minxss_make_level3` to specify which level 1 files to use (level 2 and 3 are just time averages of level 1)
 * Improved version of `minxss_fit_2temperature`, including new optional inputs like integration period and energy resolution. Now fits abundance by weighting COR and PHOTO spectra. The old method has been retained, but renamed to `minxss_fit_2temperature_old`
 
@@ -45,21 +45,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * `irradiance_low` and `irradiance_high` from level 2 and 3 `x123` structure. Now it's just e.g., `minxsslevel3.x123.irradiance`
 
 ### Fixed
-* Energy resolution (`x123_spectral_resolution_array`) was calculated slightly wrong before. Recalculated with 0.168 keV at Fe-55 energy: N=13.6. This fix had no impact on the irradiance, however, so is not expected to impact users results. 
+* Energy resolution (`x123_spectral_resolution_array`) was calculated slightly wrong before. Recalculated with 0.168 keV at Fe-55 energy: N=13.6. This fix had no impact on the irradiance, however, so is not expected to impact users results.
 
 
 ## [v2.0.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v2.0.0)
 
-This changelog only came into existence on 2020-06-04. It's unlikely that all of the major changes in the last few years are captured here because it relies on memory and sifting through the [git commits](https://github.com/minxsscubesat/minxsscubesat/commits/master). Going forward, proper changelogging will be practiced. 
+This changelog only came into existence on 2020-06-04. It's unlikely that all of the major changes in the last few years are captured here because it relies on memory and sifting through the [git commits](https://github.com/minxsscubesat/minxsscubesat/commits/master). Going forward, proper changelogging will be practiced.
 
-### Added 
+### Added
 * [MinXSS-1 CubeSat Data User Guide](minxss-1_cubesat_data_user_guide.md)
 * Level 2 product: 1-minute and 1-hour time averages of data
 * netCDF output: data products are now in both IDL savesets (.sav) and netCDF3 (.ncdf) files
-* Plotting routines in [plotting](minxss_library/plotting): 
+* Plotting routines in [plotting](minxss_library/plotting):
   * pointing jitter
   * commissioning health and safety
-  * MinXSS-2 vs CSIM communications conflicts 
+  * MinXSS-2 vs CSIM communications conflicts
   * videos and static plots of signal to noise ratio
   * satellite track over Earth
   * history of SXR observations
@@ -94,7 +94,7 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 * Walked back lowcnt filter logic
 * Changed peakcnts check to be above 0.4
 
-### Deprecated 
+### Deprecated
 * `PLOT` keyword in [minxss_get_beta()](minxss_library/convenience_functions_minxss/minxss_get_beta.pro)
 
 ### Removed
@@ -109,18 +109,18 @@ This changelog only came into existence on 2020-06-04. It's unlikely that all of
 *  removed SAA exclusion filter for level 1
 
 ### Fixed
-* Erroneous flight model labeling 
+* Erroneous flight model labeling
 * Error that set all XP number of samples to 1
 * `x123.spectrum_cps_stddev` and `x123_dark.spectrum_cps_stddev` were always 0 -- fixed
 * Numerous minor bugs, for example:
   * Moved timers outside loops as they were intended to go
   * `JPMPrintNumber()` now handles integer rounding when `/NO_DECIMALS` is set, and can handle larger numbers
-  * `JPMjd2iso()` handles times with seconds = 60 by setting it to 0 and propagating the increment to minutes 
+  * `JPMjd2iso()` handles times with seconds = 60 by setting it to 0 and propagating the increment to minutes
   * Some ADCS telemetry points were read incorrectly because they pointed to the wrong byte addresses in the packet
 
 ## [v1.0.0] - 2016-05-16
 
-This changelog only came into existence on 2020-06-04. This retroactive release is only notional. 
+This changelog only came into existence on 2020-06-04. This retroactive release is only notional.
 
 ### Added
 

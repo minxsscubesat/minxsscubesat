@@ -9,7 +9,7 @@
 ;
 
 if n_elements(hk_jd lt 1) then begin
-	hk_file ='/Users/twoods/Dropbox/minxss_dropbox/data/fm4/level0c/daxss_l0c_merged_2022_089.sav'
+	hk_file ='/Users/twoods/Dropbox/minxss_dropbox/data/fm3/level0c/daxss_l0c_merged_2022_089.sav'
 	print, 'Restoring DAXSS Level 0C file: ', hk_file
 	restore,hk_file
 	hk_jd = gps2jd(hk.time)

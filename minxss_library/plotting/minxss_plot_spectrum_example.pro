@@ -34,6 +34,8 @@
 PRO minxss_plot_spectrum_example, savePath = savePath, $
                                   VERBOSE = VERBOSE
 
+IF fm EQ !NULL THEN fm = 1
+
 ; Start a timer
 tic
 
@@ -42,7 +44,7 @@ spectrumIndex = 2913 ; Corresponds to an M5.0 flare on 2016-07-23T01:36:05
 
 ; Load data
 IF keyword_set(VERBOSE) THEN message, /INFO, systime() + ' Resotring MinXSS level 1 data'
-restore, getenv('minxss_data') + 'fm1/level1/minxss1_l1_mission_length.sav'
+restore, getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length.sav'
 
 ; Plot a single arbitrary spectrum at index 100
 IF keyword_set(VERBOSE) THEN message, /INFO, systime() + ' Plotting MinXSS level 1 arbitrary spectrum at index 100'

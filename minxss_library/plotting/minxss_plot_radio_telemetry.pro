@@ -29,10 +29,12 @@
 ; MODIFICATION HISTORY:
 ;   2017-01-17: James Paul Mason: Wrote script.
 ;-
-PRO minxss_plot_radio_telemetry
+PRO minxss_plot_radio_telemetry, fm=fm
+
+IF fm EQ !NULL THEN fm = 1
 
 ; Restore the data
-restore, getenv('minxss_data') + '/fm1/level0c/minxss1_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0c/minxss' + strtrim(fm, 2) + '_l0c_all_mission_length.sav'
 
 ; Dates of interest for Li-1 latch up
 startJd = JPMiso2jd('2017-01-02T00:00:00Z')

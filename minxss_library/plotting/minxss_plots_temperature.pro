@@ -50,7 +50,7 @@
 ;   2015/10/23: James Paul Mason: Refactored minxss_processing -> minxss_data and changed affected code to be consistent
 ;   2016/03/18: James Paul Mason: For thermal balance, now exports everything to a .sav and fixes a daylight savings time issue in minxss
 ;+
-PRO minxss_plots_temperature, timeRange, tcFilename = tcFilename, level = level, plotTitle = plotTitle, $
+PRO minxss_plots_temperature, fm=fm, timeRange, tcFilename = tcFilename, level = level, plotTitle = plotTitle, $
                               VERBOSE = VERBOSE, THERMAL_BALANCE = THERMAL_BALANCE, MANUAL_PLOT = MANUAL_PLOT
 
 ; Input checks
@@ -58,6 +58,7 @@ IF n_params() lt 1 THEN BEGIN
   print, 'USAGE: minxss_temperature_overplot, timeRange, tcFilename = tcFilename, level = level, /VERBOSE'
   return
 ENDIF
+IF fm EQ !NULL THEN fm = 1
 
 ; Time setup
 time1 = timeRange[0]
@@ -80,7 +81,7 @@ IF level_str NE 'b' OR level_str NE 'c' THEN level_str = 'b'
 ;
 ; 1. Restore relevant data
 ;
-data_dir = getenv('minxss_data') + '/fm1/level0' + level_str + '/'
+data_dir = getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level0' + level_str + '/'
 IF keyword_set(THERMAL_BALANCE) THEN data_file = 'TBAL March 2015.sav' ELSE $
                                      data_file = 'minxss_l0' + level_str + '_' + date_str + '.sav'
 

@@ -26,12 +26,13 @@
 ; EXAMPLE:
 ;   Just run it!
 ;-
-PRO minxss_plot_sd_offsets
+PRO minxss_plot_sd_offsets, fm=fm
 
 ; Defaults
+IF fm EQ !NULL THEN fm = 2
 fontSize = 16
 
-restore, getenv('minxss_data') + 'fm2/level0c/minxss2_l0c_all_mission_length.sav'
+restore, getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level0c/minxss' + strtrim(fm, 2) + '_l0c_all_mission_length.sav'
 
 ; Get rid of flatsat data
 hk = hk[where(hk.time_jd LT jpmiso2jd('2019-01-08T00:00:00Z'))]

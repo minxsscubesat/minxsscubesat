@@ -46,7 +46,7 @@ PRO daxss_processing, TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOS
     daxss_make_level0c, verbose=VERBOSE
   endif else begin
     ; ***** EXAMPLE OF daxss_make_level0c WITHOUT USING Level 0B FILE *****
-    myPath = getenv('minxss_data')+'/fm4/hydra_tlm/flight'
+    myPath = getenv('minxss_data')+'/fm3/hydra_tlm/flight'
     myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
     IF keyword_set(verbose) THEN message, /INFO, 'No L0A file made. Number of Hydra files found = '+strtrim(filesCount,2)
     daxss_make_level0c, telemetryFileNamesArray=myFiles, /verbose

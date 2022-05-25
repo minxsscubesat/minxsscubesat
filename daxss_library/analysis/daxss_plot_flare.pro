@@ -40,7 +40,8 @@ if keyword_set(debug) then verbose=1
 
 if keyword_set(PDF) then pdf_dir = getenv('minxss_data')+path_sep()+'flares'+path_sep()+'daxss'+path_sep()
 
-common daxss_plot_flare_common, daxss_level1, daxss_fe_abundance, minxsslevel1, goes, goes_year, goes_jd
+common daxss_plot_flare_common, daxss_level1, daxss_fe_abundance, daxss_s_abundance, daxss_si_abundance, $
+			minxsslevel1, goes, goes_year, goes_jd
 if (goes_year eq !NULL) then goes_year = 0L
 
 ;
@@ -52,15 +53,29 @@ DAXSS_FE_WIDTH = 1L
 DAXSS_FE_ABUNDANCE_SCALE_FACTOR = 0.080    ; based on non-flare first light spectrum so Fe abundance is ~ 4.0
 DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR = 1E5
 
+;  make S abundance factor scaling to include in the flare plots with abundance expected between 1 to 4
+DAXSS_S_LINE_PEAK = 2.43
+DAXSS_S_CONTINUUM = 1.94
+DAXSS_S_WIDTH = 1L
+DAXSS_S_ABUNDANCE_SCALE_FACTOR = 18.0
+DAXSS_S_ABUNDANCE_VALUE_ONE_SCALE_FACTOR = 1E5
+
+;  make Si abundance factor scaling to include in the flare plots with abundance expected between 1 to 4
+DAXSS_SI_LINE_PEAK = 1.85
+DAXSS_SI_CONTINUUM = 1.94
+DAXSS_SI_WIDTH = 1L
+DAXSS_SI_ABUNDANCE_SCALE_FACTOR = 0.50
+DAXSS_SI_ABUNDANCE_VALUE_ONE_SCALE_FACTOR = 1E5
+
 ;
 ;	Read DAXSS Level 1
 ;
-ddir = getenv('minxss_data') + path_sep() + 'fm4' + path_sep() + 'level1' + path_sep()
-dfile1 = 'minxss4_l1_mission_length_v1.0.0.sav'
+ddir = getenv('minxss_data') + path_sep() + 'fm3' + path_sep() + 'level1' + path_sep()
+dfile1 = 'minxss3_l1_mission_length_v1.0.0.sav'
 if (daxss_level1 eq !NULL) then begin
 	if keyword_set(verbose) then message,/INFO, 'Reading DAXSS L1 data from '+ddir+dfile1
 	restore, ddir+dfile1   ; daxss_level1 variable is structure
-	; estimate daxss_fe_abundance using Fe line peak at 0.81 keV to continuum level at 1.2 keV
+	; estimate daxss_Fe_abundance using Fe line peak at 0.81 keV to continuum level at 1.2 keV
 	num_L1 = n_elements(daxss_level1.data)
 	daxss_fe_abundance = fltarr(num_L1)
 	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_FE_LINE_PEAK),wfe)
@@ -69,6 +84,26 @@ if (daxss_level1 eq !NULL) then begin
 		fe_peak = total(daxss_level1.data[ii].irradiance[wfe-DAXSS_FE_WIDTH:wfe+DAXSS_FE_WIDTH])
 		fe_cont = total(daxss_level1.data[ii].irradiance[wcont-DAXSS_FE_WIDTH:wcont+DAXSS_FE_WIDTH])
 		daxss_fe_abundance[ii] = (fe_peak / fe_cont) * DAXSS_FE_ABUNDANCE_SCALE_FACTOR
+	endfor
+
+	; estimate daxss_S_abundance using S line peak at 2.43 keV to continuum level at 1.94 keV
+	daxss_s_abundance = fltarr(num_L1)
+	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_S_LINE_PEAK),ws)
+	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_S_CONTINUUM),wscont)
+	for ii=0L,num_L1-1 do begin
+		s_peak = total(daxss_level1.data[ii].irradiance[ws-DAXSS_FE_WIDTH:ws+DAXSS_FE_WIDTH])
+		s_cont = total(daxss_level1.data[ii].irradiance[wscont-DAXSS_FE_WIDTH:wscont+DAXSS_FE_WIDTH])
+		daxss_s_abundance[ii] = (s_peak / s_cont) * DAXSS_S_ABUNDANCE_SCALE_FACTOR
+	endfor
+
+	; estimate daxss_Si_abundance using Si line peak at 1.85 keV to continuum level at 1.94 keV
+	daxss_si_abundance = fltarr(num_L1)
+	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_SI_LINE_PEAK),wsi)
+	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_SI_CONTINUUM),wsicont)
+	for ii=0L,num_L1-1 do begin
+		si_peak = total(daxss_level1.data[ii].irradiance[wsi-DAXSS_FE_WIDTH:wsi+DAXSS_FE_WIDTH])
+		si_cont = total(daxss_level1.data[ii].irradiance[wsicont-DAXSS_FE_WIDTH:wsicont+DAXSS_FE_WIDTH])
+		daxss_si_abundance[ii] = (si_peak / si_cont) * DAXSS_SI_ABUNDANCE_SCALE_FACTOR
 	endfor
 endif
 
@@ -193,8 +228,13 @@ for ii=0L,num_date-1 do begin
 		xtitle='Time', ytitle='DAXSS Signal (cps)', XTICKFORMAT='LABEL_DATE', XTICKUNITS='Time' )
 	p1a = plot( xrange, yrange1[1]*0.99*[1,1], /overplot )
 
-	p1c = plot( daxss_level1.data.time_jd, daxss_fe_abundance*DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
+	; p1c = plot( daxss_level1.data.time_jd, daxss_fe_abundance*DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
+	;			color='red', sym='Square', line='none', /overplot )
+	;  Si Coronal/Photosphere line ratio is much better behaved as function of temperature
+	;	(Chianti model test: see twoods/projects/CHIANTI/ch_x123/plots/)
+	p1c = plot( daxss_level1.data.time_jd, daxss_si_abundance*DAXSS_SI_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
 				color='red', sym='Square', line='none', /overplot )
+
 	p1d = plot( xrange, DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR*[1 ,1], line='dash', color='red', /overplot )
 	p1e = plot( xrange, DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR*[4 ,4], line='dash', color='red', /overplot )
 	xx = xrange[0] + (xrange[1]-xrange[0])*0.01

@@ -60,7 +60,7 @@ PRO daxss_make_level0d_limited, version=version, VERBOSE=VERBOSE
 ;;
 ; 0. Defaults and validity checks
 ;;
-fm = 4
+fm = 3   ;  changed from FM4 to FM3 on 5/24/2022, TW
 time_offset_sec = -250.D0
 
 ; Defaults and validity checks - FM

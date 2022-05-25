@@ -113,7 +113,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     WHILE strlen(doy_str) LT 3 DO doy_str = '0' + doy_str
     time_date_str += doy_str
 
-    data_dir = getenv('minxss_data') + '/fm4/level0' + level_str + '/'
+    data_dir = getenv('minxss_data') + '/fm3/level0' + level_str + '/'
     data_file = 'daxss_l0' + level_str + '_' + time_date_str + '.sav'
 
     ; see if file exists before continuing
@@ -137,7 +137,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     FOR yyyyDoy = time1, time2 DO BEGIN
 
       ; Define the path and filename strings
-      data_dir = getenv('minxss_data') + '/fm4/level0' + level_str + '/'
+      data_dir = getenv('minxss_data') + '/fm3/level0' + level_str + '/'
       time_date_str = strmid(strtrim(yyyyDoy, 2), 0, 4) + '_' + strmid(strtrim(yyyyDoy, 2), 4, 3)
       data_file = 'daxss_l0' + level_str + '_' + time_date_str + '.sav'
 
@@ -272,7 +272,7 @@ PRO daxss_plots_trends, packet, timeRange = timeRange, items = items, tlmType = 
     IF pdf_type EQ !NULL AND tlmType NE !NULL THEN pdf_type = strlowcase(string(tlmType))
     IF (pdf_type NE 'sci') AND (pdf_type NE 'adcs') AND $
       (pdf_type NE 'sci') THEN pdf_type = 'other'
-    pdf_dir = getenv('minxss_data') + '/fm4/trends/' + pdf_type + '/'
+    pdf_dir = getenv('minxss_data') + '/fm3/trends/' + pdf_type + '/'
     yyyymmdd = yd2ymd(time1)
     mm = fix(yyyymmdd(1))
     IF mm LE 9 THEN mm = '0' + strtrim(mm, 2) ELSE mm = strtrim(mm, 2)

@@ -36,8 +36,10 @@
 ; MODIFICATION HISTORY:
 ;   2016-11-07: James Paul Mason: Wrote script.
 ;-
-PRO minxss_plot_sxr_waterfall, energyRange = energyRange, binRange = binRange, timeRange = timeRange, rgb_table = rgb_table, colorScale = colorScale, $
+PRO minxss_plot_sxr_waterfall, fm=fm, energyRange = energyRange, binRange = binRange, timeRange = timeRange, rgb_table = rgb_table, colorScale = colorScale, $
                                savePlotPathAndFilename = savePlotPathAndFilename
+
+IF fm EQ !NULL THEN fm = 1
 
 ; Check for input specification errors
 IF energyRange NE !NULL AND binRange NE !NULL THEN BEGIN
@@ -52,7 +54,7 @@ IF timeRange NE !NULL THEN BEGIN
 ENDIF
 
 ; Restore Level 1 data
-restore, getenv('minxss_data') + '/fm1/level1/minxss1_l1_mission_length.sav'
+restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length.sav'
 
 ; Defaults
 IF energyRange EQ !NULL AND binRange NE !NULL THEN energyRange = [minxsslevel1[0].energy[binRange[0]], minxsslevel1[0].energy[binRange[1]]]

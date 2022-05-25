@@ -44,14 +44,14 @@
 ;   3. Write MinXSS data structures to disk as IDL save file
 ;
 ; EXAMPLE USAGE
-;	IDL> myPath = getenv('minxss_data')+'/fm4/hydra_tlm/flight'
+;	IDL> myPath = getenv('minxss_data')+'/fm3/hydra_tlm/flight'
 ;	IDL> myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
 ;	IDL> print, 'Number of files found = ', filesCount
-;	IDL> minxss_make_level0b, telemetryFileNamesArray=myFiles, fm=4, /verbose
+;	IDL> minxss_make_level0b, telemetryFileNamesArray=myFiles, fm=3, /verbose
 ;
 ; HISTORY
 ;	2016 		Original code for MinXSS-1
-;	2022-02-18	Update for IS-1 DAXSS (FM4)
+;	2022-02-18	Update for IS-1 DAXSS (FM3) (*** but really need to use daxss_make_level0b.pro ***)
 ;
 ;+
 PRO minxss_make_level0b, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, $
@@ -108,12 +108,12 @@ FOR i = 0, n_elements(telemetryFileNamesArray) - 1 DO BEGIN
                           adcs1=adcs1Tmp, adcs2=adcs2Tmp, adcs3=adcs3Tmp, adcs4=adcs4Tmp, fm=fmTmp, $
                           verbose=verbose, _extra=_extra
 
-  endif else if (fm eq 4) then begin
+  endif else if (fm eq 3) then begin
   	; IS1/DAXSS processing has its own reader code
-  	;		use "diag" packets for the "dump" packets for FM4 so compatible with FM 1&2 code
+  	;		use "diag" packets for the "dump" packets for FM3 so compatible with FM 1&2 code
     is1_daxss_beacon_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, dump=diagTmp, $
     	verbose=verbose, _extra=_extra
-    fmTmp = 4
+    fmTmp = 3
   endif
 
   ; Count number of HK packets
@@ -203,7 +203,8 @@ ENDIF ELSE yyyydoy = strtrim(yyyydoy,2)
 ;
 
 ; Figure out the directory name to make
-IF FM EQ 3 THEN BEGIN
+; Changed FS3 to FS0  as FM4 (IS1-DAXSS) changed to FM3, 5/24/2022, TW
+IF FM EQ 0 THEN BEGIN
   flightModelString = 'fs' + strtrim(fm, 2)
 ENDIF ELSE BEGIN
   flightModelString = 'fm' + strtrim(fm, 2)
@@ -213,7 +214,7 @@ outputFilename = fileBase + strmid(yyyydoy, 0, 4) + '_' + strmid(yyyydoy, 4, 3)
 fullFilename = getenv('minxss_data') + '/' + flightModelString + '/level0b/' + outputFilename + '.sav'
 
 IF keyword_set(verbose) THEN message, /INFO, 'Saving MinXSS sorted packets into '+fullFilename
-if (fm ne 4) then begin
+if (fm ne 3) then begin
 	save, hk, sci, log, adcs1, adcs2, adcs3, adcs4, diag, image, $
 		FILENAME = fullFilename, /compress, $
       description = 'MinXSS Level 0B data ... FM = ' + strtrim(fm,2) + '; Year = '+strmid(yyyydoy, 0, 4) + '; DOY = ' + strmid(yyyydoy, 4, 3) + ' ... FILE GENERATED: '+systime()
