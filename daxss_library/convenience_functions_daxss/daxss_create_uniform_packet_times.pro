@@ -400,7 +400,7 @@ ENDIF ; outputInterpolatedUnifiedPacket set
 
 IF keyword_set(VERBOSE) THEN message, /INFO, JPMsystime() + ' Finished merger of all telemetry to common/unified time'
 
-stop, 'DEBUG at end of daxss_create_uniform_packet_times.pro ...'
+IF keyword_set(debug) THEN stop, 'DEBUG at end of daxss_create_uniform_packet_times.pro ...'
 
 return, timeArray
 
