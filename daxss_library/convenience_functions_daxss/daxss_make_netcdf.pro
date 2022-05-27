@@ -65,37 +65,37 @@ case level_name of
   '0C': begin
     indir = dir_data + 'level0c' + slash
     infile = 'daxss_l0c_all_mission_length_v' + version + '.sav'
-    outfile = 'minxss'+fm+'_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'minxss'+fm+'_solarSXR_level0C_metadata.att'
+    outfile = 'daxss_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.ncdf'
+    attfile = 'daxss_solarSXR_level0C_metadata.att'
   end
   '0D': begin
     indir = dir_data + 'level0d' + slash
-    infile = 'minxss'+fm+'_l0d_mission_length_v' + version + '.sav'
-    outfile = 'minxss'+fm+'_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'minxss'+fm+'_solarSXR_level0D_metadata.att'
+    infile = 'daxss_l0d_mission_length_v' + version + '.sav'
+    outfile = 'daxss_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.ncdf'
+    attfile = 'daxss_solarSXR_level0D_metadata.att'
   end
   '1': begin
     indir = dir_data + 'level1' + slash
-    infile = 'minxss'+fm+'_l1_mission_length_v' + version + '.sav'
-    outfile = 'minxss'+fm+'_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'minxss'+fm+'_solarSXR_level1_metadata.att'
+    infile = 'daxss_l1_mission_length_v' + version + '.sav'
+    outfile = 'daxss_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.ncdf'
+    attfile = 'daxss_solarSXR_level1_metadata.att'
   end
   '2': begin
     indir = dir_data + 'level2' + slash
-    infile = 'minxss'+fm+'_l2_1minute_average_mission_length_v' + version + '.sav'
-    outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_metadata.att'
+    infile = 'daxss_l2_1minute_average_mission_length_v' + version + '.sav'
+    outfile = 'daxss_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+    attfile = 'daxss_solarSXR_level2_1minute_average_metadata.att'
     IF one_minute_done NE !NULL THEN BEGIN
-      infile = 'minxss'+fm+'_l2_1hour_average_mission_length_v' + version + '.sav'
-      outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-      attfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_metadata.att'
+      infile = 'daxss_l2_1hour_average_mission_length_v' + version + '.sav'
+      outfile = 'daxss_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+      attfile = 'daxss_solarSXR_level2_1hour_average_metadata.att'
     ENDIF
   end
   '3': begin
     indir = dir_data + 'level3' + slash
-    infile = 'minxss'+fm+'_l3_1day_average_mission_length_v' + version + '.sav'
-    outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'minxss'+fm+'_solarSXR_level3_1day_average_metadata.att'
+    infile = 'daxss_l3_1day_average_mission_length_v' + version + '.sav'
+    outfile = 'daxss_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+    attfile = 'daxss_solarSXR_level3_1day_average_metadata.att'
   end
   else: begin
     print, 'ERROR with Level Name : ', level_name, ' - Exiting daxss_make_netcdf()'

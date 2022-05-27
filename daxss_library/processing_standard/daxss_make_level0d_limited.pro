@@ -23,7 +23,6 @@
 ;   version [string]:   Software/data product version to store in filename and internal anonymous structure. Default is '2.0.0'.
 ;
 ; KEYWORD PARAMETERS:
-;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
 ;   VERBOSE:             Set this to print processing messages
 ;
 ; OUTPUTS:
@@ -68,7 +67,7 @@ IF version EQ !NULL THEN version = '1.0.0'
 
 ; Defaults and validity checks - output filename
 outputPath = getenv('minxss_data') +path_sep()+ 'fm' + strtrim(fm, 2) +path_sep()+ 'level0d' +path_sep()
-outputFilename = outputPath + 'minxss' + strtrim(fm, 2) + '_l0d_mission_length_v' + version + '.sav'
+outputFilename = outputPath + 'daxss_l0d_mission_length_v' + version + '.sav'
 
 ;;
 ; 1. Restore the Level 0B mission length file
@@ -154,10 +153,7 @@ daxss_level0d.sun_declination = declination           ; [º]
 ;;
 IF keyword_set(VERBOSE) THEN message, /INFO, 'Saving DAXSS Level 0D data into '+outputFilename
 save, daxss_Level0D, filename=outputFilename
-
-; Export to netCDF
-; +++++ TODO later
-; minxss_make_netcdf, '0d', fm=fm, verbose=verbose, version=version
+daxss_make_netcdf, '0d', version=version, verbose=verbose
 
 IF keyword_set(VERBOSE) THEN message, /INFO, systime() + ' Finished processing Level 0D Limited'
 END

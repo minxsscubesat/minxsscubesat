@@ -62,7 +62,7 @@
 ;+
 PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, $
 						            yyyymmdd = yyyymmdd, use_csv_file=use_csv_file, version=version, $
-                        			VERBOSE=VERBOSE, DEBUG=DEBUG, extra = _extra
+                        VERBOSE=VERBOSE, DEBUG=DEBUG, extra = _extra
 
   ; Defaults
   fm = 3	; changed from FM4 to FM3 on 5/24/2022, TW
@@ -212,17 +212,6 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
     dump.time_human = jpmjd2iso(dump.time_jd, /NO_T_OR_Z)
   ENDIF
 
-  ;  p1sci and p2sci are just for debugging SCI packets
-  ; p1sci = JPMAddTagsToStructure(p1sci, 'time_gps', 'double')
-  ; p1sci = JPMAddTagsToStructure(p1sci, 'time_jd', 'double')
-  ; p1sci = JPMAddTagsToStructure(p1sci, 'time_iso', 'string')
-  ; p1sci = JPMAddTagsToStructure(p1sci, 'time_human', 'string')
-  ; p1sci.time_gps = p1sci.time + time_offset_sec
-  ; p1sci.time_jd = gps2jd(p1sci.time_gps)
-  ; p1sci.time_iso = jpmjd2iso(p1sci.time_jd)
-  ; p1sci.time_human = jpmjd2iso(p1sci.time_jd, /NO_T_OR_Z)
-
-
   ; If no YYYYDOY, grab one from the HK packet
   IF yyyydoy EQ !NULL THEN BEGIN
 	  jdmax = gps2jd(max(hk.daxss_time)) < systime(/julian)
@@ -231,7 +220,7 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   yyyydoy = strtrim(yyyydoy, 2)
 
   ;
-  ; 3. Write DAXSS data structures to disk as IDL save file
+  ; 3. Write DAXSS data structures to disk as IDL save file and netcdf
   ;
   if keyword_set(use_csv_file) then begin
   	outputFilename = 'daxss_l0c_all_mission_length_v' + version
@@ -248,6 +237,8 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   file_description = 'DAXSS Level 0c data ' + '; Year = '+strmid(yyyydoy, 0, 4) + '; DOY = ' + $
         strmid(yyyydoy, 4, 3) + ' ... FILE GENERATED: '+ JPMsystime()
   save, hk, sci, p1sci, p2sci, log, dump, FILENAME = fullFilename, /COMPRESS, description = file_description
-
+  
+  daxss_make_netcdf, '0c', version=version, verbose=verbose
+  
   if keyword_set(DEBUG) then stop, 'DEBUG at end of daxss_make_level0c...'
 END

@@ -209,7 +209,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
     cmd_last_opcode: 0, cmd_last_status: 0, cmd_accept_count: 0L, cmd_reject_count: 0L, $
     param_set_header: 0,  cdh_enables: 0U, $
     enable_sps: 0B, enable_x123: 0B, enable_inst_heater: 0B, enable_sdcard: 0B, $
-	fsw_major_minor: 0, fsw_patch_version: 0, flight_model: 0, $
+	fsw_major_minor: 0, fsw_patch_version: 0, flight_model: 3, $
 	lockout_TimeoutCounter: 0L, instrument_HeaterSetpoint: 0, time_offset: 0L, $
 	cdh_batt_v: 0.0, cdh_batt_v2: 0.0, cdh_5v: 0.0, cdh_3v: 0.0, cdh_temp: 0.0, $
 	cdh_i2c_err: 0L, cdh_rtc_err: 0L, cdh_spi_sd_err: 0L, $
@@ -248,7 +248,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   ; force flight model number to be 4
   ; hk.time is later set to be hk.daxss_time
   hk_struct1 = { apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, is1_time_sec: 0UL, is1_time: 0.0D0, $
-  	flight_model: 4, time: 0.0D0, $
+  	flight_model: 3, time: 0.0D0, $
   	cmd_receive_count: 0, cmd_accept_count: 0, cmd_reject_count: 0, $
   	cmd_accept_opcode: 0, cmd_reject_opcode: 0, cmd_reject_errcode: 0, pwr_status_all: 0, $
   	eclipse_state: 0, pwr_status_sd1: 0, pwr_status_sd0: 0, pwr_status_htr: 0, $
@@ -637,7 +637,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
 			sci_struct1.fsw_major_minor = (long(data[pindex+24]))
             sci_struct1.fsw_patch_version = (long(data[pindex+25]))
             ;  2015/9/7: TW  Extract out extra flags from "fsw_patch_version"
-            sci_struct1.flight_model = ishft( sci_struct1.fsw_patch_version AND '00F0'X, -4 )
+            ; sci_struct1.flight_model = ishft( sci_struct1.fsw_patch_version AND '00F0'X, -4 ) ; Recorded onboard as 4 but we overwrite on the ground as 3
             sci_struct1.fsw_patch_version = sci_struct1.fsw_patch_version AND '000F'X
 
             sci_struct1.lockout_timeoutcounter = (long(data[pindex+26]) + ishft(long(data[pindex+27]),8)) ; seconds
@@ -1167,6 +1167,14 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
           hk_struct1.bat1_temp_conv = float(barray,0)
 
 		  hk_struct1.is1_mode = fix(data[pindex+255])
+		  
+		  ; Override the eclipse flag in cases that it should've been triggered. Part way through the mission, we lowered the CSS thresholds in the onboard logic that determine the eclipse flag.
+		  IF hk_struct1.eclipse_state EQ 0 THEN BEGIN
+		    IF hk_struct1.sp0_volt LT 17 OR hk_struct1.sp1_volt LT 17 OR hk_struct1.sp2_volt LT 17 THEN BEGIN
+		      hk_struct1.eclipse_state = 1
+		      IF keyword_set(VERBOSE) THEN message, /INFO, 'Overwriting eclipse flag. It _should_ be listed as in eclipse here but was not.'
+		    ENDIF
+		  ENDIF
 
 		  ; stop, 'STOPPED:  DEBUG hk_struct1 packet values...'
 
