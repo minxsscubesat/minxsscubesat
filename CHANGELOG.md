@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
-* Support for IS1/DAXSS (INSPIRESat-1 / Dual-zone Aperture X-ray Solar Spectrometer AKA MinXSS-3) processing and plotting -- note that these data are encoded as flight model 4 (fm=4) initially and then changed to be fm=3.
+* Support for IS1/DAXSS (INSPIRESat-1 / Dual-zone Aperture X-ray Solar Spectrometer AKA MinXSS-3) processing and plotting -- note that these data are encoded as flight model 4 (fm=4) initially and then changed to be fm=3.  DAXSS Level OC, OD, and 1 products released in June 2022.
+* InspireSat-1 DAXSS has high background signal when in the polar and SAA regions.  A linear fit to the background signal in the 12-20 keV range is used in Level 1 processing to remove the background at all energies before doing the conversion to irradiance units.  The background fit information is stored in the Level 1 product.
+* DAXSS Level 1 Version 1.0.0 has text errors in the MetaData, so the MetaData has been updated.  The Level 1 in IDL saveset has correct MetaData descriptions.
 
 ### Changed
 
