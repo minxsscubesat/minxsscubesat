@@ -61,7 +61,11 @@
 ;
 ; HISTORY:
 ;	3/21/2022   T. Woods, Copy of minxss_make_level1.pro for DAXSS processing
-;
+;	5/28/2022	T. Woods, Updated to exclude Eclipse data, low Accum. Time, and to zero-out 0-0.3 keV range
+;	6/2/2022	T. Woods, Removed the unused X123_RADIO_FLAG in the Level 1 structure, broke up data & meta variables
+;	6/3/2022	T. Woods, Added calculation of Solar Zenith Angle and Tangent Ray Height
+;	6/13/2022	T. Woods, Updated MetaData units for Precision and Accuracy;
+;							and added background subtraction using linear fit to 12-20 keV signal
 ;+
 PRO daxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, version=version, cal_version=cal_version, $
                         DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE=VERBOSE, DEBUG=DEBUG
@@ -80,7 +84,7 @@ PRO daxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direct
     message,/INFO, "daxss_make_level1 is processing data for FM " + fm_str $
     	+':  START at '+JPMsystime()
   endif
-  IF version EQ !NULL THEN version = '1.0.0'
+  IF version EQ !NULL THEN version = '1.1.0'   ; updated 6/14/2022 T.Woods
   IF cal_version EQ !NULL THEN cal_version = '1.0.0'
 
   ; Constants
@@ -130,37 +134,64 @@ PRO daxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direct
 
   ;
   ; 2. Select (filter) the data for good (valid) data
-  ;   not in eclipse by at least one minute, radio flag is less than 1,
+  ;   not in eclipse by at least one minute,
   ;   low energy counts are below the low_limit, and ADCS mode is Fine-Ref(1)
   ;
   sp_sec = (DAXSS_LEVEL0D.time_jd - yd2jd(2016001.D0))*24.D0*3600.  ; seconds since Jan 1, 2016
   ;sp = count rate
   sp = float(DAXSS_LEVEL0D.x123_spectrum)
   ;raw total counts in the integration time
-  sp_counts = sp
   num_sci = n_elements(DAXSS_LEVEL0D)
   ; convert to counts per sec (cps) with smallest time
   ; Note that Version 1 used x123_live_time instead of x123_accum_time
 ;  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (DAXSS_LEVEL0D[ii].x123_accum_time/1000.)
 
+; RADIO_FLAG is not valid for DAXSS
 ; Adjust x123_accum_time to be 263 millisec shorter if x123_radio_flag EQ 1
 ; The x123_accum_time is adjusted in-line in DAXSS_LEVEL0D because it is used several times in this procedure
 ;  wradio1 = where(DAXSS_LEVEL0D.x123_radio_flag eq 1, num_radio1)
 ;  if (num_radio1 gt 0) then DAXSS_LEVEL0D[wradio1].x123_accum_time -= DAXSS_LEVEL0D[wradio1].x123_radio_flag * 263L
-  for ii=0,num_sci-1 do sp[*,ii] = sp[*,ii] / (DAXSS_LEVEL0D[ii].x123_accum_time/1000.)
+  accum_time = DAXSS_LEVEL0D.x123_accum_time/1000.
+  real_time  =  DAXSS_LEVEL0D.x123_real_time/1000.
+  accum_time_factor = 0.6  ; new check 5/28/2022 to exclude data when accum_time < this_factor * real_time
 
-  fast_count = DAXSS_LEVEL0D.x123_fast_count / (DAXSS_LEVEL0D.x123_accum_time/1000.)
-  fast_limit = 1E6  ; New Limit for  FM-4
-  slow_count = DAXSS_LEVEL0D.x123_slow_count / (DAXSS_LEVEL0D.x123_accum_time/1000.)
+  ;		Convert spectrum from counts to counts per sec (cps)
+  ;
+  ;		correct the spectrum counts for background using 12-20 keV signal (T. Woods, 6/13/2022)
+  ;			fit line as there is there is a small trend with energy
+  ;			save the background results
+  whi = indgen(420) + 602
+  bins = findgen(1024)
+  sp_counts = sp
+  background_struct1 = { background_mean: 0.0, background_median: 0.0, fit_coeff: fltarr(2) }
+  background = replicate( background_struct1, num_sci )
+  for ii=0,num_sci-1 do begin
+    ; background subtraction
+    coeff = poly_fit( bins[whi], sp_counts[whi,ii], 1)
+    background_spectrum = (coeff[0] + bins*coeff[1]) > 0.0
+    background[ii].fit_coeff = reform(coeff)
+    background[ii].background_mean = mean(sp_counts[whi,ii])
+    background[ii].background_median = median(sp_counts[whi,ii])
+    sp_counts[*,ii] = (reform(sp_counts[*,ii]) - background_spectrum) > 0.
+  	;  convert to CPS
+  	sp[*,ii] = reform(sp_counts[*,ii]) / accum_time[ii]
+  	if keyword_set(debug) AND (ii eq 0) then stop, 'DEBUG sp_counts and sp arrays ...'
+  endfor
+
+  fast_count = DAXSS_LEVEL0D.x123_fast_count / accum_time
+  fast_limit = 1E6  ; New Limit for  FM-3
+  fast_limit = 2E5  ; New Limit for FM-3 (T. Woods, 5/28/2022)
+  slow_count = DAXSS_LEVEL0D.x123_slow_count / accum_time
 
 ;  sps_sum = total(DAXSS_LEVEL0D.sps_data_sci[0:3],1) / float(DAXSS_LEVEL0D.sps_xp_integration_time)
 ;  sps_sum_sun_min = 280000.   ; June 2016 it is 310K; this  allows for 1-AU changes and 5% degradation
 
-  ; exclude spectra with radio on (flag > 1), not in sun, and high low counts
+  ; exclude spectra if not in sun, and high low counts
   lowcnts = total( sp[20:24,*], 1 )
   peakcnts = total( sp[36:40,*], 1 )
   PEAK_SLOPE_DEFAULT = 3.0
   lowlimit = 20.0    ; M5 Flare is lt 20
+  lowlimit = 1000.	; New lower limit for slow counts (T. Woods, 5/28/2022)
   slow_count_min = lowlimit
   slow_count_max = fast_limit
 
@@ -185,19 +216,20 @@ PRO daxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direct
     cal_dir = getenv('minxss_data')+ path_sep() + 'calibration' + path_sep()
   endelse
 
-
 n_spectra = n_elements(sp[*,0])
 n_times_nominal = n_elements(sp[0,*])
 initial_x123_irradiance = dblarr(n_spectra, n_times_nominal)
 
-if keyword_set(verbose) then message, /INFO, 'Level 0D starting irradiance conversion.'
+if keyword_set(verbose) then message, /INFO, 'Level 1 starting irradiance conversion.'
+if keyword_set(debug) then n_times_nominal = 100L  ; limit for DEBUG session
 
 for k = 0, n_times_nominal - 1 do begin
   minxss_x123_irradiance_wrapper, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
   initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
+  if keyword_set(debug) AND (k eq 0) then stop, 'DEBUG sp and initial_x123_irradiance_structure ...'
 endfor
 
-if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conversion at ' + JPMsystime()
+if keyword_set(verbose) then message, /INFO, 'Level 1 finished irradiance conversion at ' + JPMsystime()
 
   ; find where the ratio of counts is less than a critical ratio (minimal slope)
   dimension = 1
@@ -218,13 +250,14 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
 ;  *****  SIMPLIFIED where for DAXSS on IS-1 **************
   wsci = where((fast_count lt fast_limit) $
   			   and (slow_count gt slow_count_min) $
+  			   and (accum_time ge (accum_time_factor * real_time)) $
                and (DAXSS_LEVEL0D.eclipse lt 1.0) $
                and DAXSS_LEVEL0D.x123_read_errors le 5 $
                and DAXSS_LEVEL0D.x123_write_errors le 5, $
                num_sp)
 
   if keyword_set(verbose) then BEGIN
-  	message, /INFO, 'Number of good L0D science packets = '+strtrim(num_sp,2) $
+  	message, /INFO, 'Number of good L1 science packets = '+strtrim(num_sp,2) $
     		+' out of '+strtrim(n_elements(DAXSS_LEVEL0D),2)
   endif
   if (num_sp le 1) then begin
@@ -337,7 +370,6 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     spectrum_cps_stddev: fltarr(1024), $
     deadtime_correction_factor: 0.0, $
     valid_flag: fltarr(1024), $
-    x123_radio_flag: 0L, $
     spectrum_total_counts: fltarr(1024), $
     spectrum_total_counts_accuracy: fltarr(1024), $
     spectrum_total_counts_precision: fltarr(1024),$
@@ -354,8 +386,15 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     altitude: 0.0, $
     sun_right_ascension: 0.0, $
     sun_declination: 0.0, $
+    solar_zenith_angle: 0.0, $
+    tangent_ray_height: 0.0, $
     earth_sun_distance: 0.0, $
-    correct_au: 0.0}
+    correct_au: 0.0, $
+    background_mean: 0.0, $
+    background_median: 0.0, $
+    background_fit_yzero: 0.0, $
+    background_fit_slope: 0.0 $
+    }
 
   ;replicate the structure to the actual number of MinXSS-1 spectra that is valid in the time interval
   minxsslevel1_x123 = replicate(level1_x123, num_sp)
@@ -370,7 +409,9 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;   4. Deadtime correction
     if keyword_set(verbose) then verbose_deadtime=verbose
-    x123_counts_deadtime_corrected = minxss_x123_correct_deadtime(float(DAXSS_LEVEL0D[wsci[k]].x123_spectrum), DAXSS_LEVEL0D[wsci[k]].x123_accum_time, x123_energy_bin_centers_kev=energy_bins_kev, minxss_instrument_structure_data_file=minxss_calibration_file_path, flight_model_number=1, verbose=verbose_deadtime, $ low_energy_limit=low_energy_limit,  $
+    ; raw_spectrum_counts = float(DAXSS_LEVEL0D[wsci[k]].x123_spectrum)
+    raw_spectrum_counts = reform(sp_counts[*,wsci[k]])  ; corrected for background signal
+    x123_counts_deadtime_corrected = minxss_x123_correct_deadtime(raw_spectrum_counts, DAXSS_LEVEL0D[wsci[k]].x123_accum_time, x123_energy_bin_centers_kev=energy_bins_kev, minxss_instrument_structure_data_file=minxss_calibration_file_path, flight_model_number=1, verbose=verbose_deadtime, $ low_energy_limit=low_energy_limit,  $
       deadtime_correction_scale_factor=x123_deadtime_correction_scale_factor_array)
     ;deadtime corrected slow counts
     x123_slow_count_deadtime_corrected = (total(x123_counts_deadtime_corrected, 1, /double, /nan))/(DAXSS_LEVEL0D[wsci[k]].x123_accum_time/1000.)
@@ -417,7 +458,10 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     ;  6.  Calculate the MinXSS X123 irradiance
     minxss_x123_irradiance_wrapper, x123_cps_count_rate, x123_cps_count_rate_uncertainty_accuracy, x123_irradiance_mean, result=x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;  The VALID_FLAG may need to be fixed for DAXSS irradiance for 0.5 - 1 keV.
+    wgd = where(energy_bins_kev ge 0.5 and energy_bins_kev lt 1.0)
+	;   x123_irradiance_structure.valid_flag[wgd] = 1
+	 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; 7. Put data into structures
     ; fill the variables in the level1_x123 structure
     ;
@@ -439,7 +483,6 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     minxsslevel1_x123[num_L1].spectrum_total_counts_accuracy = X123_total_counts_uncertainty_accuracy
     minxsslevel1_x123[num_L1].spectrum_total_counts_precision = X123_total_counts_uncertainty_precision
     minxsslevel1_x123[num_L1].valid_flag = x123_irradiance_structure.valid_flag
-    minxsslevel1_x123[num_L1].x123_radio_flag = DAXSS_LEVEL0D[wsci[k]].x123_radio_flag
     minxsslevel1_x123[num_L1].integration_time = X123_total_integration_time
     minxsslevel1_x123[num_L1].number_spectra = 1
     minxsslevel1_x123[num_L1].x123_fast_count = fast_count[wsci[k]]
@@ -457,7 +500,21 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
     minxsslevel1_x123[num_L1].sun_declination = DAXSS_LEVEL0D[wsci[k]].sun_declination
     minxsslevel1_x123[num_L1].earth_sun_distance = DAXSS_LEVEL0D[wsci[k]].earth_sun_distance
     minxsslevel1_x123[num_L1].correct_au = correct_1AU
+	; New 6/13/2022 Update with addition of background subtraction - track results
+	minxsslevel1_x123[num_L1].background_mean = background[wsci[k]].background_mean
+	minxsslevel1_x123[num_L1].background_median = background[wsci[k]].background_median
+	minxsslevel1_x123[num_L1].background_fit_yzero = background[wsci[k]].fit_coeff[0]
+	minxsslevel1_x123[num_L1].background_fit_slope = background[wsci[k]].fit_coeff[1]
 
+	if keyword_set(debug) AND (k eq 0) then stop, 'DEBUG energy_bins_kev and minxsslevel1_x123[0] ...'
+
+    ; New 5/28/2022 Update to zero-out below 0.3 keV
+    DAXSS_ENERGY_LIMIT = 0.3
+    wzero = where( energy_bins_kev lt DAXSS_ENERGY_LIMIT, num_zero)
+    if (num_zero gt 1) then begin
+    	minxsslevel1_x123[num_L1].irradiance[wzero] = 0.0
+    	minxsslevel1_x123[num_L1].irradiance_uncertainty[wzero] = 0.0
+    endif
 
     ; increment k and num_L1
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
@@ -467,6 +524,14 @@ if keyword_set(verbose) then message, /INFO, 'Level 0D finished irradiance conve
 
 ; Truncate down to the elements used
 minxsslevel1_x123 = minxsslevel1_x123[0:num_L1-1]
+
+;
+;	calculate Solar Zenith Angle and Tangent Ray Height
+;
+solar_zenith_altitude, minxsslevel1_x123.time_yd, minxsslevel1_x123.longitude, $
+				minxsslevel1_x123.latitude, minxsslevel1_x123.altitude, sza, trh
+minxsslevel1_x123.solar_zenith_angle = sza
+minxsslevel1_x123.tangent_ray_height = trh
 
 if keyword_set(output_filename) then begin
   outfile = output_filename + '.sav'
@@ -527,6 +592,8 @@ minxsslevel1_x123_meta = { $
   ALTITUDE : 'Earth Altitude for this measurement in units of km from Earth center', $
   SUN_RIGHT_ASCENSION: 'Sun Right Ascension from orbit location', $
   SUN_DECLINATION: 'Sun Declination from orbit location', $
+  SOLAR_ZENITH_ANGLE: 'Solar Zenith Angle from orbit location', $
+  TANGENT_RAY_HEIGHT: 'Tangent Ray Height in km in Earth atmosphere', $
   EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
   CORRECT_AU: 'Earth-Sun Distance correction factor' $
 }
@@ -537,6 +604,11 @@ minxsslevel1_x123_meta = { $
 IF NOT keyword_set(DO_NOT_OVERWRITE_FM) THEN BEGIN
   minxsslevel1_x123.flight_model = fm
 ENDIF
+
+if keyword_set(debug) then BEGIN
+	stop, 'DEBUG: at end - will not save limited data set in DEBUG mode ...'
+	return
+endif
 
 ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .netcdf files also
 ;
@@ -552,11 +624,13 @@ endelse
 if keyword_set(verbose) then message, /INFO, ': Saving Level 1 save set in ' +  outdir+outfile
 
 ; Combine all the individual structures into one big structure (structures in structures in sructures in structures! :)
-daxss_level1 = { data: minxsslevel1_x123, meta: minxsslevel1_x123_meta }
-
+; daxss_level1 = { data: minxsslevel1_x123, meta: minxsslevel1_x123_meta }
+; Updated 6/2/2022 (TW) to break up data and meta into separate variables
+daxss_level1_data = minxsslevel1_x123
+daxss_level1_meta = minxsslevel1_x123_meta
 
 ;save the data as a .sav and .ncdf files
-save, /compress, daxss_level1, file=outdir+outfile
+save, /compress, daxss_level1_data, daxss_level1_meta, file=outdir+outfile
 
 daxss_make_netcdf, '1', version=version, verbose=verbose
 
