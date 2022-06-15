@@ -18,12 +18,14 @@
 ;
 pro daxss_plot_flare, date, minxss1=minxss1, range_hours=range_hours, $
 							do_stats=do_stats, all=all, pdf=pdf, $
-							verbose=verbose, debug=debug
+							abundance=abundance, verbose=verbose, debug=debug
 
 if (n_params() lt 1) AND (not keyword_set(all)) then begin
 	date = 0.0D0
 	read, 'Enter Date for flare (in YD or YMD format, fractional day): ', date
 endif
+
+if not keyword_set(abundance) then abundance = 0
 
 RANGE_HOURS_DEFAULT = 12.0
 if not keyword_set(range_hours) then range_hours = RANGE_HOURS_DEFAULT
@@ -71,38 +73,38 @@ DAXSS_SI_ABUNDANCE_VALUE_ONE_SCALE_FACTOR = 1E5
 ;	Read DAXSS Level 1
 ;
 ddir = getenv('minxss_data') + path_sep() + 'fm3' + path_sep() + 'level1' + path_sep()
-dfile1 = 'minxss3_l1_mission_length_v1.0.0.sav'
+dfile1 = 'daxss_l1_mission_length_v1.0.0.sav'
 if (daxss_level1 eq !NULL) then begin
 	if keyword_set(verbose) then message,/INFO, 'Reading DAXSS L1 data from '+ddir+dfile1
 	restore, ddir+dfile1   ; daxss_level1 variable is structure
 	; estimate daxss_Fe_abundance using Fe line peak at 0.81 keV to continuum level at 1.2 keV
-	num_L1 = n_elements(daxss_level1.data)
+	num_L1 = n_elements(daxss_level1_data)
 	daxss_fe_abundance = fltarr(num_L1)
-	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_FE_LINE_PEAK),wfe)
-	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_FE_CONTINUUM),wcont)
+	temp1 = min(abs(daxss_level1_data[0].energy - DAXSS_FE_LINE_PEAK),wfe)
+	temp2 = min(abs(daxss_level1_data[0].energy - DAXSS_FE_CONTINUUM),wcont)
 	for ii=0L,num_L1-1 do begin
-		fe_peak = total(daxss_level1.data[ii].irradiance[wfe-DAXSS_FE_WIDTH:wfe+DAXSS_FE_WIDTH])
-		fe_cont = total(daxss_level1.data[ii].irradiance[wcont-DAXSS_FE_WIDTH:wcont+DAXSS_FE_WIDTH])
+		fe_peak = total(daxss_level1_data[ii].irradiance[wfe-DAXSS_FE_WIDTH:wfe+DAXSS_FE_WIDTH])
+		fe_cont = total(daxss_level1_data[ii].irradiance[wcont-DAXSS_FE_WIDTH:wcont+DAXSS_FE_WIDTH])
 		daxss_fe_abundance[ii] = (fe_peak / fe_cont) * DAXSS_FE_ABUNDANCE_SCALE_FACTOR
 	endfor
 
 	; estimate daxss_S_abundance using S line peak at 2.43 keV to continuum level at 1.94 keV
 	daxss_s_abundance = fltarr(num_L1)
-	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_S_LINE_PEAK),ws)
-	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_S_CONTINUUM),wscont)
+	temp1 = min(abs(daxss_level1_data[0].energy - DAXSS_S_LINE_PEAK),ws)
+	temp2 = min(abs(daxss_level1_data[0].energy - DAXSS_S_CONTINUUM),wscont)
 	for ii=0L,num_L1-1 do begin
-		s_peak = total(daxss_level1.data[ii].irradiance[ws-DAXSS_FE_WIDTH:ws+DAXSS_FE_WIDTH])
-		s_cont = total(daxss_level1.data[ii].irradiance[wscont-DAXSS_FE_WIDTH:wscont+DAXSS_FE_WIDTH])
+		s_peak = total(daxss_level1_data[ii].irradiance[ws-DAXSS_FE_WIDTH:ws+DAXSS_FE_WIDTH])
+		s_cont = total(daxss_level1_data[ii].irradiance[wscont-DAXSS_FE_WIDTH:wscont+DAXSS_FE_WIDTH])
 		daxss_s_abundance[ii] = (s_peak / s_cont) * DAXSS_S_ABUNDANCE_SCALE_FACTOR
 	endfor
 
 	; estimate daxss_Si_abundance using Si line peak at 1.85 keV to continuum level at 1.94 keV
 	daxss_si_abundance = fltarr(num_L1)
-	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_SI_LINE_PEAK),wsi)
-	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_SI_CONTINUUM),wsicont)
+	temp1 = min(abs(daxss_level1_data[0].energy - DAXSS_SI_LINE_PEAK),wsi)
+	temp2 = min(abs(daxss_level1_data[0].energy - DAXSS_SI_CONTINUUM),wsicont)
 	for ii=0L,num_L1-1 do begin
-		si_peak = total(daxss_level1.data[ii].irradiance[wsi-DAXSS_FE_WIDTH:wsi+DAXSS_FE_WIDTH])
-		si_cont = total(daxss_level1.data[ii].irradiance[wsicont-DAXSS_FE_WIDTH:wsicont+DAXSS_FE_WIDTH])
+		si_peak = total(daxss_level1_data[ii].irradiance[wsi-DAXSS_FE_WIDTH:wsi+DAXSS_FE_WIDTH])
+		si_cont = total(daxss_level1_data[ii].irradiance[wsicont-DAXSS_FE_WIDTH:wsicont+DAXSS_FE_WIDTH])
 		daxss_si_abundance[ii] = (si_peak / si_cont) * DAXSS_SI_ABUNDANCE_SCALE_FACTOR
 	endfor
 endif
@@ -123,7 +125,7 @@ endif
 ;	configure the plot dates
 ;
 if keyword_set(all) then begin
-	jd1 = yd2jd(2022059.D0)
+	jd1 = yd2jd(2022059.0D0)
 	jd2 = systime(/julian)
 	num_date = long(jd2-jd1+1L)
 	jd_all = findgen(num_date) + jd1
@@ -157,9 +159,10 @@ for ii=0L,num_date-1 do begin
 		hour = (date[ii] - long(date[ii]))*24.
 		jd_mid = yd2jd(date[ii])
 	endelse
-	if (hour eq 0) then jd_mid += 0.5D0		; force LONG(date) to be middle of day
+	if (long(hour) eq 0) then jd_mid += 0.5D0		; force LONG(date) to be middle of day
 	jd1 = jd_mid - range_hours/24.
 	jd2 = jd_mid + range_hours/24.
+	if keyword_set(debug) then stop, 'DEBUG date and jd1, jd2 ...'
 
 	if (jd_mid lt yd2jd(2022045.D0)) or (jd_mid gt systime(/julian)) then begin
 		message,/INFO, 'ERROR with Date being outside the InspireSat-1 mission range !'
@@ -169,7 +172,7 @@ for ii=0L,num_date-1 do begin
 	;
 	;	Look for DAXSS data within the JD time range
 	;
-	wdax =  where((daxss_level1.data.time_jd ge jd1) AND (daxss_level1.data.time_jd le jd2), num_dax )
+	wdax =  where((daxss_level1_data.time_jd ge jd1) AND (daxss_level1_data.time_jd le jd2), num_dax )
 	if (num_dax lt 2) then begin
 		message,/INFO, 'ERROR finding any DAXSS data for the date '+strtrim(long(date[ii]),2)
 		continue	; continue the big FOR loop
@@ -198,8 +201,8 @@ for ii=0L,num_date-1 do begin
 	endif
 
 	;  Print DAXSS peak time too
-	dyd = jd2yd(daxss_level1.data[wdax].time_jd)
-	temp = max( daxss_level1.data[wdax].x123_slow_count, wd_max)
+	dyd = jd2yd(daxss_level1_data[wdax].time_jd)
+	temp = max( daxss_level1_data[wdax].x123_slow_count, wd_max)
 	dpeak = (dyd[wd_max] - long(dyd[wd_max])) * 24.
 	dpeak_hour = long(dpeak)
 	dpeak_min = (dpeak - dpeak_hour)*60.
@@ -222,17 +225,18 @@ for ii=0L,num_date-1 do begin
 	p1_title = 'DAXSS Flare '+date_str
 	p1_labels = label_date(DATE_FORMAT="%H:%I")
 
-	p1 = plot( daxss_level1.data.time_jd, daxss_level1.data.x123_slow_count, $
+	p1 = plot( daxss_level1_data.time_jd, daxss_level1_data.x123_slow_count, $
 		xrange=xrange, xstyle=1, /ylog, yrange=yrange1, ystyle=1, title=p1_title, $
 		axis_style = 1, sym='Diamond', $
 		xtitle='Time', ytitle='DAXSS Signal (cps)', XTICKFORMAT='LABEL_DATE', XTICKUNITS='Time' )
 	p1a = plot( xrange, yrange1[1]*0.99*[1,1], /overplot )
 
-	; p1c = plot( daxss_level1.data.time_jd, daxss_fe_abundance*DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
+  if (abundance ne 0) then begin
+	; p1c = plot( daxss_level1_data.time_jd, daxss_fe_abundance*DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
 	;			color='red', sym='Square', line='none', /overplot )
 	;  Si Coronal/Photosphere line ratio is much better behaved as function of temperature
 	;	(Chianti model test: see twoods/projects/CHIANTI/ch_x123/plots/)
-	p1c = plot( daxss_level1.data.time_jd, daxss_si_abundance*DAXSS_SI_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
+	p1c = plot( daxss_level1_data.time_jd, daxss_si_abundance*DAXSS_SI_ABUNDANCE_VALUE_ONE_SCALE_FACTOR, $
 				color='red', sym='Square', line='none', /overplot )
 
 	p1d = plot( xrange, DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR*[1 ,1], line='dash', color='red', /overplot )
@@ -240,6 +244,7 @@ for ii=0L,num_date-1 do begin
 	xx = xrange[0] + (xrange[1]-xrange[0])*0.01
 	t1d = text( xx, DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR*1.05, 'P', /data, color='red'  )
 	t1e = text( xx, DAXSS_FE_ABUNDANCE_VALUE_ONE_SCALE_FACTOR*4.05, 'C', /data, color='red'  )
+  endif
 
 	goes_factor = 1E-10
 	p1b = plot( goes_jd, goes.long/goes_factor, color='green', /histogram, /overplot )
@@ -267,8 +272,8 @@ for ii=0L,num_date-1 do begin
 	wd_max1 = wd_max-2L > 0
 	wd_max2 = wd_max+2L < (n_elements(wdax)-1L)
 	wd_max_num = wd_max2 - wd_max1 + 1.0
-	dax_sp = total(daxss_level1.data[wdax[wd_max1:wd_max2]].irradiance, 2) / wd_max_num
-	dax_e =  daxss_level1.data[wdax[wd_max]].energy
+	dax_sp = total(daxss_level1_data[wdax[wd_max1:wd_max2]].irradiance, 2) / wd_max_num
+	dax_e =  daxss_level1_data[wdax[wd_max]].energy
 
 	;  get DAXSS 1-8Angstrom Irradiance
 	EAfactor = 12.4
@@ -287,7 +292,7 @@ for ii=0L,num_date-1 do begin
 	daxss_xrsb_array[ii] = daxss_xrsb
 
 	; identify GOES XRS-B level for the DAXSS peak time
-	daxss_peak_jd = daxss_level1.data[wdax[wd_max]].time_jd
+	daxss_peak_jd = daxss_level1_data[wdax[wd_max]].time_jd
 	goes_daxss = interpol( goes.long, goes_jd, daxss_peak_jd ) > 1E-8
 	if (goes_daxss lt 9.95E-8) then goes_name = 'A' + string(goes_daxss/1E-8,format='(F3.1)') $
 	else if (goes_daxss lt 9.95E-7) then goes_name = 'B' + string(goes_daxss/1E-7,format='(F3.1)') $
@@ -428,24 +433,24 @@ endif
 ;
 if keyword_set(do_stats) then begin
 	num_stats = 0L
-	num_data = n_elements(daxss_level1.data)
+	num_data = n_elements(daxss_level1_data)
 	data_num_per_flare = lonarr(num_data)
 	data_flare_jd = dblarr(num_data)
 	num1 = 1L
 	TIME_SEC_STEP = 301.
 	for ii=1L,num_data-1 do begin
-		if ((daxss_level1.data[ii].time_gps - daxss_level1.data[ii-1].time_gps) lt TIME_SEC_STEP) then begin
+		if ((daxss_level1_data[ii].time_gps - daxss_level1_data[ii-1].time_gps) lt TIME_SEC_STEP) then begin
 			num1 += 1L
 		endif else begin
 			data_num_per_flare[num_stats] = num1
-			data_flare_jd[num_stats] = daxss_level1.data[ii-num1].time_jd
+			data_flare_jd[num_stats] = daxss_level1_data[ii-num1].time_jd
 			num_stats += 1L
 			num1 = 1L
 		endelse
 	endfor
 	; save info for last flare
 	data_num_per_flare[num_stats] = num1
-	data_flare_jd[num_stats] = daxss_level1.data[ii-1].time_jd
+	data_flare_jd[num_stats] = daxss_level1_data[ii-1].time_jd
 	num_stats += 1L
 	; clean up
 	data_num_per_flare = data_num_per_flare[0:num_stats-1]
