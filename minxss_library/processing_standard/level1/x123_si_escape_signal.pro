@@ -7,8 +7,8 @@
 ; AUTHOR:
 ;   Chris Moore, LASP, Boulder, CO 80303
 ;   christopher.moore-1@colorado.edu
-;   
-;; PURPOSE: Estimate the si k, l (2s and 2p) escape process contributions to the x123 measured count spectrum 
+;
+;; PURPOSE: Estimate the si k, l (2s and 2p) escape process contributions to the x123 measured count spectrum
 ;
 ;
 ; CALLING SEQUENCE: result = x123_si_escape_signal, x123_energy_bins_kev(converted_energy_bins_offset_bins, detected_si_photon_flux_energy_array_keV, detected_si_photon_flux_array, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, $
@@ -105,7 +105,7 @@ function x123_si_escape_signal, x123_energy_bins_kev, converted_energy_bins_offs
   ;find the good energies and put them into an array
   positive_x123_energy_bins_kev = x123_energy_bins_kev_offset[index_positive_energies]
   converted_energy_bins = positive_x123_energy_bins_kev
-  
+
   ;find the x123 gain
   gain_x123_energy_bins_kev = abs(converted_energy_bins[0] - converted_energy_bins[1])
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,8 +113,11 @@ function x123_si_escape_signal, x123_energy_bins_kev, converted_energy_bins_offs
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Restore, the minxss_detector_response_data
-  RESTORE, minxss_instrument_structure_data_file
+  ;Restore, the minxss_detector_response_data
+  ;  TW-2022:  This is very slow to Restore Cal-File 1000s of time; make COMMON BLOCK
+  COMMON  minxss_detector_response_common, minxss_detector_response
+  if (n_elements(minxss_detector_response) lt 1) then RESTORE, minxss_instrument_structure_data_file
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

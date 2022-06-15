@@ -33,7 +33,7 @@
 ; INPUT KEYWORD PARAMETERS: None
 ;
 
-; RETURNS: corrected x123 count spectrum 
+; RETURNS: corrected x123 count spectrum
 ;
 ;
 ;;;X123_energy_bins_kev:                                                         [INPUT] input X123 energy bins (ARRAY)
@@ -121,7 +121,9 @@ function X123_be_photoelectron_si_escape_count_correction, x123_energy_bins_kev,
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Restore, the minxss_detector_response_data
-  RESTORE, minxss_instrument_structure_data_file
+  ;  TW-2022:  This is very slow to Restore Cal-File 1000s of time; make COMMON BLOCK
+  COMMON  minxss_detector_response_common, minxss_detector_response
+  if (n_elements(minxss_detector_response) lt 1) then RESTORE, minxss_instrument_structure_data_file
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -190,7 +192,7 @@ function X123_be_photoelectron_si_escape_count_correction, x123_energy_bins_kev,
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;convolve the probability distribution of the photopeak be-si detection and the be photoelectrons
   ;convolve the signal
-  ;be_si_photopeak_detection  
+  ;be_si_photopeak_detection
   convolve_X123_Be_si_photopeak_detection_ARRAY = gaussfold(minxss_detector_response.photon_energy, minxss_detector_response.x123_be_fit_spectral_efficiency, minxss_detector_response.x123_nominal_spectral_resolution)
   ;    convolve_X123_Be_si_photopeak_detection_ARRAY = gauss_variable_fwhm_convolve(minxss_detector_response.photon_energy, minxss_detector_response.x123_be_fit_spectral_efficiency, minxss_detector_response.photon_energy, minxss_detector_response.x123_spectral_resolution_array)
   ;be_photoelectron
@@ -239,7 +241,7 @@ function X123_be_photoelectron_si_escape_count_correction, x123_energy_bins_kev,
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Start by finding the contribution of each escape process, also accounting for the be photoelectron component
-  
+
 ;Start the reconstruction
 estimated_count_contribution_si_k_escape = DBLARR(n_positive_x123_energy_bins_kev)
 estimated_count_contribution_si_l_2s_escape = DBLARR(n_positive_x123_energy_bins_kev)
@@ -298,7 +300,7 @@ temp_modified_x123_measured_counts_positive_array = x123_measured_counts_positiv
       estimated_count_contribution_si_l_2s_escape[k] = normalized_absoulute_interpol_si_l_2s_escape_pdf[k]*temp_modified_x123_measured_counts_positive_array[k]
       estimated_count_contribution_si_l_2p_escape[k] = normalized_absoulute_interpol_si_l_2p_escape_pdf[k]*temp_modified_x123_measured_counts_positive_array[k]
 
-      
+
       ;si_k_escape
       INDEX_temp_modified_x123_measured_counts_positive_array_count_contribution_si_k_escape = MAX(WHERE(positive_x123_energy_bins_kev LE shifted_x123_energy_bins_kev_si_k_escape[k]))
       IF positive_x123_energy_bins_kev[INDEX_temp_modified_x123_measured_counts_positive_array_count_contribution_si_k_escape] GT 0.0 THEN $
@@ -311,7 +313,7 @@ temp_modified_x123_measured_counts_positive_array = x123_measured_counts_positiv
       INDEX_temp_modified_x123_measured_counts_positive_array_count_contribution_si_l_2p_escape = MAX(WHERE(positive_x123_energy_bins_kev LE shifted_x123_energy_bins_kev_si_l_2p_escape[k]))
       IF positive_x123_energy_bins_kev[INDEX_temp_modified_x123_measured_counts_positive_array_count_contribution_si_l_2p_escape] GT 0.0 THEN $
         temp_modified_x123_measured_counts_positive_array[INDEX_temp_modified_x123_measured_counts_positive_array_count_contribution_si_l_2p_escape] = temp_modified_x123_measured_counts_positive_array[INDEX_temp_modified_x123_measured_counts_positive_array_count_contribution_si_l_2p_escape] - estimated_count_contribution_si_l_2p_escape[k]
-         
+
       corected_count_contribution[k] = temp_modified_x123_measured_counts_positive_array[k] - estimated_count_contribution_convolved_be_photoelectron_detection[k] + (estimated_count_contribution_si_k_escape[k] + estimated_count_contribution_si_l_2s_escape[k] + estimated_count_contribution_si_l_2p_escape[k])
 
 ;    ENDIF

@@ -62,7 +62,7 @@
 ;output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY:           [OUTPUT/RETURNED KEYWORD] uncertainty in the XP DN signal from be_ohotoelectrons only
 ;output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY:                        [OUTPUT/RETURNED KEYWORD] the XP fC signal from be_photoelectrons only
 ;output_uncertainty_xp_fC_signal_estimate_be_photoelectron_only_ARRAY:            [OUTPUT/RETURNED KEYWORD] uncertainty the XP fC signal from be_photoelectrons only
-                         
+
 ;
 ; REFERENCES:
 ;
@@ -79,7 +79,7 @@
 function minxss_XP_signal_from_X123_signal, x123_energy_bins_kev, converted_energy_bins_offset_bins, x123_measured_counts, counts_uncertainty=uncertainty_x123_measured_counts, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, verbose=verbose, $
                                             output_uncertainty_XP_DN_signal_estimate_ARRAY=output_model_uncertainty_XP_DN_signal_estimate, $
                                             output_XP_fC_signal_estimate_ARRAY=output_model_XP_fC_signal_estimate, $
-                                            output_uncertainty_XP_fC_signal_estimate_ARRAY=output_model_uncertainty_XP_fC_signal_estimate, $          
+                                            output_uncertainty_XP_fC_signal_estimate_ARRAY=output_model_uncertainty_XP_fC_signal_estimate, $
                                             output_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_DN_signal_estimate_be_si_photopeak_only, $
                                             output_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only_ARRAY=output_model_uncertainty_xp_DN_signal_estimate_be_si_photopeak_only, $
                                             output_xp_fC_signal_estimate_be_si_photopeak_only_ARRAY=output_model_xp_fC_signal_estimate_be_si_photopeak_only, $
@@ -108,7 +108,9 @@ function minxss_XP_signal_from_X123_signal, x123_energy_bins_kev, converted_ener
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Restore, the minxss_detector_response_data
-  RESTORE, minxss_instrument_structure_data_file
+  ;  TW-2022:  This is very slow to Restore Cal-File 1000s of time; make COMMON BLOCK
+  COMMON  minxss_detector_response_common, minxss_detector_response
+  if (n_elements(minxss_detector_response) lt 1) then RESTORE, minxss_instrument_structure_data_file
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -197,7 +199,7 @@ If KEYWORD_SET(uncertainty_x123_measured_counts) THEN BEGIN
   ;fC
   Delta_output_model_xp_fC_signal_estimate = abs(output_model_xp_fC_signal_estimate_high - output_model_xp_fC_signal_estimate_low)
   output_model_uncertainty_XP_fC_signal_estimate = 0.5*Delta_output_model_xp_fC_signal_estimate
-  
+
   ;be_si_photopeak_counts
   ;high
   output_model_xp_DN_signal_estimate_be_si_photopeak_only_high = minxss_xp_signal_estimate(converted_energy_bins, x123_inverted_counts_to_photons_be_si_photopeak_only_positive+uncertainty_x123_inverted_counts_to_photons_be_si_photopeak_only_positive, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, output_minxss_xp_signal_fC=output_model_xp_fC_signal_estimate_be_si_photopeak_only_high, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, verbose=verbose)
@@ -235,7 +237,7 @@ Endif
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
+
 
   ;return the model output signal
   return, output_model_xp_DN_signal_estimate

@@ -29,14 +29,14 @@
 ; DESCRIPTION: Converts an input photon flux (photons/s/keV/cm^2) to MinXSS X123 counts (counts/s/keV) with the keyword /use_detector_area is set, or (counts/s/keV/cm^2) if keyword /use_detector_area is NOT set
 ;
 
-; INPUTS:  
+; INPUTS:
 ; photon flux array (photons/s/keV/cm^2), photon energy array (keV)
 ;
 ; INPUT KEYWORD PARAMETERS: /use_detector_area, multiplies the input photon flux by the X123 geometric aperture area
-; 
+;
 ;
 
-; RETURNS: 
+; RETURNS:
 ;
 ;
 ; Details:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -128,7 +128,9 @@ function minxss_x123_full_signal_estimate,  x123_energy_bins_kev, converted_ener
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Restore, the minxss_detector_response_data
-  RESTORE, minxss_instrument_structure_data_file
+  ;  TW-2022:  This is very slow to Restore Cal-File 1000s of time; make COMMON BLOCK
+  COMMON  minxss_detector_response_common, minxss_detector_response
+  if (n_elements(minxss_detector_response) lt 1) then RESTORE, minxss_instrument_structure_data_file
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -155,7 +157,7 @@ function minxss_x123_full_signal_estimate,  x123_energy_bins_kev, converted_ener
 
 ;insert the fitted photon energies in keV
   minxss_x123_full_response_energy_bins_kev = minxss_detector_response.photon_energy
-  
+
   ;do the same for the response function
   n_minxss_x123_full_response_energy_bins_kev = n_elements(minxss_x123_full_response_energy_bins_kev)
   max_minxss_x123_full_response_energy_bins_kev = max(minxss_x123_full_response_energy_bins_kev)
@@ -212,7 +214,7 @@ function minxss_x123_full_signal_estimate,  x123_energy_bins_kev, converted_ener
 
   output_final_shifted_convolve_interpol_input_photon_flux = DBLARR(n_x123_energy_bins_kev)
   output_final_shifted_convolve_interpol_input_photon_flux[index_positive_energies] = final_shifted_convolve_interpol_input_photon_flux
- 
+
   ;Multiply by he minxss x123 area
   if keyword_set(use_detector_area) then output_model_x123_signal *= minxss_detector_response.x123_aperture_geometric_area
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -234,7 +236,7 @@ function minxss_x123_full_signal_estimate,  x123_energy_bins_kev, converted_ener
   output_model_X123_Si_l_2s_escape_count_contribution = out_interpol_X123_detected_counts_Si_l_2s_escape_ARRAY
   output_model_X123_Si_l_2p_escape_count_contribution = out_interpol_X123_detected_counts_Si_l_2p_escape_ARRAY
   output_model_X123_Si_escape_all_count_contribution = X123_si_escape_all_contribution
-  
+
   if keyword_set(use_detector_area) then begin
     output_model_X123_Si_k_escape_count_contribution *= minxss_detector_response.x123_aperture_geometric_area
     output_model_X123_Si_l_2s_escape_count_contribution *= minxss_detector_response.x123_aperture_geometric_area

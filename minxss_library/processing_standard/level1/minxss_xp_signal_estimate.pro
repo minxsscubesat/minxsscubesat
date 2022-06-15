@@ -6,7 +6,7 @@
 ;   Chris Moore, LASP, Boulder, CO 80303
 ;   christopher.moore-1@colorado.edu
 ;
-; PURPOSE: Calculate the detected MinXSS xp signal (DN/s) from an input photon flux in units of counts/s/keV, /use_detector_area is set (units of cm^2) 
+; PURPOSE: Calculate the detected MinXSS xp signal (DN/s) from an input photon flux in units of counts/s/keV, /use_detector_area is set (units of cm^2)
 ;
 ;
 ; CALLING SEQUENCE: result = minxss_xp_signal_estimate(input_photon_energies_kev, input_photon_flux, minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, output_minxss_xp_signal_fC=output_minxss_xp_signal_fC, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn)   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -14,12 +14,12 @@
 ; DESCRIPTION: Converts an input photon flux (photons/s/keV/cm^2) to MinXSS XP fC or DN with the keyword /use_detector_area is set, or (fC/cm^2) or (DN/cm^2) if keyword /use_detector_area is NOT set
 ;
 
-; INPUTS:  
+; INPUTS:
 ; photon flux array (photons/s/keV/cm^2), photon energy array (keV)
 ;
 ; INPUT KEYWORD PARAMETERS: /use_detector_area, multiplies the input photon flux by the XP geometric aperture area,
 ;                           can use an alternative DN gain with the keyword, input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn
-;                      
+;
 ;
 ; RETURNS: XP measured DN and/or fC (keyword)
 ;
@@ -63,8 +63,10 @@ function minxss_xp_signal_estimate, input_photon_energies_kev, input_photon_flux
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Restore, the minxss_detector_response_data
-  RESTORE, minxss_instrument_structure_data_file
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;  TW-2022:  This is very slow to Restore Cal-File 1000s of time; make COMMON BLOCK
+  COMMON  minxss_detector_response_common, minxss_detector_response
+  if (n_elements(minxss_detector_response) lt 1) then RESTORE, minxss_instrument_structure_data_file
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -143,7 +145,7 @@ finer_minxss_xp_response[index_negative_finer_minxss_xp_response] = 0.0
 
   minxss_xp_gain_dn_fC = 1.0/minxss_detector_response.xp_fc_per_DN
   if keyword_set(input_minxss_xp_gain_fC_per_dn) then minxss_xp_gain_dn_fC = 1.0/input_minxss_xp_gain_fC_per_dn
-  
+
   ;convert to DN
   output_model_xp_signal_dn = minxss_model_xp_signal_fC*minxss_xp_gain_dn_fC
 
