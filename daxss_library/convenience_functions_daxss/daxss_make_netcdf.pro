@@ -127,7 +127,7 @@ case level_name of
                   path=dir_metadata, att_file=attfile, /clobber
   end
   '1': begin
-    write_netcdf, daxss_level1, indir + outfile, status, $
+    write_netcdf, daxss_level1_data, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
   end
   '2': begin
