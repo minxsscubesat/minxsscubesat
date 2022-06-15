@@ -9,7 +9,7 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   None
+;   version [string]: Set this to the version that should be used for output files. Default is '1.1.0'.
 ;
 ; KEYWORD PARAMETERS:
 ;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
@@ -29,10 +29,11 @@
 ;   IDL>  daxss_processing, /verbose
 ;
 ;-
-PRO daxss_processing, TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOSE, DEBUG=DEBUG
+PRO daxss_processing, version=version, $
+                      TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOSE, DEBUG=DEBUG
 
   TIC	; start internal timer
-
+  IF version EQ !NULL THEN version = '1.1.0'
   IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0B and L0C for the Full Mission'
 
   ; First Make Level 0B file using IIST processed Level 0 files
@@ -43,13 +44,13 @@ PRO daxss_processing, TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOS
 	; run daxss_make_level0b.pro
 	daxss_make_level0b, verbose=VERBOSE
     ;  make Level 0C file next - this uses Level 0B binary file
-    daxss_make_level0c, verbose=VERBOSE
+    daxss_make_level0c, version=version, VERBOSE=VERBOSE
   endif else begin
     ; ***** EXAMPLE OF daxss_make_level0c WITHOUT USING Level 0B FILE *****
     myPath = getenv('minxss_data')+'/fm3/hydra_tlm/flight'
     myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
     IF keyword_set(verbose) THEN message, /INFO, 'No L0A file made. Number of Hydra files found = '+strtrim(filesCount,2)
-    daxss_make_level0c, telemetryFileNamesArray=myFiles, /verbose
+    daxss_make_level0c, telemetryFileNamesArray=myFiles, version=version, VERBOSE=VERBOSE
   endelse
 
   if keyword_set(debug) THEN stop, 'DEBUG daxss_processing after L0C processing...'
@@ -58,10 +59,10 @@ PRO daxss_processing, TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOS
 
   IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
     IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0D for full mission'
-    daxss_make_level0d_limited, VERBOSE = VERBOSE
+    daxss_make_level0d_limited, version=version, VERBOSE=VERBOSE
 
     IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L1 for full mission'
-    daxss_make_level1, VERBOSE = VERBOSE
+    daxss_make_level1, version=version, VERBOSE=VERBOSE
 
     ; IF keyword_set(verbose) THEN message, /INFO, 'Processing ' + MinXSS_name + ' L3 for full mission'
 

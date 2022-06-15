@@ -8,7 +8,7 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   None
+;   version [string]: Set this to the version that output files should have. Default is '1.1.0'.
 ;
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set this to print processing messages to console
@@ -29,7 +29,10 @@
 ;   1. Task 1: Infinite while loop with a 1 minute periodicity to check if the system time
 ;              in UTC is midnight ± 2 minutes and call minxss_processing if so
 ;+
-PRO daxss_automatic_processing, VERBOSE=VERBOSE
+PRO daxss_automatic_processing, version=version, $
+                                VERBOSE=VERBOSE
+
+IF version EQ !NULL THEN version = '1.1.0'
 
 ;;
 ; 1. Task 1: Infinite while loop with a 1 minute periodicity to check if the system time
@@ -44,7 +47,7 @@ WHILE 1 DO BEGIN
     daxss_auto_generate_downlink_scripts, saveloc='/Users/minxss/My Drive (inspire.lasp@gmail.com)/IS1 On-Orbit Data/Scripts To Run/'
     
     message, /INFO, JPMsystime() + ' Starting automated DAXSS processing'
-    daxss_processing, VERBOSE=VERBOSE
+    daxss_processing, version=version, VERBOSE=VERBOSE
   ENDIF ELSE BEGIN
     message, /INFO, JPMsystime() + ' Processing will begin in ' + JPMPrintNumber(1440. - currentMinuteOfDay) + ' minutes'
     wait, 60.
