@@ -50,8 +50,8 @@
 ;output_minxss_x123_count_isothermal_arrray:                                     [OUTPUT/RETURNED KEYWORD] returns the measured count spectrum per isothermal temperature photon flux, per unit Volume emission measure (cm^3)
 ;output_minxss_x123_count_isothermal_signal_slow_counts:                         [OUTPUT/RETURNED KEYWORD] returns the slow counts per isothermal temperature photon flux, per unit volume emission measure (cm^3)
 ;use_detector_response_matrix:                                                   [BOOLEAN KEYWORD] set this keyword to use the Detector Response Matrix (DRM) calculation also, must use the folowing variables to return the respective values
-;output_binned_temperature_response_matrix:                                      [OUTPUT/RETURNED KEYWORD] returns the DRM MinXSS X123 signal (counts/s) per isothermal photon flux, per unit volume emission measure (cm^3) 
-;output_minxss_x123_count_isothermal_matrix_arrray:                              [OUTPUT/RETURNED KEYWORD] returns the DRM measured count spectrum per isothermal temperature photon flux, per unit volume emission measure (cm^3) 
+;output_binned_temperature_response_matrix:                                      [OUTPUT/RETURNED KEYWORD] returns the DRM MinXSS X123 signal (counts/s) per isothermal photon flux, per unit volume emission measure (cm^3)
+;output_minxss_x123_count_isothermal_matrix_arrray:                              [OUTPUT/RETURNED KEYWORD] returns the DRM measured count spectrum per isothermal temperature photon flux, per unit volume emission measure (cm^3)
 ;output_total_output_model_x123_signal_slow_counts_matrix:                       [OUTPUT/RETURNED KEYWORD] returns the DRM slow counts per isothermal temperature photon flux, per unit volume emission measure (cm^3)
 ; REFERENCES:
 ;
@@ -113,7 +113,9 @@ function minxss_x123_temperature_response,  x123_energy_bins_kev, converted_ener
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Restore, the minxss_detector_response_data
-  RESTORE, minxss_instrument_structure_data_file
+  ;  TW-2022:  This is very slow to Restore Cal-File 1000s of time; make COMMON BLOCK
+  COMMON  minxss_detector_response_common, minxss_detector_response
+  if (n_elements(minxss_detector_response) lt 1) then RESTORE, minxss_instrument_structure_data_file
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -143,7 +145,7 @@ function minxss_x123_temperature_response,  x123_energy_bins_kev, converted_ener
 N_Temperatures = n_elements(temperature_bins)
 
 ;nominal energy bin width = 0.5 keV
-x123_energy_bin_width_keV_value = 0.5 
+x123_energy_bin_width_keV_value = 0.5
 if keyword_set(x123_energy_bin_width_keV) then $
   x123_energy_bin_width_keV_value = x123_energy_bin_width_keV
 
@@ -153,16 +155,16 @@ min_x123_energy_bin_keV_value = 1.0
 
 if keyword_set(min_x123_energy_bin_keV) then $
   min_x123_energy_bin_keV_value = min_x123_energy_bin_keV
-  
+
  if (max(max_input_photon_energies_kev) le max(converted_energy_bins)) then $
-   max_energy_bin_width_array = max(max_input_photon_energies_kev) 
-  
+   max_energy_bin_width_array = max(max_input_photon_energies_kev)
+
   if (max(max_input_photon_energies_kev) ge max(converted_energy_bins)) then $
    max_energy_bin_width_array = max(converted_energy_bins)
- 
+
  ;Calculate the energy bin array
 energy_bin_width_array = (x123_energy_bin_width_keV_value*dindgen((max_energy_bin_width_array - min_x123_energy_bin_keV_value)/x123_energy_bin_width_keV_value)) + min_x123_energy_bin_keV_value
-  
+
   N_energy_bin_widths = n_elements(energy_bin_width_array)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -182,17 +184,17 @@ if keyword_set(use_detector_response_matrix) then begin
   minxss_x123_count_isothermal_arrray_matrix = dblarr(n_x123_energy_bins_kev, N_Temperatures)
   total_output_model_x123_signal_slow_counts_matrix = dblarr(N_Temperatures)
 endif
-  
-  
+
+
   FOR k = 0, N_Temperatures - 1 DO BEGIN
     minxss_x123_count_isothermal_arrray[*,k] = minxss_x123_full_signal_estimate(x123_energy_bins_kev, converted_energy_bins_offset_bins, input_photon_energies_kev, input_photon_flux_isotemperature_array[*,k], minxss_instrument_structure_data_file=minxss_instrument_structure_data_file, use_detector_area=use_detector_area, $
                                                output_x123_signal_slow_counts_ARRAY=total_output_model_x123_signal_slow_counts_temp, $
                                                create_detector_response_matrix=create_detector_response_matrix_Flag, $
                                                output_X123_response_matrix_count_ARRAY=output_minxss_x123_signal_response_matrix_temp, $
                                                output_minxss_x123_signal_response_matrix_slow_counts_ARRAY = output_minxss_x123_signal_response_matrix_slow_counts_temp)
-                                               
+
     total_output_model_x123_signal_slow_counts[k] = total_output_model_x123_signal_slow_counts_temp
-    
+
     if keyword_set(use_detector_response_matrix) then begin
       minxss_x123_count_isothermal_arrray_matrix[*,k] = output_minxss_x123_signal_response_matrix_temp
       total_output_model_x123_signal_slow_counts_matrix[k] = output_minxss_x123_signal_response_matrix_slow_counts_temp
