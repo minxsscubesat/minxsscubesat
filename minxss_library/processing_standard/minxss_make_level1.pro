@@ -28,7 +28,7 @@
 ;   directory_minxss_data [string]:      ??? ; FIXME: Fill in
 ;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0'.
 ;   cal_version [string]: Calibration version to store in internal anonymous structure. Default is '2.0.0'.
-;               
+;
 ; KEYWORD PARAMETERS:
 ;   DO_NOT_OVERWRITE_FM: Set this to prevent the overwriting of the flight model number in the data product with the fm optional input
 ;   VERBOSE:             Set this to print processing messages
@@ -36,8 +36,8 @@
 ;
 ; OUTPUTS:
 ;   Saves .sav and .ncdf files to disk containing the level 1 data product
-;   
-; OPTIONAL OUTPUTS: 
+;
+; OPTIONAL OUTPUTS:
 ;   None
 ;
 ; COMMON BLOCKS:
@@ -62,7 +62,7 @@
 ;+
 PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=directory_flight_model, directory_input_file=directory_input_file,  directory_output_file=directory_output_file, directory_calibration_file=directory_calibration_file, output_filename=output_filename, directory_minxss_data=directory_minxss_data, version=version, cal_version=cal_version, $
                         DO_NOT_OVERWRITE_FM=DO_NOT_OVERWRITE_FM, VERBOSE=VERBOSE, DEBUG=DEBUG
-  
+
   ; Defaults
   if keyword_set(debug) then verbose=1
 
@@ -76,7 +76,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
   endif
   IF version EQ !NULL THEN version = '2.0.0'
   IF cal_version EQ !NULL THEN cal_version = '2.0.0'
-  
+
   ; Constants
   seconds_per_day = 60.0*60.0*24.0
 
@@ -107,7 +107,7 @@ PRO minxss_make_level1, fm=fm, low_count=low_count, directory_flight_model=direc
   endif else begin
     indir = fmdir + 'level0d' +  path_sep()
   endelse
-  infile = 'minxss' + fm_str + '_l0d_mission_length.sav'
+  infile = 'minxss' + fm_str + '_l0d_mission_length_v' + version + '.sav'
   if keyword_set(verbose) then print, '     Reading L0D data'
   restore, indir+infile    ; variable is MINXSSLEVEL0D
 
@@ -190,7 +190,7 @@ for k = 0, n_times_nominal - 1 do begin
   minxss_x123_irradiance_wrapper, sp[*,k], sp[*,k], initial_x123_irradiance_temp, result=initial_x123_irradiance_structure, directory_calibration_file=cal_dir, fm=fm
   initial_x123_irradiance[*,k] = initial_x123_irradiance_structure.irradiance
 endfor
-  
+
   ; find where the ratio of counts is less than a critical ratio (minimal slope)
   dimension = 1
   e_low_band_1 = 1.3
@@ -203,8 +203,8 @@ endfor
   initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = total(initial_x123_irradiance[index_range_band_2,*], dimension, /double, /nan)
 
   ratio_initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2 = initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_2/initial_x123_irradiance_structure_SPECTRUM_Photon_Flux_index_range_band_1
-  limit_value_Photon_Flux = 5.0E1  
-  
+  limit_value_Photon_Flux = 5.0E1
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ; select data without radio beacons, SPS on sun, ADCS in Fine-Ref point mode, and counts acceptable (not noise)
@@ -358,6 +358,8 @@ endfor
     altitude: 0.0, $
     sun_right_ascension: 0.0, $
     sun_declination: 0.0, $
+    solar_zenith_angle: 0.0, $
+    tangent_ray_height: 0.0, $
     earth_sun_distance: 0.0, $
     correct_au: 0.0}
 
@@ -398,7 +400,7 @@ endfor
     signal_fc_precision: 0.0, $
     signal_fc_stddev: 0.0, $
     integration_time: 0.0, $
-    ; x123_estimated_xp_fc: 0.0, $ ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
+    ; x123_estimated_xp_fc: 0.0, $ ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224).
     ; x123_estimated_xp_fc_uncertainty: 0.0, $
     ; fractional_difference_x123_estimated_xp_fc: 0.0, $
     number_xp_samples: 0L}
@@ -427,7 +429,7 @@ num_xp_dark = num_dark
 
 
   ; loop over only the time indices that are known to have minxss data within the x-minute for the current index
-  for k = 0, num_sp - 1 do begin  
+  for k = 0, num_sp - 1 do begin
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;   4. Deadtime correction
     if keyword_set(verbose) then verbose_deadtime=verbose
@@ -460,8 +462,8 @@ num_xp_dark = num_dark
       x123_count_rate = x123_cps_count_rate, $
       uncertainty_x123_measured_count_rate_array=x123_cps_count_rate_uncertainty_precision, $
       X123_uncertainty_Summed_Counts = X123_total_counts_uncertainty_precision)
-      
-    
+
+
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;  6.  Calculate the MinXSS X123 irradiance
@@ -565,7 +567,7 @@ num_xp_dark = num_dark
       energy_bins_offset_zero = 0.0
       if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
 
-      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ 
+      xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $
         output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
         output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
@@ -585,7 +587,7 @@ num_xp_dark = num_dark
       minxsslevel1_xp[num_L1_xp].signal_fc_precision = XP_fc_precision
       minxsslevel1_xp[num_L1_xp].signal_fc_stddev = !VALUES.F_NAN
       minxsslevel1_xp[num_L1_xp].integration_time = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time
-      ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
+      ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224).
       ;minxsslevel1_xp[num_L1_xp].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
       ;minxsslevel1_xp[num_L1_xp].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
       minxsslevel1_xp[num_L1_xp].number_xp_samples = minxsslevel0d[wsci_xp[k]].sps_xp_integration_time ; Time and number here are equivalent because each sample is 1 second
@@ -596,7 +598,7 @@ num_xp_dark = num_dark
 endfor
 
 
-;X123 dark data 
+;X123 dark data
  for k = 0, num_dark - 1 do begin
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;dark data
@@ -742,7 +744,7 @@ endfor
     minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_precision = XP_fc_precision
     minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = !VALUES.F_NAN
     minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = minxsslevel0d[wdark[k]].sps_xp_integration_time
-    ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224). 
+    ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc = xp_data_mean_fC_signal_estimate_be_photoelectron_only ; JPM 2020-01-21: Removing this variable until we receive a fix for it from Chris (value is a constant 2654.2224).
     ; minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
     ; minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = minxsslevel0d[wdark[k]].sps_xp_integration_time ; time and number are equivalent here because each sample is 1 second
@@ -759,6 +761,15 @@ minxsslevel1_x123 = minxsslevel1_x123[0:num_L1-1]
 minxsslevel1_xp = minxsslevel1_xp[0:num_L1_xp-1]
 minxsslevel1_x123_dark = minxsslevel1_x123_dark[0:num_L1_dark-1]
 minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
+
+;
+;	calculate Solar Zenith Angle and Tangent Ray Height
+;
+time_yd = double(minxsslevel1_x123.time.YYYYDOY) + minxsslevel1_x123.time.YYYYDOY/(24.D0*3600.D0)
+solar_zenith_altitude, time_yd , minxsslevel1_x123.longitude, $
+				minxsslevel1_x123.latitude, minxsslevel1_x123.altitude, sza, trh
+minxsslevel1_x123.solar_zenith_angle = sza
+minxsslevel1_x123.tangent_ray_height = trh
 
 if keyword_set(output_filename) then begin
   outfile = output_filename + '.sav'
@@ -822,6 +833,8 @@ minxsslevel1_x123_meta = { $
   ALTITUDE : 'Earth Altitude for this measurement in units of km from Earth center', $
   SUN_RIGHT_ASCENSION: 'Sun Right Ascension from orbit location', $
   SUN_DECLINATION: 'Sun Declination from orbit location', $
+  SOLAR_ZENITH_ANGLE: 'Solar Zenith Angle from orbit location', $
+  TANGENT_RAY_HEIGHT: 'Tangent Ray Height in km in Earth atmosphere', $
   EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
   CORRECT_AU: 'Earth-Sun Distance correction factor' $
 }
@@ -865,14 +878,14 @@ minxsslevel1_xp_meta = { $
   NUMBER_XP_SAMPLES: 'XP number of samples' $
 }
 
-; Overwrite flight model number by default. 
-; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN. Level 1 replaces this NaN with 0. 
-; We know what level it is though, so just overwrite it unless user does not want this. 
+; Overwrite flight model number by default.
+; Why? Level 0d interpolates the hk.flight_model to the sci packet. If hk and sci are too far apart in time, it fills with NaN. Level 1 replaces this NaN with 0.
+; We know what level it is though, so just overwrite it unless user does not want this.
 IF NOT keyword_set(DO_NOT_OVERWRITE_FM) THEN BEGIN
   minxsslevel1_x123.flight_model = fm
   minxsslevel1_x123_dark.flight_model = fm
   minxsslevel1_xp.flight_model = fm
-  minxsslevel1_xp_dark.flight_model = fm  
+  minxsslevel1_xp_dark.flight_model = fm
 ENDIF
 
 ; 9. Save the Level 1 results (mission-length file) data into an IDL .sav file, need to make .netcdf files also
@@ -895,7 +908,7 @@ minxsslevel1 = {x123:minxsslevel1_x123, $ ; FIXME: time structure needs to be el
                 xp:minxsslevel1_xp, $
                 xp_meta:minxsslevel1_xp_meta, $
                 xp_dark:minxsslevel1_xp_dark}
-                
+
 ;save the data as a .sav and .ncdf files
 save, /compress, minxsslevel1, file=outdir+outfile
 minxss_make_netcdf, '1', fm=fm, version=version, verbose=verbose

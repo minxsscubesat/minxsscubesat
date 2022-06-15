@@ -17,7 +17,7 @@
 ; OPTIONAL INPUTS:
 ;   fm [integer]:               Flight Model number 1 or 2 (default is 1)
 ;   low_limit [float]:          Option to change limit on selecting low energy counts for good X123 spectra. Default is 7.0
-;   x_minute_average [integer]: Set to the number of minutes you want to average. Default is 1. 
+;   x_minute_average [integer]: Set to the number of minutes you want to average. Default is 1.
 ;   start_time_cd_array [??]:   Not sure what this is for
 ;   end_time_cd_array [??]:     Not sure what this is for
 ;   version [string]: Software/data product version to store in filename and internal anonymous structure. Default is '2.0.0'.
@@ -28,8 +28,8 @@
 ;   DEBUG:   Set this to trigger stop points for debugging
 ;
 ; OUTPUTS:
-;   IDL saveset to disk 
-;   
+;   IDL saveset to disk
+;
 ; OPTIONAL OUTPUTS:
 ;   None
 ;
@@ -58,7 +58,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
                                 VERBOSE=VERBOSE, DEBUG=DEBUG
 
   seconds_per_day = 60.0*60.0*24.0
-  ; Defaults 
+  ; Defaults
   if keyword_set(debug) then verbose=1
 
   if fm EQ !NULL then fm = 1
@@ -258,7 +258,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
 
   ; set the start and end times in jd for the MinXSS-1 mission
-  IF fm EQ 1 THEN BEGIN 
+  IF fm EQ 1 THEN BEGIN
     start_time_jd = jpmiso2jd('2016-05-16T10:05:26Z')
     end_time_jd = jpmiso2jd('2017-05-06T02:37:26Z')
   ENDIF ELSE IF fm EQ 2 THEN BEGIN
@@ -312,6 +312,8 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     spacecraft_in_saa: 0.0, $
     sun_right_ascension: 0.0, $
     sun_declination: 0.0, $
+    solar_zenith_angle: 0.0, $
+    tangent_ray_height: 0.0, $
     earth_sun_distance: 0.0, $
     correct_au: 0.0}
 
@@ -469,7 +471,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ; loop for the X123 science data
     index_x_minute_average_loop = where((minxsslevel0d[wsci].time.jd ge x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci].time.jd le x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure + 1]), n_valid)
     IF n_valid EQ 0 THEN CONTINUE
-    
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; start x123 science ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; convert jd back to calendar date for clarity
     caldat, x_minute_jd_time_array[start_index_x123_x_minute_jd_time_array[k].structure], start_valid_month, start_valid_day, start_valid_year, start_valid_hour, start_valid_minute, start_valid_second
@@ -566,7 +568,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
       minxsslevel1_x123[num_L1].sun_declination = mean(minxsslevel0d[wsci[index_x_minute_average_loop]].sun_declination, /double, /nan)
       minxsslevel1_x123[num_L1].earth_sun_distance = mean(minxsslevel0d[wsci[index_x_minute_average_loop]].earth_sun_distance, /double, /nan)
     endif
-    
+
     ; increment k and num_L1
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1 += 1
@@ -603,7 +605,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
         out_uncertainty_XP_measured_dark_count_array = xp_data_uncertainty_measured_dark_DN_array_accuracy, $
         out_dark_count_rate = xp_data_dark_DN_rate, $
         out_uncertainty_XP_measured_dark_count_rate_array=xp_data_uncertainty_dark_DN_rate_accuracy)
-      
+
     ; Precision
     XP_data_Uncertainty_mean_DN_rate_precision = minxss_XP_mean_count_rate_uncertainty(minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].XPS_DATA_SCI, integration_time_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, XP_Dark_measured_count_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].SPS_DARK_DATA_SCI, dark_integration_time_array=minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp]].sps_xp_integration_time, $ fractional_systematic_uncertainty=pre_flight_cal_uncertainty, $
         uncertainty_XP_measured_count_rate_array=xp_data_uncertainty_DN_rate_precision, $
@@ -634,7 +636,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
 
     Fractional_Difference_xp_data_mean_DN_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_DN_rate - xp_data_mean_DN_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_DN_rate
     Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_fC_rate - xp_data_mean_fC_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_fC_rate
-    
+
     ; 8. Put data into structures
     ; fill the variables in the level1_xp structure
     minxsslevel1_xp[num_L1_xp].time = minxsslevel0d[wsci_xp[index_x_minute_average_loop_xp[0]]].time
@@ -661,7 +663,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1_xp += 1
   endfor ; k loop for XP
-  
+
   ; dark x123 data
   ; loop for the X123 dark data
   ; find data within x-minute of current index
@@ -761,7 +763,7 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     index_x_minute_average_loop_dark = where((minxsslevel0d[wsci_xp_dark].time.jd ge x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure]) and (minxsslevel0d[wsci_xp_dark].time.jd le x_minute_jd_time_array[start_index_x123_dark_x_minute_jd_time_array[k].structure+1]), n_valid_dark)
     good_xp_dark_indices = where((((minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].XPS_DATA_SCI/minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].sps_xp_integration_time) - (minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].SPS_DARK_DATA_SCI/minxsslevel0d[wsci_xp_dark[index_x_minute_average_loop_dark]].sps_xp_integration_time)) gt 0), n_valid_xp_dark)
     good_xp_dark_in_time_indices = index_x_minute_average_loop_dark[good_xp_dark_indices]
-    
+
     if n_valid_xp_dark EQ 0 then CONTINUE
 
     ; 5.  Calculate the uncertainties
@@ -805,13 +807,13 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ; use a nominal 0.0 energy bin offset
     energy_bins_offset_zero = 0.0
     if keyword_set(verbose) then verbose_xp_signal_from_x123_signal = verbose
-  
+
     xp_data_x123_mean_photon_flux_photopeak_XP_Signal = minxss_XP_signal_from_X123_signal(energy_bins_kev, energy_bins_offset_zero, x123_cps_mean_count_rate, counts_uncertainty=x123_cps_mean_count_rate_uncertainty_accuracy, minxss_instrument_structure_data_file=minxss_calibration_file_path, /use_detector_area, verbose=verbose_xp_signal_from_x123_signal, $ ; input_minxss_xp_gain_fC_per_dn=input_minxss_xp_gain_fC_per_dn, $
         output_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_DN_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_DN_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_xp_mean_DN_signal_estimate_be_photoelectron_only, $
         output_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_mean_fC_signal_estimate_be_photoelectron_only, $
         output_uncertainty_xp_fC_signal_estimate_be_photoelectron_only_ARRAY=xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only)
-  
+
     Fractional_Difference_xp_data_mean_DN_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_DN_rate - xp_data_mean_DN_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_DN_rate
     Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only = (xp_data_mean_background_subtracted_fC_rate - xp_data_mean_fC_signal_estimate_be_photoelectron_only)/xp_data_mean_background_subtracted_fC_rate
 
@@ -832,12 +834,12 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     ;minxsslevel1_xp_dark[num_L1_xp_dark].x123_estimated_xp_fc_uncertainty = xp_data_uncertainty_mean_xp_fC_signal_estimate_be_photoelectron_only
     ;minxsslevel1_xp_dark[num_L1_xp_dark].fractional_difference_x123_estimated_xp_fc = Fractional_Difference_xp_data_mean_fC_signal_estimate_be_photoelectron_only
     minxsslevel1_xp_dark[num_L1_xp_dark].number_xp_samples = n_valid_xp_dark
-  
+
     if n_valid_xp_dark gt 1 then begin
       minxsslevel1_xp_dark[num_L1_xp_dark].signal_fc_stddev = stddev(xp_data_background_subtracted_DN_rate, /double, /nan)
       minxsslevel1_xp_dark[num_L1_xp_dark].integration_time = total(minxsslevel0d[wdark[good_xp_dark_in_time_indices]].sps_xp_integration_time, /double, /nan)
     endif
-  
+
     if keyword_set(debug) and (k eq 0) then stop, 'DEBUG at first L1 entry...'
     num_L1_xp_dark += 1
   endfor
@@ -855,7 +857,17 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
   ; create the file name extension that changes with the minute average chossen as a variable
   x_minute_average_string_name_digits = long(Alog10(x_minute_average) + 1)
   x_minute_average_string = strmid(strtrim(x_minute_average, 1), 0, x_minute_average_string_name_digits)
-  
+
+  ;
+  ;	calculate Solar Zenith Angle and Tangent Ray Height  (new for June 2022, T. Woods)
+  ;
+  time_yd = double(minxsslevel1_x123.time.YYYYDOY) + minxsslevel1_x123.time.YYYYDOY/(24.D0*3600.D0)
+  solar_zenith_altitude, time_yd , minxsslevel1_x123.longitude, $
+				minxsslevel1_x123.latitude, minxsslevel1_x123.altitude, sza, trh
+  minxsslevel1_x123.solar_zenith_angle = sza
+  minxsslevel1_x123.tangent_ray_height = trh
+
+  ; define the OUTPUT File Name
   outfile = 'minxss' + fm_str + '_l1_' + x_minute_average_string + '_minute' + '_mission_length_v' + version + '.sav'
 
   ; x123 information structure
@@ -914,6 +926,8 @@ PRO minxss_make_level1_xminute, fm=fm, x_minute_average=x_minute_average, start_
     SPACECRAFT_IN_SAA: 'South Atlantic Anomaly (SAA) Flag (1=In_SAA, 0=Out_of_SAA)', $
     SUN_RIGHT_ASCENSION: 'Sun Right Ascension from orbit location', $
     SUN_DECLINATION: 'Sun Declination from orbit location', $
+    SOLAR_ZENITH_ANGLE: 'Solar Zenith Angle from orbit location', $
+    TANGENT_RAY_HEIGHT: 'Tangent Ray Height in km in Earth atmosphere', $
     EARTH_SUN_DISTANCE: 'Earth-Sun Distance in units of AU (irradiance is corrected to 1AU)', $
     CORRECT_AU: 'Earth-Sun Distance correction factor' $
   }
