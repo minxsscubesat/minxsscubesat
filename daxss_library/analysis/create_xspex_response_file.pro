@@ -60,6 +60,8 @@ instr_name = 'X123'
 if (fm eq 3) then instr_name = 'DAXSS'
 filter_name = 'Be'
 if (fm eq 3) then filter_name = 'Be/Kapton'
+det_name = 'Amptek X123'
+if (fm ge 2) then det_name = 'Amptek X123 SDD'
 
 ; *************************************************************************************************
 ;	1.  Read MinXSS Response File (calibration file)
@@ -265,26 +267,33 @@ cc=rainbow(7)
 matrix_hdr = [ $
 			"XTENSION  = 'BINTABLE'", $
 			"EXTNAME  = 'MATRIX' / Redistribution MATRIX BINTABLE", $
-			"TELESCOP = '" + fm_name + "' / Mission", $
-			"INSTRUME = '" + instr_name + "' / Instrument", $
-			"FILTER   = '" + filter_name + "' / Filter", $
+			"MISSION  = '" + fm_name + "'", $
+			"TELESCOP = '" + fm_name + "' / Mission Name", $
+			"INSTRUME = '" + instr_name + "' / Instrument Name", $
+			"DETNAM   = '" + det_name + "' / Detector Name", $
+			"FILTER   = '" + filter_name + "' / Filter Material", $
 			"ORIGIN   = 'CU/LASP'", $
 			"CREATOR  = 'IDL create_xspex_response_file.pro'", $
 			"CHANTYPE = 'PHA'", $
 			"DETCHANS = " + BIN_NUM_STR, $
+			"NUMGRP   = " + E_NUM_STR,  $
+			"NUMELT    =               / Total number of response elements ", $
+			"TLMIN4   = 0", $
+			"EFFAREA  = 1.", $
+			"LO_THRES = " + matrix_limit_str, $
 			"HDUCLASS = 'OGIP'", $
 			"HDUCLASS1 = 'RESPONSE'", $
-			"HDUCLASS2 = 'RSP_MATRI'", $
+			"HDUCLASS2 = 'RSP_MATRIX'", $
 			"HDUCLASS3 = 'REDIST'", $
 			"HDUVERS  = '1.3.0'", $
-			"TLMIN4   = 0", $
-			"LO_THRES = " + matrix_limit_str, $
 			"CCLS0001 = 'BCF'  / Basic Calibration File", $
 			"CCNM0001 = 'MATRIX'", $
 			"CDTP0001 = 'DATA'", $
 			"CVSD0001 = '2022-02-27' / Valid Start Date", $
 			"CVST0001 = '00:00:00' / Valid Start Time in UT", $
-			"CDES0001 = 'Redistribution probability matrix'" $
+			"CDES0001 = 'Redistribution probability matrix'", $
+			"EXTVER   =       1 / auto assigned by template parser", $
+			"END" $
 			]
 matrix1 = {ENERG_LO: 0.0, ENERG_HI: 0.0, N_GRP: 1, F_CHAN: 0, N_CHAN: bin_num, MATRIX: fltarr(bin_num)}
 matrix_all = replicate(matrix1, e_num)
@@ -301,9 +310,11 @@ mwrfits, matrix_all, output_file, matrix_hdr, /CREATE
 ebounds_hdr = [ $
 			"XTENSION  = 'BINTABLE'", $
 			"EXTNAME  = 'EBOUNDS' / Energy Boundaries BINTABLE", $
-			"TELESCOP = '" + fm_name + "' / Mission", $
-			"INSTRUME = '" + instr_name + "' / Instrument", $
-			"FILTER   = '" + filter_name + "' / Filter", $
+			"MISSION  = '" + fm_name + "'", $
+			"TELESCOP = '" + fm_name + "' / Mission Name", $
+			"INSTRUME = '" + instr_name + "' / Instrument Name", $
+			"DETNAM   = '" + det_name + "' / Detector Name", $
+			"FILTER   = '" + filter_name + "' / Filter Material", $
 			"ORIGIN   = 'CU/LASP'", $
 			"CREATOR  = 'IDL create_xspex_response_file.pro'", $
 			"CHANTYPE = 'PHA'", $
@@ -317,7 +328,9 @@ ebounds_hdr = [ $
 			"CDTP0001 = 'DATA'", $
 			"CVSD0001 = '2022-02-27' / Valid Start Date", $
 			"CVST0001 = '00:00:00' / Valid Start Time in UT", $
-			"CDES0001 = 'Energy bin values'" $
+			"CDES0001 = 'Energy bin values'", $
+			"EXTVER   =       1 / auto assigned by template parser", $
+			"END" $
 			]
 ebounds1 = {CHANNEL: 0, E_MIN: 0.0, E_MAX: 0.0}
 ebounds_all = replicate(ebounds1, bin_num)
@@ -334,11 +347,15 @@ mwrfits, ebounds_all, output_file, ebounds_hdr
 eff_area_hdr = [ $
 			"XTENSION  = 'BINTABLE'", $
 			"EXTNAME  = 'SPECRESP' / Effective Area cm^2 BINTABLE", $
-			"TELESCOP = '" + fm_name + "' / Mission", $
-			"INSTRUME = '" + instr_name + "' / Instrument", $
-			"FILTER   = '" + filter_name + "' / Filter", $
+			"MISSION  = '" + fm_name + "'", $
+			"TELESCOP = '" + fm_name + "' / Mission Name", $
+			"INSTRUME = '" + instr_name + "' / Instrument Name", $
+			"DETNAM   = '" + det_name + "' / Detector Name", $
+			"FILTER   = '" + filter_name + "' / Filter Material", $
 			"ORIGIN   = 'CU/LASP'", $
 			"CREATOR  = 'IDL create_xspex_response_file.pro'", $
+			"CHANTYPE = 'PHA'", $
+			"DETCHANS = " + E_NUM_STR, $
 			"HDUCLASS = 'OGIP'", $
 			"HDUCLASS1 = 'RESPONSE'", $
 			"HDUCLASS2 = 'SPECRESP'", $
@@ -348,18 +365,18 @@ eff_area_hdr = [ $
 			"CDTP0001 = 'DATA'", $
 			"CVSD0001 = '2022-02-27' / Valid Start Date", $
 			"CVST0001 = '00:00:00' / Valid Start Time in UT", $
-			"CDES0001 = 'Effective area spectral response in units of cm^2'" $
+			"CDES0001 = 'Effective area spectral response in units of cm^2'", $
+			"EXTVER   =       1 / auto assigned by template parser", $
+			"END" $
 			]
-			; 	"CHANTYPE = 'PHA'", $
-			;	"DETCHANS = " + E_NUM_STR, $
 
 eff_area1 = {ENERG_LO: 0.0, ENERG_HI: 0.0, SPECRESP: 0.0}
-eff_area_all = replicate(eff_area1, bin_num)
-eff_area_all.ENERG_LO = elow
-eff_area_all.ENERG_HI = ehigh
+eff_area_all = replicate(eff_area1, e_num)
+eff_area_all.ENERG_LO = energy_low
+eff_area_all.ENERG_HI = energy_high
 ; already in units of cm^2
 effective_area_cm2 = interpol(minxss_detector_response.X123_EFFECTIVE_AREA, $
-						minxss_detector_response.PHOTON_ENERGY, ebins )
+						minxss_detector_response.PHOTON_ENERGY, energy )
 eff_area_all.SPECRESP = effective_area_cm2
 
 if verbose then print, 'WRITING SPECRESP (ARF) data...'
