@@ -7,6 +7,7 @@
 ;	12/20/2021  Tom Woods:  Update with new energy offset comparing FM2 QS to DAXSS-2018
 ;	2/20/2022	Tom Woods:  FM4 Ver1: Make IS-1 DAXSS (MinXSS-4) calibration file
 ;	3/24/2022	Tom Woods:  FM4 Ver2: Update with correct units for daxss_response_final.sav "response"
+;	6/15/2022	Tom Woods:	Updated with DAXSS Response extended to 31 keV
 ;
 ;	.run minxss_cal4_from_cal1.pro
 ;
@@ -21,9 +22,10 @@ restore, cal1_file
 mdr1 = minxss_detector_response
 
 ;
-;	Read DAXSS Response file
+;	Read DAXSS Response file - changed to use file with extension to 31 keV
 ;
-daxss_response_file='/Users/twoods/Dropbox/minxss_dropbox/data/calibration/daxss_response_final.sav'
+; daxss_response_file='/Users/twoods/Dropbox/minxss_dropbox/data/calibration/daxss_response_final.sav'
+daxss_response_file='/Users/twoods/Dropbox/minxss_dropbox/data/calibration/daxss_response_final_extended31keV.sav'
 restore, daxss_response_file   ; energy, response
 dax_energy = energy
 dax_response = response   ; 3/24/2022: units are cm^2 * keV  (effective_area_cm^2 * bin_size_keV)
@@ -110,7 +112,7 @@ minxss_detector_response.X123_APERTURE_GEOMETRIC_AREA = !pi * (0.0813/2.)^2
 ;  FM2 response based on Si response (same as FM1) * Be filter transmission
 ;		FM2 Be thickness = 11.2 microns (versus 24 microns for FM1) + Zn contamination
 ;		Be filter transmission is calculated using Henke model and stored in special cal file (nm vs transmission)
-	be_filter_cal_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm4_be_filter_transmission.dat'
+	be_filter_cal_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm3_be_filter_transmission.dat'
 	be_trans = read_dat( be_filter_cal_file )  ;  [0,*] = nm, [1,*] = transmission
 	be_trans_energy = interpol( reform(be_trans[1,*]), reform(be_trans[0,*]), minxss_detector_response.PHOTON_WAVELENGTH )
 ;  DAXSS has special dual-zone aperture so use DAXSS_RESPONSE function as:
@@ -124,10 +126,12 @@ minxss_detector_response.X123_BE_FIT_SPECTRAL_EFFICIENCY = minxss_detector_respo
 ; X123 Effective Area is the DAXSS_RESPONSE
 minxss_detector_response.X123_EFFECTIVE_AREA = DAXSS_RESPONSE
 
+; stop, 'DEBUG dax_energy, dax_effective_area ...'
+
 ;
 ;	Save new (Version 1) FM4 calibration data results
 ;
-cal4_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm4_response_structure_Ver2.sav'
+cal4_file = '/Users/twoods/Dropbox/minxss_dropbox/data/calibration/minxss_fm4_response_structure_Ver2.1.sav'
 print, ' '
 print, 'Saving MinXSS-4 (DAXSS) Calibration file into ', cal4_file
 print, ' '
