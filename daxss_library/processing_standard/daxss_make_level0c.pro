@@ -71,8 +71,10 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   IF keyword_set(DEBUG) then VERBOSE = 1
 
   ; This offset was discovered when comparing DAXSS data to GOES peaks and rising edges
-  time_offset_sec = -250.D0
-
+  ;     time_offset_sec = -250.D0
+  ; Updated TIME_OFFSET_SEC based on GOES comparison to flare edges: 6/16/2022  T. Woods
+  ;       No time drift was noted but accuracy for this offset is only about 2 seconds
+  time_offset_sec = -201.D0
 
   ; Input checks
   IF telemetryFileNamesArray EQ !NULL AND yyyydoy EQ !NULL AND yyyymmdd EQ !NULL THEN BEGIN
@@ -192,6 +194,8 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   sci = JPMAddTagsToStructure(sci, 'time_gps', 'double')
   sci = JPMAddTagsToStructure(sci, 'time_iso', 'string')
   sci = JPMAddTagsToStructure(sci, 'time_human', 'string')
+
+  ; stop, 'DEBUG hk.time and time_offset_sec...'
   hk.time_gps = hk.time + time_offset_sec
   hk.time_jd = gps2jd(hk.time_gps)
   hk.time_iso = jpmjd2iso(hk.time_jd)
@@ -237,8 +241,8 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   file_description = 'DAXSS Level 0c data ' + '; Year = '+strmid(yyyydoy, 0, 4) + '; DOY = ' + $
         strmid(yyyydoy, 4, 3) + ' ... FILE GENERATED: '+ JPMsystime()
   save, hk, sci, p1sci, p2sci, log, dump, FILENAME = fullFilename, /COMPRESS, description = file_description
-  
+
   daxss_make_netcdf, '0c', version=version, verbose=verbose
-  
+
   if keyword_set(DEBUG) then stop, 'DEBUG at end of daxss_make_level0c...'
 END
