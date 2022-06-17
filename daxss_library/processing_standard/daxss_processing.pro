@@ -41,12 +41,14 @@ PRO daxss_processing, version=version, $
   spawn, 'hostname', hostname_output
   hostname = strupcase(hostname_output[n_elements(hostname_output)-1])
   if (hostname eq 'MACD3750') then begin
+  	message, /INFO, 'Processing Level 0B and Level 0C on '+hostname
 	; run daxss_make_level0b.pro
 	daxss_make_level0b, verbose=VERBOSE
     ;  make Level 0C file next - this uses Level 0B binary file
     daxss_make_level0c, version=version, VERBOSE=VERBOSE
   endif else begin
     ; ***** EXAMPLE OF daxss_make_level0c WITHOUT USING Level 0B FILE *****
+    message, /INFO, 'Processing Level 0C only on '+hostname
     myPath = getenv('minxss_data')+'/fm3/hydra_tlm/flight'
     myFiles = file_search( myPath, 'ccsds_*', count=filesCount )
     IF keyword_set(verbose) THEN message, /INFO, 'No L0A file made. Number of Hydra files found = '+strtrim(filesCount,2)
