@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 * Units in the response variable
 * Incorrect timestamps for levels 2 and 3
+* Bug in MinXSS level 1: `time_yd` was calculated incorrectly 
 * TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
 * TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
 
