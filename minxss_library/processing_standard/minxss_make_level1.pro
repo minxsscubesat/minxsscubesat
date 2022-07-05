@@ -765,7 +765,7 @@ minxsslevel1_xp_dark = minxsslevel1_xp_dark[0:num_L1_xp_dark-1]
 ;
 ;	calculate Solar Zenith Angle and Tangent Ray Height
 ;
-time_yd = double(minxsslevel1_x123.time.YYYYDOY) + minxsslevel1_x123.time.YYYYDOY/(24.D0*3600.D0)
+time_yd = double(minxsslevel1_x123.time.YYYYDOY) + minxsslevel1_x123.time.FOD
 solar_zenith_altitude, time_yd , minxsslevel1_x123.longitude, $
 				minxsslevel1_x123.latitude, minxsslevel1_x123.altitude, sza, trh
 minxsslevel1_x123.solar_zenith_angle = sza
