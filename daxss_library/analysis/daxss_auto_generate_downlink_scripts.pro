@@ -48,7 +48,7 @@ event_filename = 'ftp://ftp.swpc.noaa.gov/pub/indices/events/' + filename
 catch, error_status
 
 IF error_status NE 0 THEN BEGIN
-  message, /INFO, JPMsystime() + ' Error index: ' + Error_status
+  message, /INFO, JPMsystime() + ' Error index: ' + strtrim(Error_status, 2)
   message, /INFO, 'Error message: ' + !ERROR_STATE.MSG
   num_server_errors++
   wait, 1
@@ -80,6 +80,7 @@ class = strmid(events.particulars[flare_indices], 0, 4)
 
 ; Construct timestamp for each flare, generate downlink script, and add to a CSV log
 FOR i = 0, nflares - 1 DO BEGIN
+  IF class[i] LT 'C2' THEN CONTINUE
   time_iso = events_date + 'T' + strmid(times[i], 0, 2) + ':' + strmid(times[i], 2, 2) + ':00Z'
   daxss_downlink_script, time_iso=time_iso, saveloc=saveloc, class=class[i]
   openu, lun, saveloc + 'daxss_flare_list.txt', /GET_LUN, /APPEND 
