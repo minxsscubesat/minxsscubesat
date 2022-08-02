@@ -1,0 +1,206 @@
+***Warning: POISSERR keyword is missing or of wrong format, assuming FALSE.
+
+1 spectrum  in use
+ 
+Spectral Data File: FIT_Results/minxss_fm3_2022-03-15T23-25-11Z/PHA_2022-03-15T23-25-11Z.pha  Spectrum 1
+Net count rate (cts/s) for Spectrum:1  1.091e+05 +/- 1.066e+03
+ Assigned to Data Group 1 and Plot Group 1
+  Noticed Channels:  1-1000
+  Telescope: InspireSat-1 Instrument: DAXSS  Channel Type: PHA
+  Exposure Time: 9 sec
+ Using fit statistic: chi
+ Using Response (RMF) File            FITS_Files/minxss_fm3_RMF.fits for Source 1
+ Using Auxiliary Response (ARF) File  FITS_Files/minxss_fm3_ARF.fits
+
+    31 channels (1-31) ignored in spectrum #     1
+   755 channels (246-1000) ignored in spectrum #     1
+
+
+========================================================================
+Model vvapec<1> Source No.: 1   Active/On
+Model Model Component  Parameter  Unit     Value
+ par  comp
+   1    1   vvapec     kT         keV      6.50000      +/-  0.0          
+   2    1   vvapec     H                   1.00000      frozen
+   3    1   vvapec     He                  1.00000      frozen
+   4    1   vvapec     Li                  1.00000      frozen
+   5    1   vvapec     Be                  1.00000      frozen
+   6    1   vvapec     B                   1.00000      frozen
+   7    1   vvapec     C                   1.00000      frozen
+   8    1   vvapec     N                   1.00000      frozen
+   9    1   vvapec     O                   1.00000      frozen
+  10    1   vvapec     F                   1.00000      frozen
+  11    1   vvapec     Ne                  1.00000      frozen
+  12    1   vvapec     Na                  1.00000      frozen
+  13    1   vvapec     Mg                  1.00000      frozen
+  14    1   vvapec     Al                  1.00000      frozen
+  15    1   vvapec     Si                  1.00000      frozen
+  16    1   vvapec     P                   1.00000      frozen
+  17    1   vvapec     S                   1.00000      frozen
+  18    1   vvapec     Cl                  1.00000      frozen
+  19    1   vvapec     Ar                  1.00000      frozen
+  20    1   vvapec     K                   1.00000      frozen
+  21    1   vvapec     Ca                  1.00000      frozen
+  22    1   vvapec     Sc                  1.00000      frozen
+  23    1   vvapec     Ti                  1.00000      frozen
+  24    1   vvapec     V                   1.00000      frozen
+  25    1   vvapec     Cr                  1.00000      frozen
+  26    1   vvapec     Mn                  1.00000      frozen
+  27    1   vvapec     Fe                  1.00000      frozen
+  28    1   vvapec     Co                  1.00000      frozen
+  29    1   vvapec     Ni                  1.00000      frozen
+  30    1   vvapec     Cu                  1.00000      frozen
+  31    1   vvapec     Zn                  1.00000      frozen
+  32    1   vvapec     Redshift            0.0          frozen
+  33    1   vvapec     norm                1.00000      +/-  0.0          
+________________________________________________________________________
+
+Reading APEC data from 3.0.9
+
+
+Fit statistic  : Chi-Squared                18824.86     using 214 bins.
+
+Test statistic : Chi-Squared                18824.86     using 214 bins.
+ Null hypothesis probability of 0.00e+00 with 212 degrees of freedom
+ Current data and model not fit yet.
+  parameter 11 is already frozen.
+
+Fit statistic  : Chi-Squared                18824.86     using 214 bins.
+
+Test statistic : Chi-Squared                18824.86     using 214 bins.
+ Null hypothesis probability of 0.00e+00 with 211 degrees of freedom
+ Current data and model not fit yet.
+
+Fit statistic  : Chi-Squared                18824.86     using 214 bins.
+
+Test statistic : Chi-Squared                18824.86     using 214 bins.
+ Null hypothesis probability of 0.00e+00 with 210 degrees of freedom
+ Current data and model not fit yet.
+
+Fit statistic  : Chi-Squared                18824.86     using 214 bins.
+
+Test statistic : Chi-Squared                18824.86     using 214 bins.
+ Null hypothesis probability of 0.00e+00 with 209 degrees of freedom
+ Current data and model not fit yet.
+
+Fit statistic  : Chi-Squared                18824.86     using 214 bins.
+
+Test statistic : Chi-Squared                18824.86     using 214 bins.
+ Null hypothesis probability of 0.00e+00 with 208 degrees of freedom
+ Current data and model not fit yet.
+
+Fit statistic  : Chi-Squared                18824.86     using 214 bins.
+
+Test statistic : Chi-Squared                18824.86     using 214 bins.
+ Null hypothesis probability of 0.00e+00 with 207 degrees of freedom
+ Current data and model not fit yet.
+                                   Parameters
+Chi-Squared  |beta|/N    Lvl          1:kT         13:Mg         15:Si          17:S         21:Ca         27:Fe       33:norm
+8933.08      15.8127      -1       1.24334       13.4391       14.5989       15.2186      0.426647      0.200296       947788.
+1307.47      928.265      -2       1.04246       14.5435       6.93874       8.23488       2.96445       12.3486       851455.
+957.028      37.1823      -2      0.960111       20.1907       5.71358       4.85718       5.80431       9.51634   1.04381e+06
+889.841      28.1624      -2      0.924974       15.4625       5.10125       4.45500       5.98844       8.27128   1.28804e+06
+872.602      139.766      -2      0.920654       12.2451       4.00217       3.41120       4.77558       6.53800   1.60652e+06
+865.2        175.956      -2      0.916247       9.07600       3.02141       2.57487       3.70176       4.94625   2.06903e+06
+786.519      232.65       -1      0.914763       9.18667       3.05694       2.60619       3.75330       4.99820   2.18879e+06
+780.37       9.43798      -1      0.911571       8.91095       2.96142       2.52084       3.68709       4.83493   2.26471e+06
+772.147      11.8184      -1      0.908133       8.62791       2.86743       2.44272       3.62760       4.67016   2.34570e+06
+763.971      12.5376      -1      0.904357       8.34266       2.77539       2.36722       3.56914       4.51001   2.43312e+06
+756.031      14.4199      -1      0.900230       8.05846       2.68396       2.29277       3.51436       4.35029   2.52745e+06
+748.51       0.838961     -1      0.898346       7.74326       2.58570       2.20692       3.41839       4.19153   2.62411e+06
+740.811      4.73655      -1      0.897385       7.42274       2.48554       2.11866       3.30350       4.03308   2.72466e+06
+732.847      6.27172      -1      0.896620       7.10713       2.38639       2.03150       3.18546       3.87669   2.83047e+06
+724.614      6.85063      -1      0.895872       6.79828       2.28913       1.94610       3.06870       3.72335   2.94213e+06
+716.116      7.16871      -1      0.895094       6.49680       2.19408       1.86268       2.95445       3.57348   3.06004e+06
+707.363      7.41068      -1      0.894272       6.20308       2.10138       1.78137       2.84312       3.42729   3.18450e+06
+698.369      7.62311      -1      0.893398       5.91746       2.01115       1.70226       2.73491       3.28496   3.31581e+06
+689.152      7.81517      -1      0.892471       5.64029       1.92351       1.62545       2.62997       3.14667   3.45423e+06
+679.738      7.98568      -1      0.891487       5.37189       1.83855       1.55103       2.52844       3.01256   3.59998e+06
+670.155      8.13035      -1      0.890445       5.11259       1.75637       1.47909       2.43043       2.88279   3.75323e+06
+660.441      8.24382      -1      0.889342       4.86272       1.67708       1.40972       2.33608       2.75753   3.91411e+06
+650.638      8.32022      -1      0.888178       4.62256       1.60076       1.34299       2.24549       2.63691   4.08264e+06
+640.794      8.35355      -1      0.886952       4.39239       1.52750       1.27898       2.15877       2.52107   4.25879e+06
+630.966      8.33794      -1      0.885664       4.17244       1.45738       1.21777       2.07602       2.41013   4.44238e+06
+621.213      8.26799      -1      0.884317       3.96294       1.39045       1.15939       1.99731       2.30420   4.63312e+06
+611.599      8.1391       -1      0.882913       3.76404       1.32679       1.10392       1.92270       2.20337   4.83059e+06
+602.191      7.94791      -1      0.881455       3.57585       1.26642       1.05136       1.85224       2.10770   5.03421e+06
+593.057      7.69268      -1      0.879949       3.39843       1.20938       1.00175       1.78593       2.01724   5.24324e+06
+584.261      7.37366      -1      0.878401       3.23177       1.15566      0.955087       1.72379       1.93199   5.45680e+06
+575.867      6.9934       -1      0.876819       3.07580       1.10524      0.911352       1.66576       1.85194   5.67383e+06
+567.93       6.55689      -1      0.875213       2.93038       1.05811      0.870515       1.61180       1.77705   5.89316e+06
+560.497      6.07159      -1      0.873591       2.79532       1.01421      0.832524       1.56181       1.70722   6.11350e+06
+553.604      5.54719      -1      0.871965       2.67034      0.973454      0.797312       1.51570       1.64237   6.33346e+06
+553.209      4.99521      -2      0.859589       1.93107      0.726712      0.588585       1.25695       1.24188   7.73565e+06
+500.376      197.505      -2      0.841989       1.63315      0.622658      0.505639       1.18792       1.06651   9.16753e+06
+493.187      103.447      -3      0.825586       1.31152      0.514003      0.417639       1.09845      0.890420   1.08057e+07
+483.263      148.302      -4      0.829008       1.37490      0.536699      0.435287       1.11107      0.933534   1.06587e+07
+483.239      1.02006      -5      0.827933       1.36315      0.532074      0.431676       1.10973      0.924649   1.07479e+07
+483.238      0.831244     -6      0.828181       1.36641      0.533339      0.432683       1.11030      0.927109   1.07256e+07
+================================================================================
+ Variances and Principal Axes
+                 1       13       15       17       21       27       33  
+ 6.3331E-06|  0.9955   0.0432   0.0675   0.0183   0.0139   0.0443   0.0000  
+ 4.5511E-04| -0.0664   0.0752   0.3154   0.0168  -0.0348   0.9428   0.0000  
+ 4.8895E-04| -0.0516   0.0441   0.9420   0.0421  -0.0340  -0.3243   0.0000  
+ 2.3387E-03| -0.0162   0.0827  -0.0559   0.9905  -0.0932  -0.0102   0.0000  
+ 3.0898E-03| -0.0314   0.9803  -0.0691  -0.1000  -0.1397  -0.0606   0.0000  
+ 8.1029E-03| -0.0242   0.1505   0.0276   0.0813   0.9845   0.0119   0.0000  
+ 3.5240E+11|  0.0000   0.0000   0.0000   0.0000   0.0000   0.0000  -1.0000  
+--------------------------------------------------------------------------------
+
+====================================================================================
+  Covariance Matrix
+        1           2           3           4           5           6           7   
+   4.132e-05   3.637e-04   1.436e-04   9.927e-05  -1.425e-05   2.667e-04  -2.868e+03
+   3.637e-04   1.355e-02   3.512e-03   3.051e-03   4.135e-03   5.847e-03  -6.077e+04
+   1.436e-04   3.512e-03   1.791e-03   1.003e-03   1.423e-03   2.100e-03  -2.126e+04
+   9.927e-05   3.051e-03   1.003e-03   3.275e-03   1.462e-03   1.755e-03  -1.776e+04
+  -1.425e-05   4.135e-03   1.423e-03   1.462e-03   9.024e-03   2.045e-03  -1.959e+04
+   2.667e-04   5.847e-03   2.100e-03   1.755e-03   2.045e-03   3.896e-03  -3.475e+04
+  -2.868e+03  -6.077e+04  -2.126e+04  -1.776e+04  -1.959e+04  -3.475e+04   3.524e+11
+------------------------------------------------------------------------------------
+
+========================================================================
+Model vvapec<1> Source No.: 1   Active/On
+Model Model Component  Parameter  Unit     Value
+ par  comp
+   1    1   vvapec     kT         keV      0.828181     +/-  6.42829E-03  
+   2    1   vvapec     H                   1.00000      frozen
+   3    1   vvapec     He                  1.00000      frozen
+   4    1   vvapec     Li                  1.00000      frozen
+   5    1   vvapec     Be                  1.00000      frozen
+   6    1   vvapec     B                   1.00000      frozen
+   7    1   vvapec     C                   1.00000      frozen
+   8    1   vvapec     N                   1.00000      frozen
+   9    1   vvapec     O                   1.00000      frozen
+  10    1   vvapec     F                   1.00000      frozen
+  11    1   vvapec     Ne                  1.00000      frozen
+  12    1   vvapec     Na                  1.00000      frozen
+  13    1   vvapec     Mg                  1.36641      +/-  0.116385     
+  14    1   vvapec     Al                  1.00000      frozen
+  15    1   vvapec     Si                  0.533339     +/-  4.23149E-02  
+  16    1   vvapec     P                   1.00000      frozen
+  17    1   vvapec     S                   0.432683     +/-  5.72235E-02  
+  18    1   vvapec     Cl                  1.00000      frozen
+  19    1   vvapec     Ar                  1.00000      frozen
+  20    1   vvapec     K                   1.00000      frozen
+  21    1   vvapec     Ca                  1.11030      +/-  9.49941E-02  
+  22    1   vvapec     Sc                  1.00000      frozen
+  23    1   vvapec     Ti                  1.00000      frozen
+  24    1   vvapec     V                   1.00000      frozen
+  25    1   vvapec     Cr                  1.00000      frozen
+  26    1   vvapec     Mn                  1.00000      frozen
+  27    1   vvapec     Fe                  0.927109     +/-  6.24202E-02  
+  28    1   vvapec     Co                  1.00000      frozen
+  29    1   vvapec     Ni                  1.00000      frozen
+  30    1   vvapec     Cu                  1.00000      frozen
+  31    1   vvapec     Zn                  1.00000      frozen
+  32    1   vvapec     Redshift            0.0          frozen
+  33    1   vvapec     norm                1.07256E+07  +/-  5.93629E+05  
+________________________________________________________________________
+
+
+Fit statistic  : Chi-Squared                  483.24     using 214 bins.
+
+Test statistic : Chi-Squared                  483.24     using 214 bins.
+ Null hypothesis probability of 3.85e-24 with 207 degrees of freedom
