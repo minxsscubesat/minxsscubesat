@@ -5,9 +5,9 @@
 ; 	Author	: Karen Bryant
 ; 	Date	: 10/01/21
 ;
-;	$Date: 2022/03/30 20:18:22 $
+;	$Date: 2022/08/12 14:45:28 $
 ;	$Source: /home/bershenyi/cubesats/scheduling/RCS/prioritize_pass_overlap.pro,v $
-;  @(#)	$Revision: 1.4 $
+;  @(#)	$Revision: 1.5 $
 ;	$Name:  $
 ;	$Locker: bershenyi $
 ;
@@ -83,11 +83,18 @@ END
 ;          score - vector of all pass scores
 ;          overlap_inds - index vector of the first pass of 
 ;                         each overlapping pair
+;          priority_in - Input of priority vector
 ; Outputs: winners - absolute index vector of winners w/in overlapping pairs
 ;          losers  - absolute index vector of losers w/in overlapping
 ;                    pairs
+;          priority_out - Output of priority vector
 ; Assumptions: 
-PRO judge_victors, passes, score, overlap_inds, winners, losers, priority_list
+PRO judge_victors, passes, score, overlap_inds, priority_in,  $
+                   winners, losers, priority_out, $
+                   debug=debug
+
+; Copy priority input to output
+priority_out = priority_in
 
 ; score_gap
 overlap_inds_plus1 = overlap_inds + 1
@@ -122,13 +129,13 @@ keep_inds = where(full_inds ne 1)
 filtered_passes = passes[keep_inds]
 count_pass_spacecraft,filtered_passes
     
-; Create a pass priority list
+; Modify pass priority list
 ; 0 - Delete (b/c conflict)
 ; 1 - Keep (no conflict)
 ; 2 - Keep (prioritize)
-priority_list = intarr(n_elements(passes)) + 1 ; Default to 1/keep 
-priority_list[losers] = 0
-priority_list[winners] = 2
+; Initialize list if it doesn't already exist
+priority_out[losers] = 0
+priority_out[winners] = 2
 
 END
 
@@ -147,6 +154,7 @@ top_missions = mission_hash.where(1)
 n_top_missions = n_elements(top_missions)
 n_passes = n_elements(passes)
 mission_assignments = intarr(n_passes)
+n_days = floor(passes[-1].start_jd - passes[0].start_jd)
 
 ; Find sunsets
 sunlight_deltas = passes.sunlight - shift(passes.sunlight,1)
@@ -156,6 +164,52 @@ if sunset_inds[0] eq 0 and n_sunsets ge 1 then begin
    n_sunsets = n_sunsets - 1
    sunset_inds = sunset_inds[1:-1]
 endif
+; There are no passes in eclipse for about two months in the summer!
+; AND they are spotty before and after this absence
+if n_sunsets lt n_days then begin
+   
+   if keyword_set(debug) then begin
+      print,"Days:",n_days,"  Sunsets:",n_sunsets
+      print,sunset_inds
+      print,passes[0].start_jd,passes[-1].start_jd
+      ;print,time_since_sunset/3600
+      print,passes[sunset_inds].start_time/3600
+   endif
+   
+   ; If we suspect spotty sunsets, just set sunset time at 05:00:00 UTC
+   sunset_time_s = 5*3600       ; 05:00:00
+   one_day_s = 24*3600l
+   time_since_sunset = passes.start_time - sunset_time_s
+   temp_time_since_sunset = time_since_sunset
+   ; Fix negative times since sunset
+   negative_inds = where(time_since_sunset lt 0, n_negative_inds)
+   if n_negative_inds gt 0 then begin
+      time_since_sunset[negative_inds] = time_since_sunset[negative_inds] + $
+                                        one_day_s
+   endif       ; Else IDK! That will probably never happen with a full schedule
+   ; Use shift method to find when time_since_sunset crosses 0
+   sunlight_deltas = time_since_sunset - shift(time_since_sunset,1)
+   sunset_inds = where(sunlight_deltas lt 0, n_sunsets)
+   ; Eliminate the fake sunset at the beginning
+   if sunset_inds[0] eq 0 and n_sunsets ge 1 then begin
+      n_sunsets = n_sunsets - 1
+      sunset_inds = sunset_inds[1:-1]
+   endif
+   
+   if keyword_set(debug) then begin
+      print,"Days:",n_days,"  Sunsets:",n_sunsets
+      print,sunset_inds
+      print,passes[0].start_jd,passes[-1].start_jd
+      ;for j = 0, n_passes - 1 do begin
+      ;   print,j,passes[j].start_time/3600,$
+      ;         temp_time_since_sunset[j]/3600,$
+      ;          time_since_sunset[j]/3600,$
+      ;          sunlight_deltas[j]/3600,format='(F,F,F,F,F)'
+      ;endfor
+      ;stop
+   endif
+endif
+
 ; Only work hard if sunsets exist
 if n_sunsets gt 0 then begin
    ; Assign days based on modulo of JD
@@ -280,8 +334,96 @@ if n_delete_missions gt 0 then begin
       endif
    endfor
 endif
+END
+
+; Program: delete_overlap
+; Inputs:  AOS_JD - Vector of AOS times in JD format
+;          LOS_JD - Vector of LOS times in JD format
+;          score - Pass score vector
+;          passes - IDL structure for pass schedule
+;          priority_in - Input of modified priority vector
+;          
+; Outputs: priority_out - Output of modified priority vector
+;          overlap_exists - Bool of whether (1) or not (0) overlap exists
+; Assumptions: Use program recursively for N concurrent passes
+; Description: Use this program to check for overlap and delete the
+;              lower scoring pass where overlap exists
+
+PRO delete_overlap, aos_jd, los_jd, $
+                    score, passes, $
+                    priority_in, priority_out, $
+                    overlap_exists, debug=debug
+  
+; Assume overlap exists until proven otherwise
+  overlap_exists = 1b
+
+; Copy input to output
+priority_out = priority_in
+
+; Only check overlap on passes for keeping
+keep_inds = where(priority_in gt 0, n_keep_inds)
+; Bail if there are no passes to keep
+if n_keep_inds eq 0 then begin
+   overlap_exists = 0b ; Can't have overlap without passes!
+   return
+endif
+
+; Build new vectors from keep_inds
+aos_jd_keep = aos_jd[keep_inds]
+los_jd_keep = los_jd[keep_inds]
+priority_keep = priority_in[keep_inds]
+score_keep = score[keep_inds]
+passes_keep = passes[keep_inds]
+
+; Calculate gaps between passes
+;      aos_jd_keep[i+1] - los_jd_keep[i]
+gaps = shift(aos_jd_keep,-1) - los_jd_keep
+; Check for overlapping passes
+overlap_inds = where(gaps le 0,n_overlaps)
+; This method always makes an overlap at the end
+n_overlaps = n_overlaps - 1
+; Only work hard if overlaps exist
+if n_overlaps ge 1 then begin
+    ; Get rid of the fake overlap
+    overlap_inds = overlap_inds[0:-2]
+
+    ; Judge passes to keep winners and delete lower priority passes
+    judge_victors, $
+      passes_keep, score_keep, overlap_inds, priority_keep, $ ; Input Params
+       winners_of_keep, losers_of_keep, priority_keep_new, $ ; Output params
+       debug=debug
+    
+    ; Build output variables
+    ; De-reference vectors from the subset keep_inds
+    losers_inds = keep_inds[losers_of_keep]
+    winners_inds = keep_inds[winners_of_keep]
+    ; (above) out = in
+    ; Pass priority list codes
+    ; 0 - Delete (b/c conflict)
+    ; 1 - Keep (no conflict)
+    ; 2 - Keep (prioritize)
+    priority_out[losers_inds] = 0
+    priority_out[winners_inds] = 2
+    if keyword_set(debug) then begin
+       priority_delta = priority_in - priority_out
+       print,priority_delta
+       stop
+    endif
+ endif else begin
+    overlap_exists = 0b
+ endelse
 
 
+    ;; ; Print overlapping counts
+    ;; if keyword_set(debug) then begin
+    ;;    print,"------ Overlapping Pass Counts ------"
+    ;;    all_overlap_inds = [overlap_inds,overlap_inds_plus1]
+    ;;    overlap_passes = passes[all_overlap_inds]
+    ;;    count_pass_spacecraft,overlap_passes
+    ;; endif
+
+
+    
 END
 
 ; Program: parse_config
@@ -443,16 +585,39 @@ n_passes = n_elements(passes)
 print,"------ Unfiltered Pass Counts ------"
 count_pass_spacecraft,passes
 
+; V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V
+; Prioritize passes by score
+; V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V
 
-;     3. TBD input spacecraft priority
-; -1; Delete all (of that spacecraft)
-;  0; Delete when conflict
-;  1; Normal priority (judge based on score)
+; Create a default priority of all 1 - Keep (no conflict)
+priority = intarr(n_passes) + 1; 1/Keep
+
+; One mission gets days, the other gets nights, then 
+; ping pong day by day
+; In effect: One mission gets priority from sunset to sunset
+;            Flip once per day
+; Inputs: passes, mission_hash
+; Outputs: score
+rotate_priority,passes,mission_hash,score,debug
+
+; Use deprioritize_mission to deprioritize all passes of a given mission 
+; Use in conjunction with delete_mission to ensure that the deleted
+; mission gives priority to other missions
+deprioritize_mission,passes,mission_hash,score,new_score
+score = new_score
+; Delete all passes for specific missions (if applicable)
+delete_mission, passes, mission_hash, priority, new_priority
+priority = new_priority
+; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^
+; Prioritize passes by score
+; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^
 
 
-
-
-
+; V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V
+; Check overlap and delete as needed
+; V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V
+; Assume overlap exists until proven otherwise
+overlap_exists = 1b
 
 ; Pad AOS and LOS times with re-configuration durations
 ; Constants
@@ -465,82 +630,29 @@ aos_minus_3min = passes.start_jd - three_min_jd
 los_plus_2min = passes.end_jd + two_min_jd
 
 ; Use the padded times as the effective AOS and LOS
-aos = aos_minus_3min
-los = los_plus_2min
+aos_jd = aos_minus_3min
+los_jd = los_plus_2min
 
-; Calculate gaps between passes
-;      aos[i+1] - los[i]
-gaps = shift(aos,-1) - los
-; Check for overlapping passes
-overlap_inds = where(gaps le 0,n_overlaps)
-; This method always makes an overlap at the end
-n_overlaps = n_overlaps - 1
-; Only work hard if overlaps exist
-if n_overlaps ge 1 then begin
-    ; Get rid of the fake overlap
-    overlap_inds = overlap_inds[0:-2]
-    ; For every overlap, we have two passes
-    overlap_inds_plus1 = overlap_inds+1
+; Iterate to delete overlapping passes until overlap does not exist
+while overlap_exists do begin
+   delete_overlap, aos_jd, los_jd, $
+                   score, passes, $
+                   priority, priority_new,$
+                   overlap_exists, debug=debug
+   priority = priority_new
+endwhile
+; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^
+; Check overlap and delete as needed
+; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^
 
-    ; Track the last overlap
-    last_overlap_pass = passes[overlap_inds_plus1[-1]]
-    
-    ; Print overlapping counts
-    print,"------ Overlapping Pass Counts ------"
-    all_overlap_inds = [overlap_inds,overlap_inds_plus1]
-    overlap_passes = passes[all_overlap_inds]
-    count_pass_spacecraft,overlap_passes
-    
-    ; V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V
-    ; Prioritize passes by score
-    ; One mission gets days, the other gets nights, then 
-    ; ping pong day by day
-    ; In effect: One mission gets priority from sunset to sunset
-    ;            Flip once per day
-    ; Inputs: passes, mission_hash
-    ; Outputs: score
-    rotate_priority,passes,mission_hash,score,debug
+; Clone proirity to UHF and S-Band copies as schedules are synced...
+;        ... for now!
+uhf_priority = priority
+sband_priority = priority
+;        To un-sync, create new scores for each type, and
+;                    iterate with delete_overlap on each priority_*
+;                    vector
 
-
-    ; Use deprioritize_mission to deprioritize all passes of a given mission 
-    ; Use in conjunction with delete_mission to ensure that the deleted
-    ; mission gives priority to other missions
-    deprioritize_mission,passes,mission_hash,score,new_score
-    score = new_score
-
-    ;
-
-    ;; Use MaxEl as a tie breaker
-    ; (rotate_priority uses 100 to force a victor)
-    ; score = score + passes.max_elevation
-
-    ; Synchronize Sband and UHF for now
-    uhf_score = score
-    sband_score = score
-
-    ; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^
-
-    ; Judge passes
-    print,"*_*_*_*_*_*_*_*_*_*_* UHF *_*_*_*_*_*_*_*_*_*_*"
-    judge_victors, $
-      passes, uhf_score, overlap_inds, $ ; Input Params
-      uhf_winners, uhf_losers, uhf_priority ; Output params
-    print,"*_*_*_*_*_*_*_*_*_*_* S-Band *_*_*_*_*_*_*_*_*_*_*"
-    judge_victors, $
-      passes, sband_score, overlap_inds, $ ; Input Params
-      sband_winners, sband_losers, sband_priority ; Output params
-    
-endif else begin
-    uhf_priority = intarr(n_passes) + 1 ; 1/Keep
-    sband_priority = intarr(n_passes) + 1 ; 1/Keep
-    print,'No overlapping passes found'
-endelse
-
-; Delete all passes for specific missions (if applicable)
-delete_mission, passes, mission_hash, sband_priority, new_sband_priority
-sband_priority = new_sband_priority
-delete_mission, passes, mission_hash, uhf_priority, new_uhf_priority
-uhf_priority = new_uhf_priority
 
 ; Append priority to the structure (even if they're all Keep/No conflict)
 priority_passes = append_passes_priority(passes,uhf_priority,sband_priority)
