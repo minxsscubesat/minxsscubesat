@@ -1,5 +1,5 @@
 ;
-;	create_xspex_response_file.pro
+;	create_xspec_response_file.pro
 ;
 ;	Create MinXSS / DAXSS Response FITS file
 ;		OSPEX RMF Info: Redistribution Matrix (RMF) compressed format as BINTABLE
@@ -35,12 +35,12 @@
 ;	HISTORY
 ;		6/8/2022	Tom Woods, original code
 ;
-pro create_xspex_response_file, minxss_cal_file
+pro create_xspec_response_file, minxss_cal_file
 
 verbose = 1
 ans = ' '
 if n_params() lt 1 then begin
-	print, 'USAGE: create_xspex_response_file, minxss_cal_file'
+	print, 'USAGE: create_xspec_response_file, minxss_cal_file'
 	fm = 3
 	read, 'Enter MinXSS FM number (1-3) ? ', fm
 	if (fm lt 1) or (fm gt 3) then return
@@ -120,6 +120,7 @@ wkeep = where(ebins_all ge 0.1)
 ebins = ebins_all[wkeep[0]:wkeep[0]+BIN_NUM-1L]
 elow = ebins - e_width/2.
 ehigh = ebins + e_width/2.
+
 print, 'Keeping X123 bins: ',wkeep[0],wkeep[0]+BIN_NUM-1L
 
 ; *************************************************************************************************
@@ -260,6 +261,19 @@ cc=rainbow(7)
 
 ; stop, 'DEBUG after making the MATRIX ... '
 
+; update so only keep Matrix data above 0.1 keV
+wOK = where( energy ge 0.0999, num_OK )
+E_NUM = num_OK
+E_NUM_STR = strtrim(E_NUM,2)
+; force Matrix to be above 0.1 keV
+energy_low[wOK[0]] = 0.1
+
+matrix1 = {ENERG_LO: 0.0, ENERG_HI: 0.0, N_GRP: 1, F_CHAN: 0, N_CHAN: bin_num, MATRIX: fltarr(bin_num)}
+matrix_all = replicate(matrix1, e_num)
+matrix_all.ENERG_LO = energy_low[wOK]
+matrix_all.ENERG_HI = energy_high[wOK]
+for ii=0L,e_num-1 do matrix_all[ii].MATRIX = reform(matrix[*,ii+wOK[0]])
+
 ; *************************************************************************************************
 ;		4.  Write the Redistribution Matrix (RMF)
 ;				First attempt is to do it without any compression
@@ -282,9 +296,9 @@ matrix_hdr = [ $
 			"EFFAREA  = 1.", $
 			"LO_THRES = " + matrix_limit_str, $
 			"HDUCLASS = 'OGIP'", $
-			"HDUCLASS1 = 'RESPONSE'", $
-			"HDUCLASS2 = 'RSP_MATRIX'", $
-			"HDUCLASS3 = 'REDIST'", $
+			"HDUCLAS1 = 'RESPONSE'", $
+			"HDUCLAS2 = 'RSP_MATRIX'", $
+			"HDUCLAS3 = 'REDIST'", $
 			"HDUVERS  = '1.3.0'", $
 			"CCLS0001 = 'BCF'  / Basic Calibration File", $
 			"CCNM0001 = 'MATRIX'", $
@@ -295,11 +309,6 @@ matrix_hdr = [ $
 			"EXTVER   =       1 / auto assigned by template parser", $
 			"END" $
 			]
-matrix1 = {ENERG_LO: 0.0, ENERG_HI: 0.0, N_GRP: 1, F_CHAN: 0, N_CHAN: bin_num, MATRIX: fltarr(bin_num)}
-matrix_all = replicate(matrix1, e_num)
-matrix_all.ENERG_LO = energy_low
-matrix_all.ENERG_HI = energy_high
-for ii=0L,e_num-1 do matrix_all[ii].MATRIX = reform(matrix[*,ii])
 
 if verbose then print, 'WRITING MATRIX (RMF) data...'
 mwrfits, matrix_all, output_file, matrix_hdr, /CREATE
@@ -318,10 +327,10 @@ ebounds_hdr = [ $
 			"ORIGIN   = 'CU/LASP'", $
 			"CREATOR  = 'IDL create_xspex_response_file.pro'", $
 			"CHANTYPE = 'PHA'", $
-			"DETCHANS = " + E_NUM_STR, $
+			"DETCHANS = " + BIN_NUM_STR, $
 			"HDUCLASS = 'OGIP'", $
-			"HDUCLASS1 = 'RESPONSE'", $
-			"HDUCLASS2 = 'EBOUNDS'", $
+			"HDUCLAS1 = 'RESPONSE'", $
+			"HDUCLAS2 = 'EBOUNDS'", $
 			"HDUVERS  = '1.2.0'",  $
 			"CCLS0001 = 'BCF'  / Basic Calibration File", $
 			"CCNM0001 = 'EBOUNDS'", $
@@ -357,8 +366,8 @@ eff_area_hdr = [ $
 			"CHANTYPE = 'PHA'", $
 			"DETCHANS = " + E_NUM_STR, $
 			"HDUCLASS = 'OGIP'", $
-			"HDUCLASS1 = 'RESPONSE'", $
-			"HDUCLASS2 = 'SPECRESP'", $
+			"HDUCLAS1 = 'RESPONSE'", $
+			"HDUCLAS2 = 'SPECRESP'", $
 			"HDUVERS  = '1.1.0'", $
 			"CCLS0001 = 'BCF'  / Basic Calibration File", $
 			"CCNM0001 = 'SPECRESP'", $
@@ -372,11 +381,11 @@ eff_area_hdr = [ $
 
 eff_area1 = {ENERG_LO: 0.0, ENERG_HI: 0.0, SPECRESP: 0.0}
 eff_area_all = replicate(eff_area1, e_num)
-eff_area_all.ENERG_LO = energy_low
-eff_area_all.ENERG_HI = energy_high
+eff_area_all.ENERG_LO = energy_low[wOK]
+eff_area_all.ENERG_HI = energy_high[wOK]
 ; already in units of cm^2
 effective_area_cm2 = interpol(minxss_detector_response.X123_EFFECTIVE_AREA, $
-						minxss_detector_response.PHOTON_ENERGY, energy )
+						minxss_detector_response.PHOTON_ENERGY, energy[wOK] )
 eff_area_all.SPECRESP = effective_area_cm2
 
 if verbose then print, 'WRITING SPECRESP (ARF) data...'
