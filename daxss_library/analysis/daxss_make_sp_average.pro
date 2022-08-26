@@ -13,15 +13,21 @@
 ;	HISTORY
 ;		5/24/2022	Tom Woods, original code
 ;
-pro daxss_make_sp_average, time, period, data=data, directory=directory, debug=debug
+pro daxss_make_sp_average, time, period, data=data, directory=directory, $
+						version=version, goes_level=goes_level, nosave=nosave, debug=debug
 
-if n_params() lt 2 then begin
+if n_params() lt 1 then begin
 	print, 'USAGE: daxss_make_sp_average, time, period, data=data, directory=directory'
 	return
 endif
+if n_params() lt 2 then begin
+	period = 60.
+endfor
 
 if not keyword_set(directory) then directory = getenv('minxss_data') + path_sep() + 'analysis' + $
 		path_sep() + 'daxss' + path_sep()
+
+if not keyword_set(version) then version = '2.0.0'
 
 ;
 ;	get JD value for input "time"
@@ -72,38 +78,38 @@ DAXSS_SI_ABUNDANCE_VALUE_ONE_SCALE_FACTOR = 1E5
 ;	Read DAXSS Level 1
 ;
 ddir = getenv('minxss_data') + path_sep() + 'fm3' + path_sep() + 'level1' + path_sep()
-dfile1 = 'minxss3_l1_mission_length_v1.0.0.sav'
+dfile1 = 'minxss3_l1_mission_length_v'+version+'.sav'
 if (daxss_level1 eq !NULL) then begin
 	if keyword_set(verbose) then message,/INFO, 'Reading DAXSS L1 data from '+ddir+dfile1
 	restore, ddir+dfile1   ; daxss_level1 variable is structure
 	; estimate daxss_fe_abundance using Fe line peak at 0.81 keV to continuum level at 1.2 keV
-	num_L1 = n_elements(daxss_level1.data)
+	num_L1 = n_elements(daxss_level1_data.data)
 	daxss_fe_abundance = fltarr(num_L1)
-	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_FE_LINE_PEAK),wfe)
-	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_FE_CONTINUUM),wcont)
+	temp1 = min(abs(daxss_level1_data.data[0].energy - DAXSS_FE_LINE_PEAK),wfe)
+	temp2 = min(abs(daxss_level1_data.data[0].energy - DAXSS_FE_CONTINUUM),wcont)
 	for ii=0L,num_L1-1 do begin
-		fe_peak = total(daxss_level1.data[ii].irradiance[wfe-DAXSS_FE_WIDTH:wfe+DAXSS_FE_WIDTH])
-		fe_cont = total(daxss_level1.data[ii].irradiance[wcont-DAXSS_FE_WIDTH:wcont+DAXSS_FE_WIDTH])
+		fe_peak = total(daxss_level1_data.data[ii].irradiance[wfe-DAXSS_FE_WIDTH:wfe+DAXSS_FE_WIDTH])
+		fe_cont = total(daxss_level1_data.data[ii].irradiance[wcont-DAXSS_FE_WIDTH:wcont+DAXSS_FE_WIDTH])
 		daxss_fe_abundance[ii] = (fe_peak / fe_cont) * DAXSS_FE_ABUNDANCE_SCALE_FACTOR
 	endfor
 
 	; estimate daxss_S_abundance using S line peak at 2.43 keV to continuum level at 1.94 keV
 	daxss_s_abundance = fltarr(num_L1)
-	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_S_LINE_PEAK),ws)
-	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_S_CONTINUUM),wscont)
+	temp1 = min(abs(daxss_level1_data.data[0].energy - DAXSS_S_LINE_PEAK),ws)
+	temp2 = min(abs(daxss_level1_data.data[0].energy - DAXSS_S_CONTINUUM),wscont)
 	for ii=0L,num_L1-1 do begin
-		s_peak = total(daxss_level1.data[ii].irradiance[ws-DAXSS_FE_WIDTH:ws+DAXSS_FE_WIDTH])
-		s_cont = total(daxss_level1.data[ii].irradiance[wscont-DAXSS_FE_WIDTH:wscont+DAXSS_FE_WIDTH])
+		s_peak = total(daxss_level1_data.data[ii].irradiance[ws-DAXSS_FE_WIDTH:ws+DAXSS_FE_WIDTH])
+		s_cont = total(daxss_level1_data.data[ii].irradiance[wscont-DAXSS_FE_WIDTH:wscont+DAXSS_FE_WIDTH])
 		daxss_s_abundance[ii] = (s_peak / s_cont) * DAXSS_S_ABUNDANCE_SCALE_FACTOR
 	endfor
 
 	; estimate daxss_Si_abundance using Si line peak at 1.85 keV to continuum level at 1.94 keV
 	daxss_si_abundance = fltarr(num_L1)
-	temp1 = min(abs(daxss_level1.data[0].energy - DAXSS_SI_LINE_PEAK),wsi)
-	temp2 = min(abs(daxss_level1.data[0].energy - DAXSS_SI_CONTINUUM),wsicont)
+	temp1 = min(abs(daxss_level1_data.data[0].energy - DAXSS_SI_LINE_PEAK),wsi)
+	temp2 = min(abs(daxss_level1_data.data[0].energy - DAXSS_SI_CONTINUUM),wsicont)
 	for ii=0L,num_L1-1 do begin
-		si_peak = total(daxss_level1.data[ii].irradiance[wsi-DAXSS_FE_WIDTH:wsi+DAXSS_FE_WIDTH])
-		si_cont = total(daxss_level1.data[ii].irradiance[wsicont-DAXSS_FE_WIDTH:wsicont+DAXSS_FE_WIDTH])
+		si_peak = total(daxss_level1_data.data[ii].irradiance[wsi-DAXSS_FE_WIDTH:wsi+DAXSS_FE_WIDTH])
+		si_cont = total(daxss_level1_data.data[ii].irradiance[wsicont-DAXSS_FE_WIDTH:wsicont+DAXSS_FE_WIDTH])
 		daxss_si_abundance[ii] = (si_peak / si_cont) * DAXSS_SI_ABUNDANCE_SCALE_FACTOR
 	endfor
 endif
@@ -123,7 +129,7 @@ endif
 ;
 ;	find closest time in the DAXSS Level 1
 ;
-time_diff = min( abs(time_jd - daxss_level1.data.time_jd), wmin )
+time_diff = min( abs(time_jd - daxss_level1_data.data.time_jd), wmin )
 ans = ' '
 if (time_diff gt 1.) then begin
 	print, 'DAXSS Data are ' + strtrim(time_diff,2) + ' days from specified time !'
@@ -131,10 +137,10 @@ if (time_diff gt 1.) then begin
 	if (strupcase(strmid(ans,0,1)) eq 'N') then goto, theExit
 endif
 half_jd = (period/2.)/3600.D0/24.
-jd_center = daxss_level1.data[wmin].time_jd
-wgd = where( (daxss_level1.data.time_jd ge (jd_center-half_jd)) and $
-		(daxss_level1.data.time_jd le (jd_center+half_jd)), num_gd )
-jd_center = mean(daxss_level1.data[wgd].time_jd)
+jd_center = daxss_level1_data.data[wmin].time_jd
+wgd = where( (daxss_level1_data.data.time_jd ge (jd_center-half_jd)) and $
+		(daxss_level1_data.data.time_jd le (jd_center+half_jd)), num_gd )
+jd_center = mean(daxss_level1_data.data[wgd].time_jd)
 
 ;
 ;	fill in the data[] array
@@ -145,14 +151,14 @@ jd_center = mean(daxss_level1.data[wgd].time_jd)
 ;		data[4,*] = count precision
 ;
 data = fltarr(5,1024)
-data[0,*] = daxss_level1.data[wgd[0]].energy
-temp = daxss_level1.data[wgd].irradiance
+data[0,*] = daxss_level1_data.data[wgd[0]].energy
+temp = daxss_level1_data.data[wgd].irradiance
 data[1,*] = total(temp,2) / float(num_gd)
-temp = daxss_level1.data[wgd].spectrum_cps
+temp = daxss_level1_data.data[wgd].spectrum_cps
 data[2,*] = total(temp,2) / float(num_gd)
-temp = daxss_level1.data[wgd].irradiance_uncertainty
+temp = daxss_level1_data.data[wgd].irradiance_uncertainty
 data[3,*] = total(temp,2) / float(num_gd)
-temp = daxss_level1.data[wgd].spectrum_cps_precision
+temp = daxss_level1_data.data[wgd].spectrum_cps_precision
 data[4,*] = total(temp,2) / float(num_gd) / sqrt(num_gd)
 wbad = where(data[0,*] lt 0.3)
 for ii=1,4 do data[ii,wbad] = 0.0
@@ -177,7 +183,7 @@ time_yd = jd2yd(jd_center)
 hour = (time_yd - long(time_yd))*24.
 minute = (hour - long(hour))*60.
 second = (minute - long(minute))*60.
-period_actual = (daxss_level1.data[wgd[-1]].time_jd - daxss_level1.data[wgd[0]].time_jd)/24.D0/3600.
+period_actual = (daxss_level1_data.data[wgd[-1]].time_jd - daxss_level1_data.data[wgd[0]].time_jd)/24.D0/3600.
 time_str = strtrim(long(time_yd),2) + '_' + string(long(hour),format='(I02)') + $
 				'-' + string(long(minute),format='(I02)') + $
 				'-' + string(long(second),format='(I02)')
@@ -185,6 +191,9 @@ print, ' '
 print, 'DAXSS_MAKE_SP_AVERAGE: ' + strtrim(num_gd,2) +' spectra at ' + time_str +  $
 			' when XRS-B level is ' + goes_name
 print, ' '
+
+;  return goes_level
+goes_level = goes_daxss
 
 ;
 ;	plot the spectrum
@@ -198,6 +207,7 @@ plot, data[0,*], data[1,*], psym=10, title=time_str+' @ XRS-B = '+goes_name, $
 ;
 ;	write result to a file
 ;
+if keyword_set(nosave) then goto, theExit
 read, 'Do you want to save this spectrum (Y/N) ? ', ans
 if (strupcase(strmid(ans,0,1)) eq 'N') then goto, theExit
 
