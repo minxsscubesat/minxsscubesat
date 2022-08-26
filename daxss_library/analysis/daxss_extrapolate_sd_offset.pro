@@ -8,7 +8,7 @@
 ; INPUTS:
 ;   jds [dblarr]:                The known times in julian date format
 ;   sd_pointers [lonarr]:        The known SD card write offsets. Could be for beacon, science, or whatever packet.
-;   jds_to_extrapolate [dblarr]: The times to estimate the SD write offsets for. 
+;   jds_to_extrapolate [dblarr]: The times to estimate the SD write offsets for.
 ;
 ; OPTIONAL INPUTS:
 ;   None
@@ -41,15 +41,15 @@ sd_pointers = sd_pointers[ind]
 
 ; TODO: handle SD pointer rollover (e.g., at ~2e6 for SCID)
 fit_range_indices = where(jds GE jds_to_extrapolate[0]-1 AND jds LE jds_to_extrapolate[1]+1, n_indices) ; 2 days centered around the user inputted times to interpolate
-IF n_indices EQ 0 THEN BEGIN 
+IF n_indices EQ 0 THEN BEGIN
   fit_range_indices = where(jds GE jds[-100] AND jds LE jds[-1]) ; Last 100 points extrapolation method
-ENDIF 
+ENDIF
 fit_params = linfit(jds[fit_range_indices], sd_pointers[fit_range_indices])
 
 ; Handle cases where the prediction just can't be made because the SD offset is all over the place
 derivative = deriv(float(sd_pointers[fit_range_indices]))
 downward_indices = where(derivative LT 0, count)
-IF count GT 0 THEN BEGIN
+IF count GT 2 THEN BEGIN ; GT 2 to avoid end-point issues for derivative
   message, /INFO, 'The SD offsets appear to be fluctuating randomly with ' + JPMPrintNumber(count, /NO_DECIMALS) + ' decreases in the data. Skipping this event.'
   return, !VALUES.F_NAN
 ENDIF
