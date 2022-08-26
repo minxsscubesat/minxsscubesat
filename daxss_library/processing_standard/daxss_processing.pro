@@ -33,7 +33,7 @@ PRO daxss_processing, version=version, $
                       TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOSE, DEBUG=DEBUG
 
   TIC	; start internal timer
-  IF version EQ !NULL THEN version = '1.1.0'
+  IF version EQ !NULL THEN version = '2.0.0'
   IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0B and L0C for the Full Mission'
 
   ; First Make Level 0B file using IIST processed Level 0 files
@@ -41,11 +41,8 @@ PRO daxss_processing, version=version, $
   spawn, 'hostname', hostname_output
   hostname = strupcase(hostname_output[n_elements(hostname_output)-1])
   if (hostname eq 'MACD3750') then begin
-  	message, /INFO, 'Processing Level 0B and Level 0C on '+hostname
-	; run daxss_make_level0b.pro
-	daxss_make_level0b, verbose=VERBOSE
-    ;  make Level 0C file next - this uses Level 0B binary file
-    daxss_make_level0c, version=version, VERBOSE=VERBOSE
+   	message, /INFO, 'Processing Level 0B and Level 0C on '+hostname
+    daxss_make_level0c, version=version, VERBOSE=VERBOSE ; Also makes level 0b internally so need need to call that separately
   endif else begin
     ; ***** EXAMPLE OF daxss_make_level0c WITHOUT USING Level 0B FILE *****
     message, /INFO, 'Processing Level 0C only on '+hostname
@@ -66,12 +63,18 @@ PRO daxss_processing, version=version, $
     IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L1 for full mission'
     daxss_make_level1, version=version, VERBOSE=VERBOSE
 
-    ; IF keyword_set(verbose) THEN message, /INFO, 'Processing ' + MinXSS_name + ' L3 for full mission'
 
-    ; IF keyword_set(COPY_GOES) THEN BEGIN
-    ;  file_copy, '/timed/analysis/goes/goes_1mdata_widx_20*.sav', getenv('minxss_data') + 'ancillary/goes/', /OVERWRITE
-    ; ENDIF
-    ; daxss_merge_level3, VERBOSE = VERBOSE ; TODO: This should really be minxss_make_level3 but that can't yet handle the mission_length level1 file; implement this function
+    IF keyword_set(COPY_GOES) THEN BEGIN
+		minxss_goes_dir = getenv('minxss_data')+path_sep()+'ancillary'+path_sep()+'goes'+path_sep()
+    	IF keyword_set(verbose) THEN message, /INFO, 'Copying over GOES data to minxss_dropbox'
+ 		; Copy GOES annual file from timed-see.lasp.colorado.edu
+		;  file_copy, '/evenetapp/store2/timed/analysis/goes/goes_1mdata_widx_2022.sav', minxss_goes_dir, /OVERWRITE
+    ENDIF
+
+    IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L2 and L3 for full mission'
+    daxss_make_x123_average, 1, version=version, VERBOSE=VERBOSE ; L2 1-min averages
+    daxss_make_x123_average, 60, version=version, VERBOSE=VERBOSE ; L2 1-hour averages
+    daxss_make_x123_average, 24*60L, version=version, VERBOSE=VERBOSE ; L3 1-day averages
 
   ENDIF
 
