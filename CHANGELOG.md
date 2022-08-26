@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
+* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+
+## [v4.0.0-minxss+v2.0.0-daxss](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v4.0.0-minxss%2Bv2.0.0-daxss)
+
+### Added
 * Support for IS1/DAXSS (INSPIRESat-1 / Dual-zone Aperture X-ray Solar Spectrometer AKA MinXSS-3) processing and plotting -- note that these data are encoded as flight model 4 (fm=4) initially and then changed to be fm=3.  DAXSS Level OC, OD, and 1 products released in June 2022.
 * InspireSat-1 DAXSS has high background signal when in the polar and SAA regions.  A linear fit to the background signal in the 12-20 keV range is used in Level 1 processing to remove the background at all energies before doing the conversion to irradiance units.  The background fit information is stored in the Level 1 product.
 * DAXSS Level 1 Version 1.0.0 has text errors in the MetaData, so the MetaData has been updated.  The Level 1 in IDL saveset has correct MetaData descriptions.
@@ -27,8 +41,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * Units in the response variable
 * Incorrect timestamps for levels 2 and 3
 * Bug in MinXSS level 1: `time_yd` was calculated incorrectly 
-* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
-* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
 
 ## [v3.1.0](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v3.1.0)
 
