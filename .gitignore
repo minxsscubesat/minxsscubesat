@@ -106,3 +106,4 @@ surf_analysis/SURF_FLUX_XRS1.dat
 surf_analysis/SURF_FLUX_GOES.dat
 code_with_fm original_do_NOT_use.txt
 code_with_fm.txt
+*.tle
