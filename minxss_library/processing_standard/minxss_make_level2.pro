@@ -12,7 +12,7 @@
 ;   fm [integer]: Flight Model number 1 or 2 (default is 1)
 ;   version [string]: Set this to specify a particular level 1 file to restore for filtering.
 ;                     Defaults to '' (nothing), which is intended for situations where you've
-;                     just processed level 1 but didn't specify `version` in your call to minxss_make_level1. 
+;                     just processed level 1 but didn't specify `version` in your call to minxss_make_level1.
 ;
 ; OPTIONAL INPUTS:
 ;   None
@@ -48,18 +48,22 @@ if (fm gt 2) or (fm lt 1) then begin
   message, /INFO, JPMsystime() + "ERROR: need a valid 'fm' value. FM can be 1 or 2."
   return
 endif
-IF version EQ !NULL THEN version = ''
+fm_str = strtrim(fm,2)
+
+IF version EQ !NULL THEN version = '3.2.0'
 IF ~isA(version, 'string') THEN BEGIN
   message, /INFO, JPMsystime() + " ERROR: version input must be a string"
   return
 ENDIF
 
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length_v' + version + '.sav'
+ddir = getenv('minxss_data') + path_sep() + 'fm' + fm_str + path_sep() + 'level1' + path_sep()
+file1 = 'minxss' + fm_str + '_l1_mission_length_v' + version + '.sav'
+restore, ddir+file1
 
 message, /INFO, JPMsystime() + " Creating Level 2 data for FM-" + strtrim(fm, 2) + ": time averages of level 1 for 1 minute and 1 hour"
 minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1, version=version, cal_version=cal_version, $
                             minxsslevel1_x123_time_structure=minxsslevel1.x123.time, minxsslevel1_x123_dark_time_structure=minxsslevel1.x123_dark.time, $
-                            minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time    
+                            minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time
 minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=60, version=version, cal_version=cal_version, $
                             minxsslevel1_x123_time_structure=minxsslevel1.x123.time, minxsslevel1_x123_dark_time_structure=minxsslevel1.x123_dark.time, $
                             minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time
