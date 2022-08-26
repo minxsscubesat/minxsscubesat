@@ -8,7 +8,7 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   version [string]: Set this to the version that output files should have. Default is '1.1.0'.
+;   version [string]: Set this to the version that output files should have. See code for default value.
 ;
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set this to print processing messages to console
@@ -32,7 +32,7 @@
 PRO daxss_automatic_processing, version=version, $
                                 VERBOSE=VERBOSE
 
-IF version EQ !NULL THEN version = '1.1.0'
+IF version EQ !NULL THEN version = '2.0.0'
 
 ;;
 ; 1. Task 1: Infinite while loop with a 1 minute periodicity to check if the system time
@@ -45,7 +45,7 @@ WHILE 1 DO BEGIN
   IF currentMinuteOfDay LT 2. THEN BEGIN
     ; First generate new flare scripts
     daxss_auto_generate_downlink_scripts, saveloc='/Users/minxss/My Drive (inspire.lasp@gmail.com)/IS1 On-Orbit Data/Scripts To Run/'
-    
+
     message, /INFO, JPMsystime() + ' Starting automated DAXSS processing'
     daxss_processing, version=version, VERBOSE=VERBOSE
   ENDIF ELSE BEGIN
