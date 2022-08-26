@@ -30,6 +30,11 @@
 ;	1.  Setup directory and file names based on Level name provided
 ;	2.  Read Level file (IDL save set restore)
 ;	3.	Write NetCDF file
+;
+;	HISTORY
+;	2017		J. Mason, original code
+;	2022-08-25	T. Woods, update for L2 and L3 new products and making default Version 4.0.0
+;
 ;-
 pro minxss_make_netcdf, level, $
                         fm=fm, version=version, $
@@ -40,7 +45,7 @@ if keyword_set(debug) then verbose=1
 
 level_name = strtrim(strupcase(level),2)
 
-IF version EQ !NULL THEN version = '2.0.0'
+IF version EQ !NULL THEN version = '4.0.0'
 
 IF fm EQ !NULL THEN fm = 1
 if fm lt 1 then fm = 1
@@ -54,6 +59,8 @@ ENDIF ELSE IF fm EQ 3 THEN BEGIN
 ENDIF
 fm = strtrim(fm, 2)
 
+;  set to non-zero if want to use the old (pre-2022) L2 and L3 products for MinXSS
+use_old_L2L3 = 0
 
 ;
 ;	get root data directory dependent on FM number
@@ -88,21 +95,41 @@ case level_name of
 		 end
 	'2': begin
 		 indir = dir_data + 'level2' + slash
-		 infile = 'minxss'+fm+'_l2_1minute_average_mission_length_v' + version + '.sav'
-		 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-		 attfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_metadata.att'
-		 IF one_minute_done NE !NULL THEN BEGIN
-		   infile = 'minxss'+fm+'_l2_1hour_average_mission_length_v' + version + '.sav'
-		   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-		   attfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_metadata.att'
-		 ENDIF
+		 if (use_old_L2L3 ne 0) then begin
+			 infile = 'minxss'+fm+'_l2_1minute_average_mission_length_v' + version + '.sav'
+			 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			 attfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_metadata.att'
+			 IF one_minute_done NE !NULL THEN BEGIN
+			   infile = 'minxss'+fm+'_l2_1hour_average_mission_length_v' + version + '.sav'
+			   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			   attfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_metadata.att'
+			 ENDIF
+		 endif else begin
+		 	 ; use 2022 "new" L2 products
+		 	 infile = 'minxss'+fm+'_l2new_1minute_average_mission_length_v' + version + '.sav'
+			 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			 attfile = 'minxss'+fm+'_solarSXR_level2new_1minute_average_metadata.att'
+			 IF one_minute_done NE !NULL THEN BEGIN
+			   infile = 'minxss'+fm+'_l2new_1hour_average_mission_length_v' + version + '.sav'
+			   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			   attfile = 'minxss'+fm+'_solarSXR_level2new_1hour_average_metadata.att'
+			 ENDIF
+		 endelse
 		 end
 	'3': begin
+		 if (use_old_L2L3 ne 0) then begin
 			indir = dir_data + 'level3' + slash
 			infile = 'minxss'+fm+'_l3_1day_average_mission_length_v' + version + '.sav'
 			outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
 			attfile = 'minxss'+fm+'_solarSXR_level3_1day_average_metadata.att'
-			end
+		 endif else begin
+		 	; use 2022 "new" L3 product
+			indir = dir_data + 'level3' + slash
+			infile = 'minxss'+fm+'_l3new_1day_average_mission_length_v' + version + '.sav'
+			outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
+			attfile = 'minxss'+fm+'_solarSXR_level3new_1day_average_metadata.att'
+		 endelse
+		 end
 	else:	begin
 			print, 'ERROR with Level Name : ', level_name, ' - Exiting minxss_make_netcdf()'
 			return
@@ -138,18 +165,30 @@ case level_name of
 				           path=dir_metadata, att_file=attfile, /clobber
 			end
   '2': begin
-		 minxsslevel2 = minxss_flatten_structure_for_netcdf(minxsslevel2)
-		 write_netcdf, minxsslevel2, indir + outfile, status, $
+		 if (use_old_L2L3 ne 0) then begin
+		 	minxsslevel2 = minxss_flatten_structure_for_netcdf(minxsslevel2)
+		 	write_netcdf, minxsslevel2, indir + outfile, status, $
 			             path=dir_metadata, att_file=attfile, /clobber
+		 endif else begin
+		 	; 2022 "new" L2 products do not require flattening
+		 	write_netcdf, minxsslevel2_x123, indir + outfile, status, $
+			             path=dir_metadata, att_file=attfile, /clobber
+		 endelse
 		 IF one_minute_done EQ !NULL THEN BEGIN
 		   one_minute_done = 1
        GOTO, SETUP
 		 ENDIF
 			end
 	'3': begin
-	    minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
-			write_netcdf, minxsslevel3, indir + outfile, status, $
+			if (use_old_L2L3 ne 0) then begin
+	    		minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
+				write_netcdf, minxsslevel3, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
+			endif else begin
+		 		; 2022 "new" L3 products do not require flattening
+		 		write_netcdf, minxsslevel3_x123, indir + outfile, status, $
+			             path=dir_metadata, att_file=attfile, /clobber
+			endelse
 			end
 	else:	begin
 			print, 'ERROR with Level Name : ', level_name, ' - Exiting minxss_make_netcdf()'
