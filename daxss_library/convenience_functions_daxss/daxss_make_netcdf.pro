@@ -40,7 +40,9 @@ if keyword_set(debug) then verbose=1
 
 level_name = strtrim(strupcase(level),2)
 
-IF version EQ !NULL THEN version = '1.0.0'
+IF version EQ !NULL THEN version = '2.0.0'
+version_float = float(version)  ; keeps first 2 digits
+version_long = long(version)	; keeps only first digit
 
 IF fm EQ !NULL THEN fm = 3
 IF fm EQ 3 THEN BEGIN
@@ -78,7 +80,8 @@ case level_name of
     indir = dir_data + 'level1' + slash
     infile = 'daxss_l1_mission_length_v' + version + '.sav'
     outfile = 'daxss_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'daxss_solarSXR_level1_metadata.att'
+    ; T. Woods 6/30/2022:  New Level 1 for Version 2 has different variables
+    attfile = 'daxss_solarSXR_level1_metadata_ver'+strtrim(version_long,2)+'.att'
   end
   '2': begin
     indir = dir_data + 'level2' + slash
@@ -109,6 +112,8 @@ endcase
 if (verbose ne 0) then print, 'Reading IDL save set ', indir + infile, ' ...'
 restore, indir + infile
 
+; stop, 'DEBUG data from SAV file...'
+
 ;
 ; 3.  Write NetCDF file
 ;
@@ -131,7 +136,7 @@ case level_name of
                   path=dir_metadata, att_file=attfile, /clobber
   end
   '2': begin
-    write_netcdf, daxss_level2, indir + outfile, status, $
+    write_netcdf, daxss_average_data, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
     IF one_minute_done EQ !NULL THEN BEGIN
       one_minute_done = 1
@@ -139,7 +144,7 @@ case level_name of
     ENDIF
   end
   '3': begin
-    write_netcdf, daxss_level3, indir + outfile, status, $
+    write_netcdf, daxss_average_data, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
   end
   else: begin
