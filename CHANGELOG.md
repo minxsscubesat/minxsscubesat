@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * `minxss_post_pass_times_plotly.py` now runs for more ground stations (India, Singapore, and Taiwan)
 * Massive speed improvements in creating level 1 by using a common block instead of thousands of restores of the same files
 * Time averaging algorithm changed for the Level 2 and Level 3 products for DAXSS, MinXSS-1, and MinXSS-2.  MinXSS Version 3.1 had time averaging of just the counts and then Level 1 code used to generate irradiance values.  The new algorithm does time averages of all data points using the Level 1 data product; consequently, it processes the L2/L3 data products very quickly.  The time averages are done based on gridding up UT day into 1-minute, 1-hour, and 24-hour intervals, with the first two being Level 2 products and the 24-hour (daily) average being for the Level 3 product.  Being a major algorithm change, all MinXSS data products are moved up to Version 4.0.0.
+* Observations taken through the earth's atmosphere have been cut out of level 1 and above. 
 
 ### Deprecated
 
