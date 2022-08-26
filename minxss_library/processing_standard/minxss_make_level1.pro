@@ -770,6 +770,12 @@ solar_zenith_altitude, time_yd , minxsslevel1_x123.longitude, $
 				minxsslevel1_x123.latitude, minxsslevel1_x123.altitude, sza, trh
 minxsslevel1_x123.solar_zenith_angle = sza
 minxsslevel1_x123.tangent_ray_height = trh
+;
+;	truncate down X123 array so that L1 does not have atmospheric absorption
+;
+whigh = where( minxsslevel1_x123.tangent_ray_height ge 250., numhigh )
+if (numhigh lt (0.9*n_elements(minxsslevel1_x123))) then message, /INFO, 'WARNING: too much of the data has low TANGENT_RAY_HEIGHT values !!!'
+minxsslevel1_x123 = minxsslevel1_x123[whigh]
 
 if keyword_set(output_filename) then begin
   outfile = output_filename + '.sav'
