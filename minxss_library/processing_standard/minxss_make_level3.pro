@@ -54,20 +54,7 @@ IF ~isA(version, 'string') THEN BEGIN
   return
 ENDIF
 
-restore, getenv('minxss_data') + '/fm' + strtrim(fm, 2) + '/level1/minxss' + strtrim(fm, 2) + '_l1_mission_length_v' + version + '.sav'
-
-message, /INFO, JPMsystime() + " Creating Level 3 data for FM-" + strtrim(fm, 2) + ": daily average of level 1"
-minxss_make_level1_xminute, fm=fm, VERBOSE=VERBOSE, x_minute_average=1440, version=version, cal_version=cal_version, $
-                            minxsslevel1_x123_time_structure=minxsslevel1.x123.time, minxsslevel1_x123_dark_time_structure=minxsslevel1.x123_dark.time, $
-                            minxsslevel1_xp_time_structure=minxsslevel1.xp.time, minxsslevel1_xp_dark_time_structure=minxsslevel1.xp_dark.time
-
-; Move the generated files to the Level 3 folder
-level1Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level1/'
-level3Folder = getenv('minxss_data') + 'fm' + strtrim(fm, 2) + '/level3/'
-file_move, level1Folder + '*1440_minute_mission_length_v' + version + '.sav', level3Folder + 'minxss'+ strtrim(fm, 2) +'_l3_1day_average_mission_length_v' + version + '.sav', /OVERWRITE
-
-; Rename the structures in the files from minxsslevel1* to minxsslevel3*
-minxss_rename_level_structure, level3Folder + 'minxss' + strtrim(fm, 2) + '_l3_1day_average_mission_length_v' + version + '.sav', newlevel = 3
+minxss_make_x123_average, 24*60L, fm=fm, version=version, VERBOSE=VERBOSE
 
 message, /INFO, JPMsystime() + " All done!"
 END

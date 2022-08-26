@@ -9,17 +9,17 @@
 ;   None
 ;
 ; OPTIONAL INPUTS:
-;   start_date [long or string]: First date of data to process in either yyyydoy long format (e.g., 2016137L) or yyyymmdd string format (e.g., '20160516'). 
-;                                Defaults to 5 days ago. 
-;   end_date [long or string]:   Same as start_date but for the end date to process (e.g., 20170507). 
-;                                Defaults to today. 
-;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1. 
+;   start_date [long or string]: First date of data to process in either yyyydoy long format (e.g., 2016137L) or yyyymmdd string format (e.g., '20160516').
+;                                Defaults to 5 days ago.
+;   end_date [long or string]:   Same as start_date but for the end date to process (e.g., 20170507).
+;                                Defaults to today.
+;   fm [integer]:                Set this to either 1 or 2 to indicate the flight model of MinXSS. Default is 1.
 ;   version [string]:            The version tag to put in the output filename and internal anonymous structure. Default is '2.0.0'
 ;   cal_version [string]:        The calibration version tag to put in the internal anonymous structure. Default is '2.0.0'
 ;
 ; KEYWORD PARAMETERS:
 ;   MISSION:    Set this to ignore the start_date and end_date optional inputs and process the entire known dates for the corresponding fm mission.
-;   TO_0C_ONLY: Set this to process up to level 0C only. Defaults to processing all the way to level 1. 
+;   TO_0C_ONLY: Set this to process up to level 0C only. Defaults to processing all the way to level 1.
 ;   COPY_GOES:  Set this to copy GOES data from a LASP server to the MinXSS Dropbox
 ;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
 ;
@@ -33,7 +33,7 @@
 ;   Requires MinXSS code package
 ;
 ; EXAMPLE:
-;   Just run it! 
+;   Just run it!
 ;
 ;-
 PRO minxss_processing, start_date=start_date, end_date=end_date, fm=fm, version=version, cal_version=cal_version, $
@@ -46,7 +46,7 @@ IF start_date EQ !NULL THEN start_date = jd2yd(systime(/JULIAN) - 5.)
 IF end_date EQ !NULL THEN end_date = jd2yd(systime(/JULIAN) + 1.)
 IF fm EQ !NULL THEN fm = 2
 IF fm GE 3 THEN BEGIN
-  message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS. If you are looking to process INSPIRESat-1/DAXSS data, see daxss_processing.' 
+  message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS. If you are looking to process INSPIRESat-1/DAXSS data, see daxss_processing.'
   return
 ENDIF
 IF version EQ !NULL THEN version = '2.0'
@@ -61,7 +61,7 @@ IF keyword_set(MISSION) THEN BEGIN
   ENDIF
 ENDIF
 
-; Deal with time input 
+; Deal with time input
 IF isa(start_date, 'string') THEN start_date = JPMyyyymmdd2yyyydoy(start_date)
 IF isa(end_date, 'string') THEN end_date = JPMyyyymmdd2yyyydoy(end_date)
 start_jd = yd2jd(start_date)
@@ -105,7 +105,7 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, ' '
   print, '***************************************************************'
   minxss_make_level0d, fm=fm, version=version, /VERBOSE
-  
+
   print, ' '
   print, '***************************************************************'
   print, ' '
@@ -113,26 +113,26 @@ IF ~keyword_set(TO_0C_ONLY) THEN BEGIN
   print, ' '
   print, '***************************************************************'
   minxss_make_level1, fm=fm, version=version, cal_version=cal_version, /VERBOSE
-  
+
   print, ' '
   print, '***************************************************************'
   print, ' '
   print, 'Processing ' + MinXSS_name + ' L2 for full mission'
   print, ' '
   print, '***************************************************************'
+  IF keyword_set(COPY_GOES) THEN BEGIN
+    file_copy, '/timed/analysis/goes/goes_1mdata_widx_20*.sav', getenv('minxss_data') + 'ancillary/goes/', /OVERWRITE
+  ENDIF
   minxss_make_level2, fm=fm, version=version, /VERBOSE
-  
+
   print, ' '
   print, '***************************************************************'
   print, ' '
   print, 'Processing ' + MinXSS_name + ' L3 for full mission'
   print, ' '
   print, '***************************************************************'
-  IF keyword_set(COPY_GOES) THEN BEGIN
-    file_copy, '/timed/analysis/goes/goes_1mdata_widx_20*.sav', getenv('minxss_data') + 'ancillary/goes/', /OVERWRITE
-  ENDIF
   minxss_make_level3, fm=fm, version=version, /VERBOSE
-  
+
   print, ' '
   print, '***************************************************************'
   print, ' '
