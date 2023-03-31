@@ -14,6 +14,8 @@
 ;   windowSize [integer, integer]:          Set this to the pixel dimensions in [x, y] that you want the display. Default is [1000, 800].
 ;   data_output_path_file_prepend [string]: Where output csv files will be stored. Path and whatever prepend is desired for the filename. 
 ;                                           Default is '/Users/minxss/Dropbox/minxss_dropbox/data/reve_36_353/tm1_files/rocket_analog_monitors_'
+;   frequencyOfImageDisplay [integer]:      Number of packets to skip after each display, default=10. In conjunction with the wait, this controls
+;                                           how busy the system will be. Increase to make screen refreshes less frequent to reduce the load.
 ;
 ; KEYWORD PARAMETERS:
 ;   DEBUG:            Set to print debugging information, such as the sizes of and listed in the packets.
@@ -67,9 +69,13 @@
 ; MODIFICATION HISTORY:
 ;   2017-08-08: James Paul Mason: Wrote script based on rocket_eve_tm2_real_time_display.
 ;   2018-05-29: Robert Henry Alexander Sewell: Updated for 36.336 launch
+;   2021: Don Woodraska and James Mason: Updated for 36.353- added frequencyOfImageDisplay keyword to allow code to keep up
+;   2023-03-10: Don Woodraska Updated for 36.389, calling convert_temeperatures
+;   2023-03-30 Don Woodraska Added test_display_only keyword to allow repositioning items on the displays
+;
 ;-
 PRO rocket_eve_tm1_real_time_display, port=port, windowSize=windowSize, data_output_path_file_prepend=data_output_path_file_prepend, $
-                                      DEBUG=DEBUG, LIGHT_BACKGROUND=LIGHT_BACKGROUND, frequencyOfImageDisplay=frequencyOfImageDisplay
+                                      DEBUG=DEBUG, LIGHT_BACKGROUND=LIGHT_BACKGROUND, frequencyOfImageDisplay=frequencyOfImageDisplay, test_display_only=test_display_only
 
 ; Defaults
 IF ~keyword_set(port) THEN port = 8002
@@ -89,6 +95,8 @@ redColor = 'tomato'
 greenColor='lime green'
 fontSize = 16
 
+if keyword_set(test_display_only) then goto, label_create_display
+
 ; Open a port that the DEWESoft computer will be commanded to stream to (see PROCEDURE in this code's header)
 socket, connectionCheckLUN, port, /LISTEN, /GET_LUN, /RAWIO
 STOP, 'Wait until DEWESoft is set to startacq. Then click go.'
@@ -97,8 +105,9 @@ STOP, 'Wait until DEWESoft is set to startacq. Then click go.'
 get_lun, socketLun
 
 ; Prepare output file
-openw, file_lun, getenv('HOME') + '/Dropbox/minxss_dropbox/data/reve_36_353/tm1_files/rocket_analog_monitors_' + strjoin(strsplit(jpmsystime(), ' :', /EXTRACT), '_')+'.csv', /GET_LUN
+openw, file_lun, getenv('HOME') + '/Dropbox/minxss_dropbox/data/reve_36_389/tm1_files/rocket_analog_monitors_' + strjoin(strsplit(jpmsystime(), ' :', /EXTRACT), '_')+'.csv', /GET_LUN
 
+; TODO: these names are here and in the analogMonitorsStructure definition, just need one definition
 printf,file_lun,'Time, megsp_temp, megsa_htr, xrs_5v, slr_pressure, '+$
                 'cryo_cold, megsb_htr, xrs_temp, megsa_ccd_temp, megsb_ccd_temp, cryo_hot, exprt_28v, '+$
                 'vac_valve_pos, hvs_pressure, exprt_15v, fpga_5v, tv_12v, megsa_ff_led, megsb_ff_led, '+$
@@ -128,38 +137,48 @@ socketDataBuffer = !NULL
 ;esp9=1,megsp_fpga_time=1,megsp1=1,megsp2=1
 
 ;36.353
-synctype = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+synctype = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ; 35 items
 ;megsp_temp=0,megsa_htr=0,**xrs_5v=0,slr_pressure=0,cryo_cold=0,megsb_htr=0,xrs_temp=0,megsa_ccd_temp=0,megsb_ccd_temp=1,cryo_hot=1,**exprt_28v=1,vac_valve_pos=1,hvs_pressure=1,**exprt_15v=1,**fpga_5v=1,tv_12v=1,megsa_ff_led=1,megsb_ff_led=1,**sdoor_pos=1,exprt_bus_cur=0,tm_exp_batt_volt=0,esp_fpga_time=1,esp_rec_counter=1
-;esp1=1,esp2=1,esp3=1,esp4=1
-;esp5=1,esp6=1,esp7=1,esp8=1
-;esp9=1,megsp_fpga_time=1,megsp1=1,megsp2=1
+;esp1=1,esp2=1,esp3=1,esp4=1,esp5=1,esp6=1,esp7=1,esp8=1,esp9=1,
+;megsp_fpga_time=1,megsp1=1,megsp2=1
 ; Arrays for thermal conversions for 36.336 monitors
 ; TODO: move the thermal conversions to a different function call
-woods5 = [0.00147408,0.00023701459,1.0839894e-7]
-woods6 = [0.0014051,0.0002369,1.019e-7]
-woods7 = [0.001288,0.0002356,9.557e-8]
-woods8 = [0.077,0.1037,0.0256]
-woods11 = [15.0,11.75,5.797]
-woods14 = [15.0,12.22,5.881]
-woods15 = [15.0,11.71,5.816]
-woods17 = [257.122,-257.199]
+;woods5 = [0.00147408,0.00023701459,1.0839894e-7]
+;woods6 = [0.0014051,0.0002369,1.019e-7]
+;woods7 = [0.001288,0.0002356,9.557e-8]
+;woods8 = [0.077,0.1037,0.0256]
+;woods11 = [15.0,11.75,5.797]
+;woods14 = [15.0,12.22,5.881]
+;woods15 = [15.0,11.71,5.816]
+;woods17 = [257.122,-257.199]
 
-esp_d1 = []
-esp_d2 = []
-esp_d3 = []
-esp_d4 = []
-esp_d5 = []
-esp_d6 = []
-esp_d7 = []
-esp_d8 = []
-esp_d9 = []
+;36.389
+synctype = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ; Index which channels are synchronous (0) or async (1) corresponding to channel order pulled
+;megsp_temp=0, megsa_htr=0, xrs_5v=0, slr_pressure=0, cryo_cold=0, megsb_htr=0, xrs_temp=0, megsa_ccd_temp=0, megsb_ccd_temp=1, cryo_hot=1,
+;exprt_28v=1, vac_valve_pos=1, hvs_pressure=1, exprt_15v=1, fpga_5v=1, tv_12v=1, megsa_ff_led=1, megsb_ff_led=1,
+;sdoor_pos=1, exprt_bus_cur=0, tm_exp_batt_volt=0,
+;esp_fpga_time=1, esp_rec_counter=1, esp1=1, esp2=1, esp3=1, esp4=1, esp5=1, esp6=1, esp7=1, esp8=1, esp9=1,
+;megsp_fpga_time=1, megsp1=1, megsp2=1
 
-megsp_d1 = []
-megsp_d2 = []
+
+;esp_d1 = []
+;esp_d2 = []
+;esp_d3 = []
+;esp_d4 = []
+;esp_d5 = []
+;esp_d6 = []
+;esp_d7 = []
+;esp_d8 = []
+;esp_d9 = []
+
+;megsp_d1 = []
+;megsp_d2 = []
 
 sdoor_history=lonarr(10)
-; Initialize monitor structure
 
+label_create_display:
+
+; Initialize monitor structure
 analogMonitorsStructure = {megsp_temp: 0.0, megsa_htr: 0.0, xrs_5v:0.0,$
   slr_pressure:0.0,cryo_cold:0.0,megsb_htr:0.0,xrs_temp:0.0,$
   megsa_ccd_temp:0.0,megsb_ccd_temp:0.0,cryo_hot:0.0,exprt_28v:0.0,$
@@ -170,8 +189,8 @@ analogMonitorsStructure = {megsp_temp: 0.0, megsa_htr: 0.0, xrs_5v:0.0,$
   megsp_fpga_time:0.0,megsp1:0.0,megsp2:0.0}
 
 ; Initialize invalid Dewesoft packet counters
-stale_a = 0
-stale_s = 0
+stale_analog = 0
+stale_serial = 0
 sdoor_state = 'UNKNOWN'
 
 ; -= CREATE PLACE HOLDER PLOTS =- ;
@@ -255,59 +274,32 @@ t =     text(0.8, topLinePosition, 'MEGS A Heater = ', ALIGNMENT = 1.0, FONT_SIZ
 ta3 =   text(0.8 + textHSpacing, topLinePosition, '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 t =     text(0.8, topLinePosition - (1 * textVSpacing), 'MEGS B Heater = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 ta15 =  text(0.8 + textHSpacing, topLinePosition - (1 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.8, topLinePosition - (2 * textVSpacing), 'MEGS A CCD Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.8, topLinePosition - (2 * textVSpacing), 'MEGS A CCD PRT Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 ta19 =  text(0.8 + textHSpacing, topLinePosition - (2 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.8, topLinePosition - (3 * textVSpacing), 'MEGS B CCD Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.8, topLinePosition - (3 * textVSpacing), 'MEGS B CCD PRT Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
 ta20 =  text(0.8 + textHSpacing, topLinePosition - (3 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.8, topLinePosition - (5 * textVSpacing), 'MEGS A FF Lamp = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta31 =  text(0.8 + textHSpacing, topLinePosition - (5 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.8, topLinePosition - (6 * textVSpacing), 'MEGS B FF Lamp = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta32 =  text(0.8 + textHSpacing, topLinePosition - (6 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-t =     text(0.8, topLinePosition - (8 * textVSpacing), 'MEGS-P Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
-ta1 =   text(0.8 + textHSpacing, topLinePosition - (8 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+
+t =     text(0.8, topLinePosition - (4 * textVSpacing), 'MEGS A CCD Diode Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta19b=  text(0.8 + textHSpacing, topLinePosition - (4 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.8, topLinePosition - (5 * textVSpacing), 'MEGS B CCD Diode Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta20b=  text(0.8 + textHSpacing, topLinePosition - (5 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+
+t =     text(0.8, topLinePosition - (7 * textVSpacing), 'MEGS A FF Lamp = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta31 =  text(0.8 + textHSpacing, topLinePosition - (7 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.8, topLinePosition - (8 * textVSpacing), 'MEGS B FF Lamp = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta32 =  text(0.8 + textHSpacing, topLinePosition - (8 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+t =     text(0.8, topLinePosition - (10 * textVSpacing), 'MEGS-P Temp [ºC] = ', ALIGNMENT = 1.0, FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+ta1 =   text(0.8 + textHSpacing, topLinePosition - (10 * textVSpacing), '--', FONT_SIZE = fontSize, FONT_COLOR = fontColor)
+
 monitorsRefreshText = text(0.5, 0.0, 'Last full refresh: ' + JPMsystime(), COLOR = blueColor, ALIGNMENT = 0.5,font_size=14)
 
-;w = window(DIMENSIONS = windowSize, /DEVICE, LOCATION = [1415, 0], WINDOW_TITLE = 'EVE Rocket 36.336 ESP/MEGSP Science Data', BACKGROUND_COLOR = backgroundColor)
-;p1 = plot(findgen(10), sin(findgen(10)), COLOR = orangeColor, '2*-', LAYOUT=[1,2,1], /CURRENT, FONT_COLOR = fontColor, $
-;  TITLE = 'MEGSP', $
-;  XTITLE = 'Data Packet', XCOLOR = fontColor, $
-;  YTITLE = 'Intensity [DN]', YCOLOR = fontColor, $
-;  NAME = 'NULL')
-;p1a = plot(findgen(10), sin(findgen(10)), COLOR = orangeColor, '2*-', /OVERPLOT, $
-;    NAME = 'MEGS Diode 1')
-;p1b = plot(findgen(10), sin(findgen(10) + 0.3), COLOR = blueColor, '2*-', /OVERPLOT, $
-;  NAME = 'MEGS Diode 2')
-;t1a = text(0.0, -0.3, 'MEGSP FPGA Time = --', /RELATIVE, TARGET = p1, FONT_COLOR = fontColor)
-;
-;p2 = plot(findgen(10), tan(findgen(10)), COLOR = orangeColor, '2*-', /CURRENT, LAYOUT = [1, 2, 2], FONT_COLOR = fontColor, $
-;  TITLE = 'ESP', $
-;  YTITLE = 'Intensity [DN]', YCOLOR = fontColor, $
-;  XTITLE = 'Data Packet', XCOLOR = fontColor, $
-;  NAME = 'NULL')
-;p2a = plot(findgen(10), tan(findgen(10)), COLOR = orangeColor, '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 1') 
-;p2b = plot(findgen(10), tan(findgen(10) + 0.1), COLOR = blueColor, '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 2')
-;p2c = plot(findgen(10), tan(findgen(10) + 0.2), COLOR = greenColor, '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 3')
-;p2d = plot(findgen(10), tan(findgen(10) + 0.3), COLOR = greenColor, '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 4')
-;p2e = plot(findgen(10), tan(findgen(10) + 0.4), COLOR = 'white', '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 5')
-;p2f = plot(findgen(10), tan(findgen(10) - 0.1), COLOR = 'pink', '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 6')
-;p2g = plot(findgen(10), tan(findgen(10) - 0.2), COLOR = 'purple', '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 7')
-;p2h = plot(findgen(10), tan(findgen(10) - 0.3), COLOR = 'red', '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 8')
-;p2i = plot(findgen(10), tan(findgen(10) - 0.4), COLOR = 'yellow', '2*-', /OVERPLOT, $
-;  NAME = 'ESP Diode 9')
-;t2a = text(0.0, -0.3, 'ESP FPGA Time = --', /RELATIVE, TARGET = p2a, FONT_COLOR = fontColor)
-;t2b = text(1.0, -0.3, 'ESP Record Counter = --', /RELATIVE, ALIGNMENT = 1.0, TARGET = p2, FONT_COLOR = fontColor)
 
 serialTextObjArray = [monitorsSerialRefreshText, s3_time, s3_cnt, s3_esp1, s3_esp2, s3_esp3, s3_esp4, s3_esp5, s3_esp6, s3_esp7, s3_esp8, s3_esp9, s4_time, s4_megsp1, s4_megsp2]
 
-analogTextObjArray = [ta23, ta124, ta106, ta82, ta25, ta26, ta13, ta14, ta22, ta29, ta30, ta3, ta15, ta19, ta20, ta31, ta32, ta1, monitorsRefreshText]
+analogTextObjArray = [ta23, ta124, ta106, ta82, ta25, ta26, ta13, ta14, ta22, ta29, ta30, ta3, ta15, ta19, ta20, ta19b, ta20b, ta31, ta32, ta1, monitorsRefreshText]
+
+if keyword_set(test_display_only) then stop
+
 
 dewesoftcounter = 0L ; initialize counter for drawing to the screen
 
@@ -457,31 +449,34 @@ WHILE 1 DO BEGIN
         ; -= INTERPRET DATA =- ;
         ; rocket_eve_tm1_read_packets actually processes the channel data using offsets and sample size and passes back a struct with our data
         analogMonitors = rocket_eve_tm1_read_packets(singleFullDeweSoftPacket, analogMonitorsStructure, offsets, samplesize, monitorsRefreshText, monitorsSerialRefreshText, $
-                                                     stale_a, stale_s, sdoor_state,sdoor_history)
+                                                     stale_analog, stale_serial, sdoor_state,sdoor_history)
         
         dewesoftcounter += 1
         
         if dewesoftcounter gt frequencyOfImageDisplay then begin
 
           ; Convert voltages to temperature for the 36.336 flight
-          ; TODO: move these to a seperate function
-          R_therm_MEGSP = woods14[1]/((woods14[0]/(analogMonitors.megsp_temp))-(woods14[1]/woods14[2])-1)*1000
-          t_MEGSP = 1/(woods7[0]+woods7[1]*alog(R_therm_MEGSP)+woods7[2]*((alog(R_therm_MEGSP))^3))-273.15
-          
-          R_therm_XRS1 = woods15[1]/((woods15[0]/(analogMonitors.xrs_temp))-(woods15[1]/woods15[2])-1)*1000
-          t_XRS1 = 1/(woods6[0]+woods6[1]*alog(R_therm_XRS1)+woods6[2]*((alog(R_therm_XRS1))^3))-273.15
-          
-          R_therm_Cryo_Hotside = woods11[1]/((woods11[0]/(analogMonitors.cryo_hot))-(woods11[1]/woods11[2])-1)*1000
-          t_Cryo_Hotside = 1/(woods5[0]+woods5[1]*alog(R_therm_Cryo_Hotside)+woods5[2]*((alog(R_therm_Cryo_Hotside))^3))-273.15
-          
-          v_convert_ = woods8[2]*(analogMonitors.cryo_cold)^2+woods8[1]*(analogMonitors.cryo_cold)+woods8[0]
-          t_Cold_Finger = woods17[0]*v_convert_+woods17[1]
-          
-          megsa_ccd = 34.5*analogMonitors.megsa_ccd_temp-143
-          megsb_ccd = 34.45*analogMonitors.megsb_ccd_temp-156
+          ;R_therm_MEGSP = woods14[1]/((woods14[0]/(analogMonitors.megsp_temp))-(woods14[1]/woods14[2])-1)*1000
+          ;t_MEGSP = 1/(woods7[0]+woods7[1]*alog(R_therm_MEGSP)+woods7[2]*((alog(R_therm_MEGSP))^3))-273.15
+          ;R_therm_XRS1 = woods15[1]/((woods15[0]/(analogMonitors.xrs_temp))-(woods15[1]/woods15[2])-1)*1000
+          ;t_XRS1 = 1/(woods6[0]+woods6[1]*alog(R_therm_XRS1)+woods6[2]*((alog(R_therm_XRS1))^3))-273.15
+          ;R_therm_Cryo_Hotside = woods11[1]/((woods11[0]/(analogMonitors.cryo_hot))-(woods11[1]/woods11[2])-1)*1000
+          ;t_Cryo_Hotside = 1/(woods5[0]+woods5[1]*alog(R_therm_Cryo_Hotside)+woods5[2]*((alog(R_therm_Cryo_Hotside))^3))-273.15
+          ;v_convert_ = woods8[2]*(analogMonitors.cryo_cold)^2+woods8[1]*(analogMonitors.cryo_cold)+woods8[0]
+          ;t_Cold_Finger = woods17[0]*v_convert_+woods17[1]
+          ;megsa_ccd = 34.5*analogMonitors.megsa_ccd_temp-143
+          ;megsb_ccd = 34.45*analogMonitors.megsb_ccd_temp-156
+
+          ; 36.389 uses convert_temperatures function
+          t_MEGSP = convert_temperatures( analogMonitors.megsp_temp, /megsp_temp )
+          t_XRS1 = convert_temperatures( analogMonitors.xrs_temp, /xrs_temp )
+          t_Cryo_Hotside = convert_temperatures( analogMonitors.cryo_hot, /cryo_hot )
+          t_Cold_Finger = convert_temperatures( analogMonitors.cryo_cold, /cryo_cold )
+          megsa_ccd = convert_temperatures( analoMonitors.megsa_ccd_temp, /megsa_ccd )
+          megsb_ccd = convert_temperatures( analoMonitors.megsb_ccd_temp, /megsa_ccd )
           
           ; Write data to file if its new
-          IF stale_a EQ 0 THEN BEGIN
+          IF stale_analog EQ 0 THEN BEGIN
             printf, file_lun, string(systime(/julian),format='(F32.16)')+', '+jpmprintnumber(analogMonitors.megsp_temp)+', '+jpmprintnumber(analogMonitors.megsa_htr)+', '+jpmprintnumber(analogMonitors.xrs_5v)+$
                              ', '+jpmprintnumber(analogMonitors.slr_pressure)+', '+jpmprintnumber(analogMonitors.cryo_cold)+', '+jpmprintnumber(analogMonitors.megsb_htr)+$
                              ', '+jpmprintnumber(analogMonitors.xrs_temp)+', '+jpmprintnumber(analogMonitors.megsa_ccd_temp)+', '+jpmprintnumber(analogMonitors.megsb_ccd_temp)+', '+jpmprintnumber(analogMonitors.cryo_hot)+$
@@ -494,7 +489,7 @@ WHILE 1 DO BEGIN
           ENDIF
           
           ;save diode data for plotting
-  ;        if stale_s EQ 0 THEN BEGIN
+  ;        if stale_serial EQ 0 THEN BEGIN
   ;          esp_d1=[esp_d1,analogMonitors.esp1]
   ;          esp_d2=[esp_d2,analogMonitors.esp2]
   ;          esp_d3=[esp_d3,analogMonitors.esp3]
@@ -541,6 +536,8 @@ WHILE 1 DO BEGIN
           ta30.string = jpmprintnumber(analogMonitors.tv_12v)
           ta19.string = jpmprintnumber(megsa_ccd)+" ("+jpmprintnumber(analogMonitors.megsa_ccd_temp)+")"
           ta20.string = jpmprintnumber(megsb_ccd)+" ("+jpmprintnumber(analogMonitors.megsb_ccd_temp)+")"
+          ta19b.string = jpmprintnumber(megsa_ccd)+" ("+jpmprintnumber(analogMonitors.megsa_ccd_temp)+")"
+          ta20b.string = jpmprintnumber(megsb_ccd)+" ("+jpmprintnumber(analogMonitors.megsb_ccd_temp)+")"
           ta1.string = jpmprintnumber(t_MEGSP)
           ta26.string = jpmprintnumber(analogMonitors.hvs_pressure)
           ta22.string = jpmprintnumber(t_Cryo_Hotside)
@@ -575,7 +572,7 @@ WHILE 1 DO BEGIN
           ; -= LIMIT CHECKING =- ;
           
           ; Sets the refresh text at the bottom of the analog window to purple if we get 20 invalid dewesoft packets
-          IF (stale_a GT 20) THEN BEGIN
+          IF (stale_analog GT 20) THEN BEGIN
             set_monitor_window_color, analogTextObjArray
           ENDIF ELSE BEGIN
             monitorsRefreshText.font_color = blueColor
@@ -599,7 +596,7 @@ WHILE 1 DO BEGIN
           ENDELSE
       
           ; Sets the refresh text at the bottom of the serial window to purple if we get 20 invalid dewesoft packets
-          IF (stale_s GT 40) THEN BEGIN
+          IF (stale_serial GT 40) THEN BEGIN
             set_monitor_window_color, serialTextObjArray
           ENDIF ELSE BEGIN
             monitorsSerialRefreshText.font_color = bluecolor
@@ -651,6 +648,6 @@ ENDWHILE ; Infinite loop
 
 ; These lines never get called since the only way to exit the above infinite loop is to stop the code
 free_lun, socketlun
-free_lun,file_lun
+free_lun, file_lun
 
 END
