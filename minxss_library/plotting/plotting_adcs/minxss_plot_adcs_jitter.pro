@@ -119,9 +119,9 @@ FOR i = 0, n_elements(adcs3) - 1 DO BEGIN
 ENDFOR
 
 ; Create histogram data
-xHistogram = histogram(jitter1, NBINS = 1000000, LOCATIONS = xBins)
-yHistogram = histogram(jitter2, NBINS = 1000000, LOCATIONS = yBins)
-zHistogram = histogram(jitter3, NBINS = 1000000, LOCATIONS = zBins)
+xHistogram = histogram(jitter1, NBINS = 10000, LOCATIONS = xBins)
+yHistogram = histogram(jitter2, NBINS = 10000, LOCATIONS = yBins)
+zHistogram = histogram(jitter3, NBINS = 10000, LOCATIONS = zBins)
 
 ; Determine the sigma value
 ; At what jitter value are 66% of the points captured
@@ -160,9 +160,9 @@ p3 = plot(zBins, zHistogram, COLOR = 'dodger blue', /HISTOGRAM, THICK = 2, LAYOU
           YTITLE = '#', $
           NAME = 'Z')
 l1 = legend(POSITION = [0.26, 0.41], TARGET = [p1, p2, p3], FONT_SIZE = fontSize - 2)
-t1 = text(0.25, 0.87, '3$\sigma$ = ' + JPMPrintNumber(3 * xSigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'tomato', FONT_SIZE = fontSize - 2)
-t2 = text(0.25, 0.55, '3$\sigma$ = ' + JPMPrintNumber(3 * ySigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'lime green', FONT_SIZE = fontSize - 2)
-t3 = text(0.25, 0.21, '3$\sigma$ = ' + JPMPrintNumber(3 * zSigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'dodger blue', FONT_SIZE = fontSize - 2)
+t1 = text(0.25, 0.87, '1$\sigma$ = ' + JPMPrintNumber(xSigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'tomato', FONT_SIZE = fontSize - 2)
+t2 = text(0.25, 0.55, '1$\sigma$ = ' + JPMPrintNumber(ySigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'lime green', FONT_SIZE = fontSize - 2)
+t3 = text(0.25, 0.21, '1$\sigma$ = ' + JPMPrintNumber(zSigma, NUMBER_OF_DECIMALS = 4) + '$\deg$ (10 s$^{-1}$)', COLOR = 'dodger blue', FONT_SIZE = fontSize - 2)
 STOP
 ; Save plot to disk
 p1.save, saveloc + 'Jitter Histogram.png'
