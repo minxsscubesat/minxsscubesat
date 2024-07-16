@@ -45,7 +45,7 @@ if keyword_set(debug) then verbose=1
 
 level_name = strtrim(strupcase(level),2)
 
-IF version EQ !NULL THEN version = '4.0.0'
+IF version EQ !NULL THEN version = '5.0.0'
 
 IF fm EQ !NULL THEN fm = 1
 if fm lt 1 then fm = 1
@@ -78,57 +78,37 @@ case level_name of
 	'0C':	begin
 			indir = dir_data + 'level0c' + slash
 			infile = 'minxss'+fm+'_l0c_all_mission_length_v' + version + '.sav'
-			outfile = 'minxss'+fm+'_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			attfile = 'minxss'+fm+'_solarSXR_level0C_metadata.att'
+			outfile = 'minxss'+fm+'_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.nc'
+			attfile = 'minxss'+fm+'_solarSXR_level0C_metadata_v' + version + '.att'
 			end
 	'0D':	begin
 			indir = dir_data + 'level0d' + slash
 			infile = 'minxss'+fm+'_l0d_mission_length_v' + version + '.sav'
-			outfile = 'minxss'+fm+'_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			attfile = 'minxss'+fm+'_solarSXR_level0D_metadata.att'
+			outfile = 'minxss'+fm+'_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.nc'
+			attfile = 'minxss'+fm+'_solarSXR_level0D_metadata_v' + version + '.att'
 			end
 	'1': begin
 		 indir = dir_data + 'level1' + slash
 		 infile = 'minxss'+fm+'_l1_mission_length_v' + version + '.sav'
-		 outfile = 'minxss'+fm+'_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.ncdf'
-		 attfile = 'minxss'+fm+'_solarSXR_level1_metadata.att'
+		 outfile = 'minxss'+fm+'_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.nc'
+		 attfile = 'minxss'+fm+'_solarSXR_level1_metadata_v' + version + '.att'
 		 end
 	'2': begin
 		 indir = dir_data + 'level2' + slash
-		 if (use_old_L2L3 ne 0) then begin
-			 infile = 'minxss'+fm+'_l2_1minute_average_mission_length_v' + version + '.sav'
-			 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			 attfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_metadata.att'
-			 IF one_minute_done NE !NULL THEN BEGIN
-			   infile = 'minxss'+fm+'_l2_1hour_average_mission_length_v' + version + '.sav'
-			   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			   attfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_metadata.att'
-			 ENDIF
-		 endif else begin
-		 	 ; use 2022 "new" L2 products
-		 	 infile = 'minxss'+fm+'_l2new_1minute_average_mission_length_v' + version + '.sav'
-			 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			 attfile = 'minxss'+fm+'_solarSXR_level2new_1minute_average_metadata.att'
-			 IF one_minute_done NE !NULL THEN BEGIN
-			   infile = 'minxss'+fm+'_l2new_1hour_average_mission_length_v' + version + '.sav'
-			   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			   attfile = 'minxss'+fm+'_solarSXR_level2new_1hour_average_metadata.att'
-			 ENDIF
-		 endelse
+		 infile = 'minxss'+fm+'_l2_1minute_average_mission_length_v' + version + '.sav'
+		 outfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.nc'
+		 attfile = 'minxss'+fm+'_solarSXR_level2_1minute_average_metadata_v' + version + '.att'
+		 IF one_minute_done NE !NULL THEN BEGIN
+		   infile = 'minxss'+fm+'_l2_1hour_average_mission_length_v' + version + '.sav'
+		   outfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.nc'
+		   attfile = 'minxss'+fm+'_solarSXR_level2_1hour_average_metadata_v' + version + '.att'
+		 ENDIF
 		 end
 	'3': begin
-		 if (use_old_L2L3 ne 0) then begin
-			indir = dir_data + 'level3' + slash
-			infile = 'minxss'+fm+'_l3_1day_average_mission_length_v' + version + '.sav'
-			outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			attfile = 'minxss'+fm+'_solarSXR_level3_1day_average_metadata.att'
-		 endif else begin
-		 	; use 2022 "new" L3 product
-			indir = dir_data + 'level3' + slash
-			infile = 'minxss'+fm+'_l3new_1day_average_mission_length_v' + version + '.sav'
-			outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-			attfile = 'minxss'+fm+'_solarSXR_level3new_1day_average_metadata.att'
-		 endelse
+		 indir = dir_data + 'level3' + slash
+		 infile = 'minxss'+fm+'_l3_1day_average_mission_length_v' + version + '.sav'
+		 outfile = 'minxss'+fm+'_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.nc'
+		 attfile = 'minxss'+fm+'_solarSXR_level3_1day_average_metadata_v' + version + '.att'
 		 end
 	else:	begin
 			print, 'ERROR with Level Name : ', level_name, ' - Exiting minxss_make_netcdf()'
@@ -139,15 +119,14 @@ endcase
 ;
 ;	2.  Read Level file (IDL save set restore)
 ;
-if (verbose ne 0) then print, 'Reading IDL save set ', indir + infile, ' ...'
+if (verbose ne 0) then print, 'Reading IDL save set ', indir + infile
 restore, indir + infile
 
 ;
 ;	3.	Write NetCDF file
 ;
 if (verbose ne 0) then begin
-	print, 'Writing NetCDF file:  ', indir + outfile, ' ...'
-	print, ' with metadata file: ', dir_metadata + attfile
+	print, 'Writing NetCDF file:  ', indir + outfile, ' with metadata file: ', dir_metadata + attfile
 endif
 case level_name of
 	'0C':	begin
@@ -181,7 +160,7 @@ case level_name of
 			end
 	'3': begin
 			if (use_old_L2L3 ne 0) then begin
-	    		minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
+	    	minxsslevel3 = minxss_flatten_structure_for_netcdf(minxsslevel3)
 				write_netcdf, minxsslevel3, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			endif else begin

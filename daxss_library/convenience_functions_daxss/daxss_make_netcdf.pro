@@ -67,38 +67,37 @@ case level_name of
   '0C': begin
     indir = dir_data + 'level0c' + slash
     infile = 'daxss_l0c_all_mission_length_v' + version + '.sav'
-    outfile = 'daxss_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'daxss_solarSXR_level0C_metadata.att'
+    outfile = 'daxss_solarSXR_level0C_' + mission_start_date + '-mission_v' + version + '.nc'
+    attfile = 'daxss_solarSXR_level0C_metadata_v' + version + '.att'
   end
   '0D': begin
     indir = dir_data + 'level0d' + slash
     infile = 'daxss_l0d_mission_length_v' + version + '.sav'
-    outfile = 'daxss_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'daxss_solarSXR_level0D_metadata.att'
+    outfile = 'daxss_solarSXR_level0D_' + mission_start_date + '-mission_v' + version + '.nc'
+    attfile = 'daxss_solarSXR_level0D_metadata_v' + version + '.att'
   end
   '1': begin
     indir = dir_data + 'level1' + slash
     infile = 'daxss_l1_mission_length_v' + version + '.sav'
-    outfile = 'daxss_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    ; T. Woods 6/30/2022:  New Level 1 for Version 2 has different variables
-    attfile = 'daxss_solarSXR_level1_metadata_ver'+strtrim(version_long,2)+'.att'
+    outfile = 'daxss_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.nc'
+    attfile = 'daxss_solarSXR_level1_metadata_v' + version + '.att'
   end
   '2': begin
     indir = dir_data + 'level2' + slash
     infile = 'daxss_l2_1minute_average_mission_length_v' + version + '.sav'
-    outfile = 'daxss_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'daxss_solarSXR_level2_1minute_average_metadata.att'
+    outfile = 'daxss_solarSXR_level2_1minute_average_' + mission_start_date + '-mission_v' + version + '.nc'
+    attfile = 'daxss_solarSXR_level2_1minute_average_metadata_v' + version + '.att'
     IF one_minute_done NE !NULL THEN BEGIN
       infile = 'daxss_l2_1hour_average_mission_length_v' + version + '.sav'
-      outfile = 'daxss_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-      attfile = 'daxss_solarSXR_level2_1hour_average_metadata.att'
+      outfile = 'daxss_solarSXR_level2_1hour_average_' + mission_start_date + '-mission_v' + version + '.nc'
+      attfile = 'daxss_solarSXR_level2_1hour_average_metadata_v' + version + '.att'
     ENDIF
   end
   '3': begin
     indir = dir_data + 'level3' + slash
     infile = 'daxss_l3_1day_average_mission_length_v' + version + '.sav'
-    outfile = 'daxss_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.ncdf'
-    attfile = 'daxss_solarSXR_level3_1day_average_metadata.att'
+    outfile = 'daxss_solarSXR_level3_1day_average_' + mission_start_date + '-mission_v' + version + '.nc'
+    attfile = 'daxss_solarSXR_level3_1day_average_metadata_v' + version + '.att'
   end
   else: begin
     print, 'ERROR with Level Name : ', level_name, ' - Exiting daxss_make_netcdf()'
@@ -109,7 +108,7 @@ endcase
 ;
 ; 2.  Read Level file (IDL save set restore)
 ;
-if (verbose ne 0) then print, 'Reading IDL save set ', indir + infile, ' ...'
+if (verbose ne 0) then print, 'Reading IDL save set ', indir + infile
 restore, indir + infile
 
 ; stop, 'DEBUG data from SAV file...'
@@ -118,11 +117,11 @@ restore, indir + infile
 ; 3.  Write NetCDF file
 ;
 if (verbose ne 0) then begin
-  print, 'Writing NetCDF file:  ', indir + outfile, ' ...'
-  print, ' with metadata file: ', dir_metadata + attfile
+  print, 'Writing NetCDF file:  ', indir + outfile, ' with metadata file: ', dir_metadata + attfile
 endif
 case level_name of
   '0C': begin
+    if (dump EQ !NULL) then dump = -1
     daxsslevel0c = { hk: hk, p1sci: p1sci, p2sci: p2sci, sci: sci, dump: dump }
     write_netcdf, daxsslevel0c, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
