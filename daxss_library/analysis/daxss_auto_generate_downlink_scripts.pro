@@ -11,13 +11,13 @@
 ; OPTIONAL INPUTS:
 ;   date_iso [string]: The date you want to look for flares in ISO format (yyyy-mm-dd), e.g., '2022-04-10'.
 ;                      If no value is provided, assume yesterday.
-;   saveloc [string]:  The path to save the scripts to. Default is "~/" (home). 
+;   saveloc [string]:  The path to save the scripts to. Default is "~/" (home).
 ;
 ; KEYWORD PARAMETERS:
 ;   None
 ;
 ; OUTPUTS:
-;   None directly, but puts scripts on disk in saveloc. 
+;   None directly, but puts scripts on disk in saveloc.
 ;
 ; OPTIONAL OUTPUTS:
 ;   None
@@ -26,13 +26,23 @@
 ;   Requires internet access to get to the GOES FTP
 ;
 ; EXAMPLE:
-;   Just run it! 
+;   Just run it!
+;
+; HISTORY:
+;	April 2022		James Mason, original code
+;	10/1/2022		Tom Woods, Updated with saveloc default value on "Scripts To Run"
+;						and with limitation between C4 and M3 flare sizes
 ;-
 PRO daxss_auto_generate_downlink_scripts, date_iso=date_iso, saveloc=saveloc
-  
+
 ; Defaults
 IF saveloc EQ !NULL THEN BEGIN
   saveloc = '~/'
+  DAXSS_FLARE_DIR = getenv('minxss_data') + path_sep() + 'flares' + path_sep() + $
+  					'daxss' + path_sep() + 'scripts' + path_sep()
+  if file_test(DAXSS_FLARE_DIR, /directory) then saveloc = DAXSS_FLARE_DIR
+  IS1_SCRIPT_DIR = '/Volumes/GoogleDrive-102509592257659234307/My Drive/IS1 On-Orbit Data/Scripts To Run/'
+  if file_test(IS1_SCRIPT_DIR, /directory) then saveloc = IS1_SCRIPT_DIR
 ENDIF
 IF date_iso EQ !NULL THEN BEGIN
   filename = 'yesterday.txt'
@@ -80,10 +90,11 @@ class = strmid(events.particulars[flare_indices], 0, 4)
 
 ; Construct timestamp for each flare, generate downlink script, and add to a CSV log
 FOR i = 0, nflares - 1 DO BEGIN
-  IF class[i] LT 'C2' THEN CONTINUE
+  ; IF class[i] LT 'C2' THEN CONTINUE
+  IF (class[i] LT 'C4') OR (class[i] GE 'M3') THEN CONTINUE
   time_iso = events_date + 'T' + strmid(times[i], 0, 2) + ':' + strmid(times[i], 2, 2) + ':00Z'
   daxss_downlink_script, time_iso=time_iso, saveloc=saveloc, class=class[i]
-  openu, lun, saveloc + 'daxss_flare_list.txt', /GET_LUN, /APPEND 
+  openu, lun, saveloc + 'daxss_flare_list.txt', /GET_LUN, /APPEND
   printf, lun, time_iso + ',' + class[i]
   free_lun, lun
 ENDFOR
