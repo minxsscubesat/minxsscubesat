@@ -76,7 +76,7 @@ function daxss_dead_time, fast_count_rate, slow_count_rate, $
 	endif
 
 	; Use look-up table for converting between C_meas and C_in
-	COMMON daxss_dead_time_common, c_in, c_meas_slow, c_meas_fast, c_dead_time_uncertainty
+	COMMON daxss_dead_time_orginal_common, c_in, c_meas_slow, c_meas_fast, c_dead_time_uncertainty
 	if (n_elements(c_in) le 1) or (do_table_calculation ne 0) then begin
 		c_in = findgen(100000L)*100.D0 + 1.
 		c_meas_slow = c_in * exp(-c_in*tau_dead_time/2.)
