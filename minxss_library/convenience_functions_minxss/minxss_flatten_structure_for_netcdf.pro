@@ -28,21 +28,34 @@
 ;-
 FUNCTION minxss_flatten_structure_for_netcdf, structure
 
-x123_time = structure.x123.time
-x123 = rem_tag(structure.x123, 'time')
+x123 = structure.x123
+x123 = JPMAddTagsToStructure(x123, 'time_tai', 'double')
+x123.time_tai = structure.x123.time.tai
+x123 = JPMAddTagsToStructure(x123, 'julian_date', 'double')
+x123.julian_date = structure.x123.time.jd
+x123 = rem_tag(x123, 'time')
 
-x123_dark_time = structure.x123_dark.time
-x123_dark = rem_tag(structure.x123_dark, 'time')
+x123_dark = structure.x123_dark
+x123_dark = JPMAddTagsToStructure(x123_dark, 'time_tai', 'double')
+x123_dark.time_tai = structure.x123_dark.time.tai
+x123_dark = JPMAddTagsToStructure(x123_dark, 'julian_date', 'double')
+x123_dark.julian_date = structure.x123_dark.time.jd
+x123_dark = rem_tag(x123_dark, 'time')
 
-xp_time = structure.xp.time
-xp = rem_tag(structure.xp, 'time')
+xp = structure.xp
+xp = JPMAddTagsToStructure(xp, 'time_tai', 'double')
+xp.time_tai = structure.xp.time.tai
+xp = JPMAddTagsToStructure(xp, 'julian_date', 'double')
+xp.julian_date = structure.xp.time.jd
+xp = rem_tag(xp, 'time')
 
-xp_dark_time = structure.xp_dark.time
-xp_dark = rem_tag(structure.xp_dark, 'time')
+xp_dark = structure.xp_dark
+xp_dark = JPMAddTagsToStructure(xp_dark, 'time_tai', 'double')
+xp_dark.time_tai = structure.xp_dark.time.tai
+xp_dark = JPMAddTagsToStructure(xp_dark, 'julian_date', 'double')
+xp_dark.julian_date = structure.xp_dark.time.jd
+xp_dark = rem_tag(xp_dark, 'time')
 
-return, create_struct('x123', x123, 'x123_time', x123_time, $
-                      'x123_dark', x123_dark, 'x123_dark_time', x123_dark_time, $
-                      'xp', xp, 'xp_time', xp_time, $
-                      'xp_dark', xp_dark, 'xp_dark_time', xp_dark_time)
+return, create_struct('x123', x123, 'x123_dark', x123_dark, 'xp', xp, 'xp_dark', xp_dark)
 
 END

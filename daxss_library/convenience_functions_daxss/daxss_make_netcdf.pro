@@ -131,10 +131,26 @@ case level_name of
                   path=dir_metadata, att_file=attfile, /clobber
   end
   '1': begin
+    daxss_level1_data = JPMAddTagsToStructure(daxss_level1_data, 'time_tai', 'double')
+    daxss_level1_data.time_tai = anytim2tai(daxss_level1_data.time_iso)
+    daxss_level1_data = JPMAddTagsToStructure(daxss_level1_data, 'julian_date', 'double')
+    daxss_level1_data.julian_date = daxss_level1_data.time_jd
+    daxss_level1_data = rem_tag(daxss_level1_data, 'time_jd')
+    daxss_level1_data = rem_tag(daxss_level1_data, 'time_gps')
+    daxss_level1_data = rem_tag(daxss_level1_data, 'time_yd')
+    daxss_level1_data = rem_tag(daxss_level1_data, 'time_iso')
     write_netcdf, daxss_level1_data, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
   end
   '2': begin
+    daxss_average_data = JPMAddTagsToStructure(daxss_average_data, 'time_tai', 'double')
+    daxss_average_data.time_tai = anytim2tai(daxss_average_data.time_iso)
+    daxss_average_data = JPMAddTagsToStructure(daxss_average_data, 'julian_date', 'double')
+    daxss_average_data.julian_date = daxss_average_data.time_jd
+    daxss_average_data = rem_tag(daxss_average_data, 'time_jd')
+    daxss_average_data = rem_tag(daxss_average_data, 'time_gps')
+    daxss_average_data = rem_tag(daxss_average_data, 'time_yd')
+    daxss_average_data = rem_tag(daxss_average_data, 'time_iso')
     write_netcdf, daxss_average_data, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
     IF one_minute_done EQ !NULL THEN BEGIN
@@ -143,6 +159,14 @@ case level_name of
     ENDIF
   end
   '3': begin
+    daxss_average_data = JPMAddTagsToStructure(daxss_average_data, 'time_tai', 'double')
+    daxss_average_data.time_tai = anytim2tai(daxss_average_data.time_iso)
+    daxss_average_data = JPMAddTagsToStructure(daxss_average_data, 'julian_date', 'double')
+    daxss_average_data.julian_date = daxss_average_data.time_jd
+    daxss_average_data = rem_tag(daxss_average_data, 'time_jd')
+    daxss_average_data = rem_tag(daxss_average_data, 'time_gps')
+    daxss_average_data = rem_tag(daxss_average_data, 'time_yd')
+    daxss_average_data = rem_tag(daxss_average_data, 'time_iso')
     write_netcdf, daxss_average_data, indir + outfile, status, $
                   path=dir_metadata, att_file=attfile, /clobber
   end

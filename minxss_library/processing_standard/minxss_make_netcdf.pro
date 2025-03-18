@@ -90,7 +90,6 @@ case level_name of
 	'1': begin
 		 indir = dir_data + 'level1' + slash
 		 infile = 'minxss'+fm+'_l1_mission_length_v' + version + '.sav'
-		 outfile = 'minxss'+fm+'_solarSXR_level1_' + mission_start_date + '-mission_v' + version + '.nc'
 		 attfile = 'minxss'+fm+'_solarSXR_level1_metadata_v' + version + '.att'
 		 end
 	'2': begin
@@ -126,7 +125,7 @@ restore, indir + infile
 ;	3.	Write NetCDF file
 ;
 if (verbose ne 0) then begin
-	print, 'Writing NetCDF file:  ', indir + outfile, ' with metadata file: ', dir_metadata + attfile
+	print, 'Writing NetCDF files to folder:  ', indir, ' with metadata file: ', dir_metadata + attfile
 endif
 case level_name of
 	'0C':	begin
@@ -139,19 +138,34 @@ case level_name of
 				            path=dir_metadata, att_file=attfile, /clobber
 			end
   '1': begin
-	   minxsslevel1 = minxss_flatten_structure_for_netcdf(minxsslevel1)
-		 write_netcdf, minxsslevel1, indir + outfile, status, $
+	   minxsslevel1 = minxss_flatten_structure_for_netcdf(minxsslevel1)   
+	   
+	   outfile = 'minxss'+fm+'_solarSXR_x123_level1_' + mission_start_date + '-mission_v' + version + '.nc'
+		 write_netcdf, minxsslevel1.x123, indir + outfile, status, $
 				           path=dir_metadata, att_file=attfile, /clobber
+     outfile = 'minxss'+fm+'_solarSXR_xp_level1_' + mission_start_date + '-mission_v' + version + '.nc'
+     write_netcdf, minxsslevel1.xp, indir + outfile, status, $
+                   path=dir_metadata, att_file=attfile, /clobber
+     outfile = 'minxss'+fm+'_solarSXR_x123_dark_level1_' + mission_start_date + '-mission_v' + version + '.nc'
+     write_netcdf, minxsslevel1.x123_dark, indir + outfile, status, $
+                   path=dir_metadata, att_file=attfile, /clobber
+     outfile = 'minxss'+fm+'_solarSXR_xp_dark_level1_' + mission_start_date + '-mission_v' + version + '.nc'
+     write_netcdf, minxsslevel1.xp_dark, indir + outfile, status, $
+                   path=dir_metadata, att_file=attfile, /clobber
 			end
   '2': begin
 		 if (use_old_L2L3 ne 0) then begin
-		 	minxsslevel2 = minxss_flatten_structure_for_netcdf(minxsslevel2)
-		 	write_netcdf, minxsslevel2, indir + outfile, status, $
-			             path=dir_metadata, att_file=attfile, /clobber
+  	 	 minxsslevel2 = minxss_flatten_structure_for_netcdf(minxsslevel2)
+  	 	 write_netcdf, minxsslevel2, indir + outfile, status, $
+  		               path=dir_metadata, att_file=attfile, /clobber
 		 endif else begin
-		 	; 2022 "new" L2 products do not require flattening
-		 	write_netcdf, minxsslevel2_x123, indir + outfile, status, $
-			             path=dir_metadata, att_file=attfile, /clobber
+  		 	minxsslevel2_x123 = JPMAddTagsToStructure(minxsslevel2_x123, 'time_tai', 'double')
+  		 	minxsslevel2_x123.time_tai = minxsslevel2_x123.time.tai
+  		 	minxsslevel2_x123 = JPMAddTagsToStructure(minxsslevel2_x123, 'julian_date', 'double')
+        minxsslevel2_x123.julian_date = minxsslevel2_x123.time.jd
+        minxsslevel2_x123 = rem_tag(minxsslevel2_x123, 'time')  
+  		 	write_netcdf, minxsslevel2_x123, indir + outfile, status, $
+  			              path=dir_metadata, att_file=attfile, /clobber
 		 endelse
 		 IF one_minute_done EQ !NULL THEN BEGIN
 		   one_minute_done = 1
@@ -164,9 +178,13 @@ case level_name of
 				write_netcdf, minxsslevel3, indir + outfile, status, $
 				            path=dir_metadata, att_file=attfile, /clobber
 			endif else begin
-		 		; 2022 "new" L3 products do not require flattening
-		 		write_netcdf, minxsslevel3_x123, indir + outfile, status, $
-			             path=dir_metadata, att_file=attfile, /clobber
+  	 		minxsslevel3_x123 = JPMAddTagsToStructure(minxsslevel3_x123, 'time_tai', 'double')		 		
+  	 		minxsslevel3_x123.time_tai = minxsslevel3_x123.time.tai
+  	 		minxsslevel3_x123 = JPMAddTagsToStructure(minxsslevel3_x123, 'julian_date', 'double')
+  	 		minxsslevel3_x123.julian_date = minxsslevel3_x123.time.jd
+  	 		minxsslevel3_x123 = rem_tag(minxsslevel3_x123, 'time')		 		
+  	 		write_netcdf, minxsslevel3_x123, indir + outfile, status, $
+  		             path=dir_metadata, att_file=attfile, /clobber
 			endelse
 			end
 	else:	begin
