@@ -7,9 +7,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
-
+*  Added DAXSS radiation background subtraction algorithm for Version 2.1 that uses the background signal in the X123 high energy range above 12 keV. This background correction is very close to zero most of the time but can be a few counts per second during major geomagnetic storms near Earth's polar regions.
+  
 ### Changed
-
+*  Updated the DAXSS deadtime correction for the X123 to better match the flight solar signal levels (changes for Version 2.1 and Version 2.2).
+*  For the DAXSS data product archive, the TIME variable was changed to TAI seconds and a new JD_DATE variable is added for the Julian Day.
+  
 ### Deprecated
 
 ### Removed
