@@ -49,7 +49,7 @@ IF fm GE 3 THEN BEGIN
   message, /INFO, JPMsystime() + ' There are only two flight models of MinXSS. If you are looking to process INSPIRESat-1/DAXSS data, see daxss_processing.'
   return
 ENDIF
-IF version EQ !NULL THEN version = '2.0'
+IF version EQ !NULL THEN version = '5.0.0'
 IF cal_version EQ !NULL THEN cal_version = '2.0.0'
 IF keyword_set(MISSION) THEN BEGIN
   IF fm EQ 1 THEN BEGIN

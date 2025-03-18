@@ -31,13 +31,16 @@
 ;
 ; HISTORY
 ;	2024-05-07	T. Woods, Updated to Version 2.1 default for updated Level 1 Version 2.1
-;
+; 2025-01-30 T. Woods, Updated to Version 2.2 for revised dead_time correction
+; 
 ;+
 PRO daxss_automatic_processing, version=version, $
                                 VERBOSE=VERBOSE
 
 ;; IF version EQ !NULL THEN version = '2.0.0'
-IF version EQ !NULL THEN version = '2.1.0'		;; New default V2.1 (T. Woods, 5/7/2024)
+;; IF version EQ !NULL THEN version = '2.1.0'		;; New default V2.1 (T. Woods, 5/7/2024)
+; updated to Version 2.2 default (T. Woods, 1/30/2025) for "final" fix for dead_time / radio_noise in Level 1
+IF version EQ !NULL THEN version = '3.0.0'
 
 ;;
 ; 1. Task 1: Infinite while loop with a 1 minute periodicity to check if the system time
@@ -54,6 +57,10 @@ WHILE 1 DO BEGIN
     ;  Changed to new 2024 merged_raw option for processing
     daxss_processing, version=version, VERBOSE=VERBOSE, /merged_raw
 
+    ; generate IS-1 ephemeris scripts
+    plan_satellite_pass,'India', /verbose
+    make_is1_set_ephemeris_script,/latest,/verbose
+    
     ; generate new flare scripts for yesterday
     message, /INFO, JPMsystime() + ' Making DAXSS flare scripts for yesterday.'
     ; saveloc default is updated with "Scripts To Run" default if it exists
