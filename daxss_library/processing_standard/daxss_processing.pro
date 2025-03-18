@@ -15,6 +15,8 @@
 ;   DEBUG:      Set this to trigger stop statements in the code in good locations for debugging
 ;   TO_0C_ONLY: Set this to process up to level 0B only. Defaults to processing all the way to level 1.
 ;   VERBOSE:    Set to print processing messages
+;	MERGED_RAW:	Option to use new merged raw (Level 0) files India generated in 2024
+;
 ;
 ; OUTPUTS:
 ;   None directly, but each level of processing generates IDL savesets on disk
@@ -28,21 +30,32 @@
 ; EXAMPLE:
 ;   IDL>  daxss_processing, /verbose
 ;
+; HISTORY:
+;	2024-02-02	T. Woods   Added the /merged_raw option to process new Level 0 merged packets
+;	2024-05-07	T. Woods   Updated to Version 2.1 default for updated Level 1 Ver 2.1
+;
 ;-
-PRO daxss_processing, version=version, $
+PRO daxss_processing, version=version, merged_raw=merged_raw, $
                       TO_0C_ONLY=TO_0C_ONLY, COPY_GOES=COPY_GOES, VERBOSE=VERBOSE, DEBUG=DEBUG
 
   TIC	; start internal timer
-  IF version EQ !NULL THEN version = '2.0.0'
+  ;; IF version EQ !NULL THEN version = '2.0.0'
+  ; updated to Version 2.1 default (T. Woods, 5/7/2024)
+  ; updated to Version 2.2 default (T. Woods, 1/30/2025) for "final" fix for dead_time / radio_noise in Level 1
+  IF version EQ !NULL THEN version = '3.0.0'
   IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L0B and L0C for the Full Mission'
 
   ; First Make Level 0B file using IIST processed Level 0 files
   ;	This only can be done on DAXSS Science Data Processing computer (due to GoogleDrive paths)
   spawn, 'hostname', hostname_output
   hostname = strupcase(hostname_output[n_elements(hostname_output)-1])
+
   if (hostname eq 'MACD3750') then begin
    	message, /INFO, 'Processing Level 0B and Level 0C on '+hostname
-    daxss_make_level0c, version=version, VERBOSE=VERBOSE ; Also makes level 0b internally so need need to call that separately
+   	; Also makes level 0b internally so we don't need to call that separately
+   	; 2/2/2024 addition:  /merged_raw option
+    daxss_make_level0c, version=version, VERBOSE=VERBOSE, MERGED_RAW=MERGED_RAW
+
   endif else begin
     ; ***** EXAMPLE OF daxss_make_level0c WITHOUT USING Level 0B FILE *****
     message, /INFO, 'Processing Level 0C only on '+hostname
@@ -65,10 +78,10 @@ PRO daxss_processing, version=version, $
 
 
     IF keyword_set(COPY_GOES) THEN BEGIN
-		minxss_goes_dir = getenv('minxss_data')+path_sep()+'ancillary'+path_sep()+'goes'+path_sep()
+		minxss_goes_dir = getenv('minxss_data')+'ancillary'+path_sep()+'goes'+path_sep()
     	IF keyword_set(verbose) THEN message, /INFO, 'Copying over GOES data to minxss_dropbox'
  		; Copy GOES annual file from timed-see.lasp.colorado.edu
-		;  file_copy, '/evenetapp/store2/timed/analysis/goes/goes_1mdata_widx_2022.sav', minxss_goes_dir, /OVERWRITE
+		;  file_copy, '/evenetapp/store2/timed/analysis/goes/goes_1mdata_widx_2023.sav', minxss_goes_dir, /OVERWRITE
     ENDIF
 
     IF keyword_set(verbose) THEN message, /INFO, 'Processing DAXSS L2 and L3 for full mission'
