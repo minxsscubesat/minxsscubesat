@@ -21,16 +21,16 @@ plan_satellite_pass,'Boulder', verbose=verbose
 print, 'PROCESSING pass plans for FAIRBANKS...'
 plan_satellite_pass,'Fairbanks',/no_update, /no_orbit, verbose=verbose
 
-print, 'PROCESSING pass plans for PARKER...'
-plan_satellite_pass,'Parker',/no_update, /no_orbit, verbose=verbose
+; print, 'PROCESSING pass plans for PARKER...'
+; plan_satellite_pass,'Parker',/no_update, /no_orbit, verbose=verbose
 
 print, 'PROCESSING pass plans for INDIA...'
 plan_satellite_pass,'India',/no_update, /no_orbit, verbose=verbose
 	print, '  *** Also Generate IS1 Ephemeris Script ***'
 	make_is1_set_ephemeris_script,/latest,/verbose
 
-print, 'PROCESSING pass plans for SINGAPORE...'
-plan_satellite_pass,'Singapore',/no_update, /no_orbit, verbose=verbose
+; print, 'PROCESSING pass plans for SINGAPORE...'
+; plan_satellite_pass,'Singapore',/no_update, /no_orbit, verbose=verbose
 
 print, 'PROCESSING pass plans for TAIWAN...'
 plan_satellite_pass,'Taiwan',/no_update, /no_orbit, verbose=verbose

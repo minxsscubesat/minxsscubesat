@@ -5,9 +5,9 @@
 ; 	Author	: Karen Bryant
 ; 	Date	: 10/01/21
 ;
-;	$Date: 2022/08/12 14:45:28 $
+;	$Date: 2022/11/30 22:06:06 $
 ;	$Source: /home/bershenyi/cubesats/scheduling/RCS/prioritize_pass_overlap.pro,v $
-;  @(#)	$Revision: 1.5 $
+;  @(#)	$Revision: 1.7 $
 ;	$Name:  $
 ;	$Locker: bershenyi $
 ;
@@ -116,18 +116,20 @@ endif else begin           ; Otherwise, the second pass won every time
 endelse
 
 
+if keyword_set(debug) then begin
 ; Print priority among overlapping counts
-print,"------ Winners among Overlapping Pass Counts ------"
-winner_passes = passes[winners]
-count_pass_spacecraft,winner_passes
+   print,"------ Winners among Overlapping Pass Counts ------"
+   winner_passes = passes[winners]
+   count_pass_spacecraft,winner_passes
 
 ; Print filtered counts
-print,"------ Filtered Pass Counts ------"
-full_inds = intarr(n_elements(passes))
-full_inds[losers] = 1
-keep_inds = where(full_inds ne 1)
-filtered_passes = passes[keep_inds]
-count_pass_spacecraft,filtered_passes
+   print,"------ Filtered Pass Counts ------"
+   full_inds = intarr(n_elements(passes))
+   full_inds[losers] = 1
+   keep_inds = where(full_inds ne 1)
+   filtered_passes = passes[keep_inds]
+   count_pass_spacecraft,filtered_passes
+endif
     
 ; Modify pass priority list
 ; 0 - Delete (b/c conflict)
@@ -268,6 +270,42 @@ END
 
 
 
+; Program: Coronate_Mission
+; Inputs:  passes - IDL structure for pass schedule
+;          mission_hash - Hash of mission names and priority scores
+;          score_in - Input of score vector
+; Outputs: score_out - Output of modified score vector
+; Assumptions: Only one can wear the crown
+; Description: Use mission_hash to oronate the highest priority
+;          mission with a "crown" of 1000 points in the score
+PRO coronate_mission, passes, mission_hash, score_in, score_out, debug=debug
+
+; Copy score in to out
+score_out = score_in
+
+; Find royal mission (prio value = 2)
+royal_missions = mission_hash.where(2)
+
+n_royal_missions = n_elements(royal_missions)
+if n_royal_missions gt 1 then begin
+   print,"/!\ /!\ /!\ /!\ /!\ /!\ /!\ /!\"
+   print,"WARNING: More than 1 mission marked priority level 2 (highest)"
+   print,"         Only prioritizing ",royal_missions[0]
+   print,"/!\ /!\ /!\ /!\ /!\ /!\ /!\ /!\"
+   ; score_out = ; How can we break this in an obvious way?
+   return
+endif
+if n_royal_missions eq 1 then begin
+   royal_mission = royal_missions[0]
+   royal_inds = where(passes.satellite_name eq royal_mission,n_royal_inds)
+      if n_royal_inds gt 0 then begin
+      ; 1000 should be 10x any other score
+      score_out[royal_inds] = score_in[royal_inds] + 1000
+   endif
+endif
+
+END
+
 ; Program: Delete_Mission
 ; Inputs:  passes - IDL structure for pass schedule
 ;          mission_hash - Hash of mission names and priority scores
@@ -404,11 +442,11 @@ if n_overlaps ge 1 then begin
     ; 2 - Keep (prioritize)
     priority_out[losers_inds] = 0
     priority_out[winners_inds] = 2
-    if keyword_set(debug) then begin
-       priority_delta = priority_in - priority_out
-       print,priority_delta
-       stop
-    endif
+    ;if keyword_set(debug) then begin
+    ;   priority_delta = priority_in - priority_out
+    ;   print,priority_delta
+    ;   stop
+    ;endif
  endif else begin
     overlap_exists = 0b
  endelse
@@ -579,11 +617,13 @@ stop,'Enter .c to continue if correct'
 
 ;       2. restore the IDL saveset
 restore,directory+pass_idl_save_file
-
-; Print baseline counts
 n_passes = n_elements(passes)
-print,"------ Unfiltered Pass Counts ------"
-count_pass_spacecraft,passes
+
+if keyword_set(debug) then begin
+; Print baseline counts
+   print,"------ Unfiltered Pass Counts ------"
+   count_pass_spacecraft,passes
+endif
 
 ; V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V_V
 ; Prioritize passes by score
@@ -600,6 +640,12 @@ priority = intarr(n_passes) + 1; 1/Keep
 ; Outputs: score
 rotate_priority,passes,mission_hash,score,debug
 
+; If the mission hash contains a royal mission, give it a crown
+; The Queen must think the whole world smells like fresh paint
+; 1000 additional points should beat any other score
+coronate_mission,passes,mission_hash,score,new_score,debug=debug
+score = new_score
+
 ; Use deprioritize_mission to deprioritize all passes of a given mission 
 ; Use in conjunction with delete_mission to ensure that the deleted
 ; mission gives priority to other missions
@@ -608,6 +654,7 @@ score = new_score
 ; Delete all passes for specific missions (if applicable)
 delete_mission, passes, mission_hash, priority, new_priority
 priority = new_priority
+
 ; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^
 ; Prioritize passes by score
 ; ^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^_^

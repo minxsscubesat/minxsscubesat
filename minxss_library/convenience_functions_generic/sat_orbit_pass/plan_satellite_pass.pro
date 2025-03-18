@@ -18,7 +18,7 @@
 ;	INPUT
 ;		station		Required input to specify which Ground Station by name ("Boulder", "Fairbanks")
 ;						Expanded in 2022 to include India, Singapore, and Taiwan
-;		date_range	Option to specify JD date range, default is to calculate passes for next 10 days
+;		date_range	Option to specify JD date range, default is to calculate passes for next 14 days
 ;		debug		Option to not download latest TLE while debugging this procedure
 ;		verbose		Option to print information while running
 ;		auto_pass	Option to generate AUTO pass scripts based on Pass Elevation
@@ -84,7 +84,7 @@ endif
 if (n_params() lt 2) or (n_elements(date_range) lt 2) then begin
 	date1 = systime(/utc,/jul) ; julian date for the current time
 	date1 = long(date1-0.5) + 0.5D0  ; force to day boundary
-	date2 = date1 + 10   ; add 10 days for planning
+	date2 = date1 + 14   ; add 14 days for planning
 	date_range = [date1, date2]
 endif else begin
 	date1 = date_range[0]
@@ -256,6 +256,7 @@ if (not keyword_set(no_update)) and (not keyword_set(debug)) then begin
 	tle_download_latest, tle, satid=satid[0], path=path_name, /output, verbose=verbose
 	if n_elements(tle) lt 3 then begin
 		print, 'ERROR: could not find TLE for satellite ', mission_in[0]
+		stop, 'DEBUG TLE issue ...'
 		if keyword_set(debug) then stop, 'DEBUG TLE issue...'
 		return
 	endif
@@ -302,7 +303,7 @@ if (not keyword_set(no_update)) and (not keyword_set(debug)) then begin
  endif
 
 ;
-;	2.  Calculate passes for next 10 days for each satellite
+;	2.  Calculate passes for next 14 days for each satellite
 ;
 number_passes_total = 0L
 save_path = path_name + station + slash

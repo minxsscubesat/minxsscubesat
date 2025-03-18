@@ -5,11 +5,11 @@
 ; 	Author	: Gabe Bershenyi
 ; 	Date	: 10/21/21
 ;
-;	$Date: 2019/11/12 16:43:16 $
-;	$Source: /lasp/software/src/devel_tools/src/rcs_templates/template.pro.in,v $
-;  @(#)	$Revision: 1.3 $
+;	$Date: 2022/10/19 16:46:30 $
+;	$Source: /home/bershenyi/cubesats/scheduling/RCS/csv2sav_passes.pro,v $
+;  @(#)	$Revision: 1.4 $
 ;	$Name:  $
-;	$Locker:  $
+;	$Locker: bershenyi $
 ;
 ;	PURPOSE:
 ;	Convert from .csv to .sav pass schedule file
@@ -42,6 +42,8 @@
 ;-
 ;	MODIFICATIONS/REVISION LEVEL:
 ;	MM/DD/YY WHO	WHAT (most recent change first)
+;       10/18/22 Bershenyi Added checks to ensure that the two
+;                          schedule file inputs match per SMOPS-304
 ;
 ; H-
 ;------------------------------------------------------------------------------
@@ -102,6 +104,31 @@ sband_priority_numeric = prio_string2numeric(sband_priority_str)
 ; Ingest .sav file
 restore,directory+sav_filename
 
+; Ensure that the .sav schedule matches the .csv schedule
+; Compare the satellite_name field in passes to the satellite column
+; of the csv
+csv_satellites = passes_csv.field1
+match_fails = 0
+for pass_num = 0, n_passes - 1 do begin
+   if csv_satellites[pass_num] ne passes[pass_num].satellite_name then begin
+      if keyword_set(debug) then begin
+         print,strtrim(pass_num,2),' ',csv_satellites[pass_num],' ne ',$
+               passes[pass_num].satellite_name
+      endif
+      match_fails = match_fails + 1
+   endif
+endfor
+; Warn and quit if there are match failures
+if match_fails ne 0 then begin
+   print,"CSV and SAV file inputs do not match"
+   print,match_fails," discrepancies between satellite names."
+   print,"Check date of ",csv_filename
+   print,"Find corresponding file in archive"
+   print,"Input filename as 'archive/passes_YYYY-MM-DD_YYYY-MM-DD_BOULDER.sav'"
+   if keyword_set(debug) then stop
+   return
+endif
+
 ; Filter .sav file(s)
 ; UHF
 uhf_keep_inds = where(uhf_priority_numeric ne 0, n_keep_uhf)
@@ -120,18 +147,7 @@ endif else begin
     sband_keep_passes = -1
 endelse
 
-
-; Replace .sav file(s)
-; Chop up input filename
-;split_sav_filename = strsplit(sav_filename,'.',/extract)
-;base_sav_filename = split_sav_filename[0]
-;extension_sav_filename = split_sav_filename[1] 
-;uhf_sav_filename = $
-;  base_sav_filename+'_filtered_UHF.'+extension_sav_filename
-;sband_sav_filename = $
-;  base_sav_filename+'_filtered_SBand.'+extension_sav_filename
-
-
+; Save the output to fixed-name files used by other automation
 sband_sav_filename = 'passes_manual_SBAND_BOULDER.sav'
 uhf_sav_filename = 'passes_manual_UHF_BOULDER.sav'
 ; Variable for saving must be called 'passes'

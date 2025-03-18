@@ -54,6 +54,7 @@ s3 = strarr(3)
 strin = ' '
 strin2 = ' '
 lastLine = ' '
+linecnt = 0L
 
 ;
 ;	2.	Search catalog file for specific mission and obtain its TLE (three lines per mission)
@@ -72,7 +73,8 @@ while not eof(flun) do begin
 	readf, flun, strin
 	linecnt += 1
 	linecap = strupcase(strin)
-	if (strpos(linecap, missionID) eq 2) then begin
+	idPos = strpos(linecap, missionID)
+	if (idPos ge 0) AND (idPos le 2) then begin
 		; read the next TLE line and add to result
 		s3[1] = strin
 		readf, flun, strin2

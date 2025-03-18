@@ -33,7 +33,9 @@
 ;
 ;	HISTORY
 ;	2015-Nov-21		T. Woods	Original version
-; 2016-Feb-09   T. Woods  Added the option /SatPC so TLEs for MinXSS, CADRE, ISS are saved for SatPC32 tracking
+; 	2016-Feb-09   T. Woods  Added the option /SatPC so TLEs for MinXSS, CADRE, ISS are saved for SatPC32 tracking
+;	2024-Dec-26		T. Woods  Stopped automatic TLE downloads from space-track.org, do Manual upates now
+;	2025-Jan-24   T. Woods   Replaced space-track.org download with Celestrack download of TLEs
 ;
 pro tle_download_latest, tle, satid=satid, mission=mission, $
 		catalog=catalog, url=url, user=user, password=password, $
@@ -61,6 +63,50 @@ endelse
 if not keyword_set(path) then begin
 	path = getenv('TLE_dir')
 	if strlen(path) gt 0 then path += slash
+endif
+
+;
+;  2024 ISSUE:  space-track.org doesn't allow TLE insecure login as this procedure implements
+;  +++++ To Do:  update software for secure connection to space-track.org
+;  +++++ For Now:  do manual TLE updates:  Search for satellite over epoch date range and paste into TLE file
+;
+autoTLEdownload = 1		; set to zero in 2024 so it will read TLE file directly; changed to 1 for 2025 Celestrack TLEs
+if (autoTLEdownload eq 0) then begin
+  tle = ' '
+  if keyword_set(satid) then begin
+	out_file = path + string(satid,format='(I08)') + '.tle'
+	filename = file_search( out_file, count=fcount )
+	if (fcount ge 1) then begin
+		; find last complete TLE
+		openr, lun, out_file, /get_lun
+		tle0 = ' ' & tle1 = ' ' & tle2 = ' '
+		while not(eof(lun)) do begin
+			cntline = 0
+			if not(eof(lun)) then begin
+				readf, lun, tle0
+				cntline += 1
+			endif
+			if not(eof(lun)) then begin
+				readf, lun, tle1
+				cntline += 1
+			endif
+			if not(eof(lun)) then begin
+				readf, lun, tle2
+				cntline += 1
+			endif
+			if (cntline ge 3) then begin
+				; make tle output as string array
+				tle = [ tle0, tle1, tle2 ]
+			endif
+		endwhile
+		close, lun
+		free_lun, lun
+	endif
+  endif
+  if (n_elements(tle) lt 3) then begin
+  	print, 'ERROR: tle_download_latest() needs satid.'
+  endif
+  return
 endif
 
 ;
@@ -128,15 +174,25 @@ if not keyword_set(password) then password = 'Go_cubesat-Pass'
 ;		curl -c cookies.txt -b cookies.txt -k
 ;			https://www.space-track.org/ajaxauth/login -d "identify=USER&password=PASSWORD&query=URL"
 ;
-
-cookies = path + 'space-track_cookies.txt'
-curl_cmd = 'curl -c ' + cookies + ' -b ' + cookies
-curl_cmd += ' --output ' + quote2 + catalog + quote2
-if keyword_set(verbose) then curl_cmd += ' --verbose'
-curl_cmd += ' -k https://www.space-track.org/ajaxauth/login -d '
-curl_cmd += quote1 + "identity=" + strtrim(user,2) + '&password=' + strtrim(password,2)
-curl_cmd += '&query=' + strtrim(url,2) + quote1
-
+useCelestrak = 1
+if (useCelestrak eq 0) then begin
+  ;  Use Space-Track to get TLEs
+  cookies = path + 'space-track_cookies.txt'
+  curl_cmd = 'curl -c ' + cookies + ' -b ' + cookies
+  curl_cmd += ' --output ' + quote2 + catalog + quote2
+  if keyword_set(verbose) then curl_cmd += ' --verbose'
+  curl_cmd += ' -k https://www.space-track.org/ajaxauth/login -d '
+  curl_cmd += quote1 + "identity=" + strtrim(user,2) + '&password=' + strtrim(password,2)
+  curl_cmd += '&query=' + strtrim(url,2) + quote1
+endif else begin
+  ; use Celestrak NORAD to get TLEs
+  curl_link = ' -k https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle'
+  curl_cmd = 'curl --output ' + quote2 + catalog + quote2
+  if keyword_set(verbose) then curl_cmd += ' --verbose'
+  curl_cmd += curl_link
+  ; print, curl_cmd
+  ; stop, 'Check out curl_cmd ...'
+endelse
 if not keyword_set(nodownload) then begin
 	print, '*****  Starting TLE download. This will take several seconds. *****'
 	if keyword_set(debug) or keyword_set(verbose) then $
@@ -144,6 +200,8 @@ if not keyword_set(nodownload) then begin
 	spawn, curl_cmd, curl_messages
 	n_str = n_elements(curl_messages)
 	if keyword_set(debug) or keyword_set(verbose) then for k=0L,n_str-1 do print, curl_messages[k]
+	wait, 5   ; wait 5 seconds
+	; stop, 'Check out curl_cmd results...'
 endif
 
 ; if keyword_set(debug) then stop, 'DEBUG curl download file ...'
@@ -165,26 +223,30 @@ endif
 if keyword_set(satid) then result = tle_satid_find_in_file( satid, catalog ) $
 else result = tle_find_in_file( mission, catalog )  ; find using mission name
 
+; print, 'SATID = ', satid
+; stop, 'DEBUG TLE result from finding in file ...'
+
 num = n_elements(result)
 if (num lt 3) then begin
 	; mission not found
 	tle = -1L
-	print, 'ERROR: mission TLE not found'
+	print, 'ERROR: mission TLE not found (error #1)'
 	if keyword_set(debug) then stop, 'DEBUG error-1 ...'
 	return
 endif
 
 ;	search for first line with "0 "
+; 2025:  Celestrack does not add 0 before Satellite Name, so force iStart to be 0L
 istart = 0L
-for k=0L,num-1 do begin
-	 if strmid(result[k],0,2) eq '0 ' then break
-endfor
-istart = k
+; for k=0L,num-1 do begin
+; 	 if strmid(result[k],0,2) eq '0 ' then break
+; endfor
+; istart = k
 
 if (istart ge num) then begin
 	; mission not found
 	tle = -1L
-	print, 'ERROR: mission TLE not found'
+	print, 'ERROR: mission TLE not found (error #2)'
 	if keyword_set(debug) then stop, 'DEBUG error-2 ...'
 	return
 endif
@@ -194,7 +256,7 @@ num_options = (num + 1 - istart) / 4L
 if (num_options lt 1) then begin
 	; no mission found
 	tle = -1L
-	print, 'ERROR: mission TLE not found'
+	print, 'ERROR: mission TLE not found (error #3)'
 	if keyword_set(debug) then stop, 'DEBUG error-3 ...'
 	return
 endif else if (num_options eq 1) then begin

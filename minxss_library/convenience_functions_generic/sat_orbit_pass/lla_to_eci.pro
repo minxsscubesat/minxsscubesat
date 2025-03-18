@@ -43,7 +43,7 @@
 ;       Stan Solomon, 3/00
 ;
 ;-
-pro lla_to_eci, year, doy, utc, lla, eci
+pro lla_to_eci, year, doy, utc, lla, eci, ra_dec=ra_dec
 
 ; f = Earth oblateness flattening factor, re = equatorial radius:
 f = 1./298.257D
@@ -63,6 +63,9 @@ ra = atan(sin(lon+gst),cos(lon+gst))
 
 ; Calculate declination:
 dec = atan(tan(lat)*(1.-f)^2)
+
+; Optional output of Right Ascension and Declination
+ra_dec = [ra,dec] * 180./!pi
 
 ; Calculate normalized position vector:
 rnx = cos(ra)*cos(dec)

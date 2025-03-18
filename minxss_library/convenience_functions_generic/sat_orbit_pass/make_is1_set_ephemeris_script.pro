@@ -22,9 +22,10 @@
 ;   11/2/16 Tom Woods   Updated with /latest option so filename is set_ephemeris_latest.prc
 ;   12/6/18 Tom Woods   Updated for MinXSS-2 file saveset
 ;	02/26/22 Tom Woods	Created for IS1 using make_set_ephemeris.pro used by MinXSS
+;	01/27/23 Tom Woods  Updated with Taiwan ground station option instead of India default
 ;
 PRO make_is1_set_ephemeris_script, yr, mo, day, hr, mn, sec, $
-			script_path = script_path, verbose = verbose, latest=latest
+			script_path = script_path, verbose = verbose, latest=latest, taiwan=taiwan
 
   ;
   ; Set script path
@@ -48,6 +49,8 @@ PRO make_is1_set_ephemeris_script, yr, mo, day, hr, mn, sec, $
     ;  ***** changed for IS-1 *****
     path_name = getenv('TLE_dir') + slash + 'India' + slash + 'scripts'
     ; else path_name is empty string
+    ; Updated 1/27/23 for Taiwan option
+    if keyword_set(taiwan) then path_name = getenv('TLE_dir') + slash + 'Taiwan' + slash + 'scripts'
   ENDELSE
   IF strlen(path_name) GT 0 THEN BEGIN
     ; check if need to remove end of string back slash
@@ -65,6 +68,11 @@ if keyword_set(latest) then begin
   endif
   path_dropbox = path2_name + 'India' + slash  ; ***** changed for IS-1 *****
   file_passes = 'passes_latest_INDIA.sav'
+  if keyword_set(taiwan) then begin
+  	; Updated 1/27/23 for Taiwan option
+  	path_dropbox = path2_name + 'Taiwan' + slash  ; ***** changed for IS-1 *****
+  	file_passes = 'passes_latest_TAIWAN.sav'
+  endif
   ;  restore "passes" data structure
   restore, path_dropbox + file_passes
   jd_now = systime( /julian ) - 5.5/24.D0  ; also convert IST to UT ***** changed for IS-1 *****
@@ -88,7 +96,8 @@ endif else begin
   if (n_params() lt 5) then mn = 0.
   if (n_params() lt 4) then hr = 12.0
   if (n_params() lt 3) then begin
-     print, 'USAGE:  make_is1_set_ephemeris_script, yr, mo, day, hr, mn, sec, script_path=script_path, /verbose'
+     print, 'USAGE:  make_is1_set_ephemeris_script, yr, mo, day, hr, mn, sec  '
+     print, '                                      [ script_path=script_path, /verbose, /taiwan ]'
      print, 'ERROR:  invalid parameters (need at least 3), so no Script file created.'
      return
   endif
