@@ -48,10 +48,12 @@
 ;	2022-02-28  Tom Woods		Added option to save SCI packets group #1 (incomplete packets)
 ;	2022-03-25	Tom Woods		Fixed the ADCS data in Beacon (missed a 8-bit flag for ADCS)
 ;	2022-04-23	Tom Woods		Added option to save SCI packets group #2 (incomplete packets)
+;	2022-10-05	Tom Woods		Added ADCS_CSS packet reading code (CSS option)
+;	2023-02-18	Tom Woods		Added SD_HK packet reading code (SD option)
 ;
 ;+
 pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
-						p1sci=p1sci, p2sci=p2sci, hexdump=hexdump, fm=fm, $
+						css=css, sd=sd, p1sci=p1sci, p2sci=p2sci, hexdump=hexdump, fm=fm, $
 						VERBOSE=VERBOSE, DEBUG=DEBUG, DIR_LOG=DIR_LOG, _extra=_extra
 
   ; Clear any values present in the output variables, needed since otherwise the input values get returned when these packet types are missing from the input file
@@ -59,13 +61,15 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   junk = temporary(log)
   junk = temporary(dump)
   junk = temporary(hk)
+  junk = temporary(css)
+  junk = temporary(sd)
 
   ; Define initial quantum of packet array length
   N_CHUNKS = 500
 
   if (n_params() lt 1) then begin
     print, 'USAGE: is1_daxss_beacon_read_packets, input_file, hk=hk, sci=sci, log=log, dump=dump, $'
-    print, '              				fm=fm, /hexdump, /verbose, /debug'
+    print, '              				css=css, sd=sd, fm=fm, /hexdump, /verbose, /debug'
     input=' '
   endif
   IF size(input[0], /TYPE) EQ 7 THEN if (strlen(input) lt 2) then begin
@@ -142,18 +146,24 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   PACKET_ID_DUMP = 177	; 0xB1
   PACKET_ID_SCI = 178	; 0xB2
   PACKET_ID_HK = 1		; 0x01
+  PACKET_ID_CSS = 210	; 0xD2
+  PACKET_ID_SD = 42		; 0x2A
 
   ; Packet LEN values (actual packet length total = this value + 7)
   PACKET_LEN_LOG = 119		; 0x77
   PACKET_LEN_DUMP = 151		; 0x97
   PACKET_LEN_SCI = 245		; 0xF5
   PACKET_LEN_HK = 249		; 0xF9
+  PACKET_LEN_CSS = 53		; 0x35
+  PACKET_LEN_SD = 165		; 0xA5
 
   ; DAXSS does NOT have Playback option at the instrument level
   ;PACKET_ID_LOG_PLAYBACK = PACKET_ID_LOG + '40'X
   ;PACKET_ID_DUMP_PLAYBACK = PACKET_ID_DUMP + '40'X
   ;PACKET_ID_SCI_PLAYBACK = PACKET_ID_SCI + '40'X
   ;PACKET_ID_HK_PLAYBACK = PACKET_ID_HK + '40'X
+  ;PACKET_ID_CSS_PLAYBACK = PACKET_ID_CSS + '40'X
+  ;PACKET_ID_SD_PLAYBACK = PACKET_ID_SD + '40'X
 
   ;  doPause allows interactive flow of printing for the Hex Dump option
   if keyword_set(hexdump) then doPause = 1 else doPause = 0
@@ -187,6 +197,37 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
     enable_sps: 0B, enable_x123: 0B, enable_inst_heater: 0B, enable_sdcard: 0B, $
 	dump_spares: 0UL, dump_data: uintarr(DUMP_ARRAY_NUM), $
 	checkbytes: 0L, SyncWord: 0.0, $
+    checkbytes_calculated: 0L, checkbytes_valid: 1B  }
+
+  ;
+  ; ADCS_CSS (coarse sun sensor from XACT) Packet Structure definition
+  ;
+  css_count = 0L
+  CSS_DIODE_NUM = 4
+  CSS_ARRAY_NUM = 16
+  css_struct1 = { apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, $
+  	time: 0.0D0, is1_time: 0.0D0, css_angle_offset_deg: 0.0, css_angle_offset_alt_deg: 0.0, $
+    css_sun_vector_body1: 0.0, css_sun_vector_body2: 0.0, css_sun_vector_body3: 0.0, $
+	css_sun_vector_status: 0B, css_num_diodes_used: bytarr(CSS_DIODE_NUM), $
+	css_raw_data: uintarr(CSS_ARRAY_NUM), $
+	css_sun_vector_enabled: 0B, css_sun_sensor_used: 0B, css_test_mode: 0B, css_spares: 0UL, $
+	checkbytes: 0L, SyncWord: 0.0, $
+    checkbytes_calculated: 0L, checkbytes_valid: 1B  }
+
+  ;
+  ; SD_HK (SD-card housekeeping) Packet Structure definition
+  ;
+  sd_count = 0L
+  SD_PARTITIONS_NUM = 6L
+  sd_partition_struct1 = { start: 0UL, size: 0UL, write: 0UL, read: 0UL, pbk: 0UL, id: 0UL }
+  sd_partition_all = replicate( sd_partition_struct1, SD_PARTITIONS_NUM )
+  sd_struct1 = { apid: 0, seq_flag: 0, seq_count: 0, data_length: 0L, $
+  	time: 0.0D0, is1_time: 0.0D0, write_cnt: 0UL, read_cnt: 0UL, $
+  	write_state: 0, card0_state: 0, card1_state: 0, $
+  	card_sel: 0, read_state: 0, pbk_state: 0, $
+  	read_stream: 0, read_id: 0, read_end_time: 0UL, $
+  	partitions: sd_partition_all, $
+	checkbytes: 0L, SyncWord: 0UL, $
     checkbytes_calculated: 0L, checkbytes_valid: 1B  }
 
   ;
@@ -292,6 +333,8 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   ;			0x08 0xB0 xx xx 0x77 ...   LOG Packet
   ;			0x08 0xB1 xx xx 0x97 ...   DUMP Packet
   ;			0x08 0xB2 xx xx 0xF5 ...   SCI Packet
+  ;			0x08 0xD2 xx xx 0x35 ...   ADCS_CSS Packet
+  ;			0x08 0x2A xx xx 0x21 ...   SD_HK Packet
   ;
   SpecIndex = 1
   ; index = 1L
@@ -307,11 +350,13 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
 
    while (index lt (inputSize-1)) do begin
     ;if (data[index-1] eq SYNC_BYTE1) and (data[index] eq SYNC_BYTE2) then begin
-    ; TW: 2020-May: do search on DAXSS CCSDS Packet Header (LOG, DUMP, or SCI)
+    ; TW: 2020-May: do search on DAXSS CCSDS Packet Header (LOG, DUMP, SCI, or CSS)
     if ((data[index] eq CCSDS_BYTE1) and (data[index+4] eq CCSDS_BYTE5)) and $
     			(((data[index+1] eq PACKET_ID_HK) and (data[index+5] eq PACKET_LEN_HK)) OR $
     			 ((data[index+1] eq PACKET_ID_LOG) and (data[index+5] eq PACKET_LEN_LOG)) OR $
     			 ((data[index+1] eq PACKET_ID_DUMP) and (data[index+5] eq PACKET_LEN_DUMP)) OR $
+    			 ((data[index+1] eq PACKET_ID_CSS) and (data[index+5] eq PACKET_LEN_CSS)) OR $
+    			 ((data[index+1] eq PACKET_ID_SD) and (data[index+5] eq PACKET_LEN_SD)) OR $
     			 ((data[index+1] eq PACKET_ID_SCI) and (data[index+5] eq PACKET_LEN_SCI))) then begin
 
       ; first search for next Sync word (next Packet)
@@ -532,9 +577,136 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
           dump_struct1.SyncWord = (long(data[pindex-2]) + ishft(long(data[pindex-1]),8))  ;none
 
           if (dump_count eq 0) then dump = replicate(dump_struct1, N_CHUNKS) else $
-            if dump_count ge n_elements(xactimage) then dump = [dump, replicate(dump_struct1, N_CHUNKS)]
+            if dump_count ge n_elements(dump) then dump = [dump, replicate(dump_struct1, N_CHUNKS)]
           dump[dump_count] = dump_struct1
           dump_count += 1
+        endif
+
+      endif else if (packet_id eq PACKET_ID_CSS) then begin
+        ;
+        ;  ************************
+        ;  ADCS_CSS Packet (if user asked for it)
+        ;  ************************
+        ;
+        if arg_present(css) and ((pindex+PACKET_LEN_CSS+7) le data_length) then begin
+
+          css_struct1.apid = packet_id_full  ; keep Playback bit in structure
+          css_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
+          css_struct1.seq_count = packet_seq_count
+          css_struct1.data_length = packet_length
+          css_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+		  css_struct1.is1_time = packet_time  ; No Way to figure out GPS time for CSS packets !
+		  ; MSB first for CSS 16-bit data
+          css_struct1.css_sun_vector_body1 = (fix(data[pindex+13]) + ishft(fix(data[pindex+12]),8)) $
+          									*  0.0001  ; convert to unit vector
+          css_struct1.css_sun_vector_body2 = (fix(data[pindex+15]) + ishft(fix(data[pindex+14]),8)) $
+          									*  0.0001  ; convert to unit vector
+          css_struct1.css_sun_vector_body3 = (fix(data[pindex+17]) + ishft(fix(data[pindex+16]),8)) $
+          									*  0.0001  ; convert to unit vector
+          ; calculate sun angle off from Z axis (IS1 sun-side)
+          css_struct1.css_angle_offset_deg = acos(abs(css_struct1.css_sun_vector_body3) < 1.0) * 180./!pi
+          css_sun_vector_1_2 = sqrt(css_struct1.css_sun_vector_body1^2. + $
+          							css_struct1.css_sun_vector_body2^2. ) < 1.0
+          css_struct1.css_angle_offset_alt_deg = asin(css_sun_vector_1_2) * 180./!pi
+
+		  css_struct1.css_sun_vector_status = data[pindex+18]
+		  for ii=0,CSS_DIODE_NUM-1 do begin
+ 		    css_struct1.css_num_diodes_used[ii] = data[pindex+19+ii]
+ 		  endfor
+ 		  for ii=0,CSS_ARRAY_NUM-1 do begin
+ 		    css_struct1.css_raw_data[ii] = ulong(data[pindex+24+ii*2]) + $
+ 		    				ishft(ulong(data[pindex+23+ii*2]),8) ; none
+ 		  endfor
+		  css_struct1.css_sun_vector_enabled = data[pindex+55]
+		  css_struct1.css_sun_sensor_used = data[pindex+56]
+		  css_struct1.css_test_mode = data[pindex+57]
+		  ; 3 spare bytes at end of CSS packet
+		  css_struct1.css_spares = (long(data[pindex+58]) + $
+		  	ishft(long(data[pindex+59]),8) + ishft(long(data[pindex+60]),16))
+
+          pkt_expectedCheckbytes = fletcher_checkbytes(data[pindex:pindex+60])
+          pkt_expectedCheckbytes = long(pkt_expectedCheckbytes[0]) + $
+          						ishft(long(pkt_expectedCheckbytes[1]),8)
+          pkt_actualCheckbytes = 0L ; none  to read from packet
+
+          css_struct1.checkbytes = pkt_actualCheckbytes
+          css_struct1.checkbytes_calculated = pkt_expectedCheckbytes
+          ; css_struct1.checkbytes_valid = pkt_actualCheckbytes EQ pkt_expectedCheckbytes
+          ; css_struct1.SyncWord = (long(data[pindex-2]) + ishft(long(data[pindex-1]),8))  ;none
+
+          if (css_count eq 0) then css = replicate(css_struct1, N_CHUNKS) else $
+            if css_count ge n_elements(css) then css = [css, replicate(css_struct1, N_CHUNKS)]
+          css[css_count] = css_struct1
+          css_count += 1
+
+        endif
+
+      endif else if (packet_id eq PACKET_ID_SD) then begin
+        ;
+        ;  ************************
+        ;  SD_HK Packet (if user asked for it)
+        ;  ************************
+        ;
+        if arg_present(sd) and ((pindex+PACKET_LEN_SD+7) le data_length) then begin
+
+          sd_struct1.apid = packet_id_full  ; keep Playback bit in structure
+          sd_struct1.seq_flag = ishft(long(data[pindex+2] AND 'C0'X),-6)
+          sd_struct1.seq_count = packet_seq_count
+          sd_struct1.data_length = packet_length
+          sd_struct1.time = packet_time   ; millisec (0.1 msec resolution)
+		  sd_struct1.is1_time = packet_time  ; No Way to figure out GPS time for SD_HK packets !
+
+		  ; LSB first for IS-1 16-bit data
+          sd_struct1.write_cnt = (long(data[pindex+12]) + ishft(long(data[pindex+13]),8))
+          sd_struct1.read_cnt = (long(data[pindex+14]) + ishft(long(data[pindex+15]),8))
+
+		  sd_struct1.write_state = data[pindex+16]
+		  sd_struct1.card0_state = data[pindex+17]
+		  sd_struct1.card1_state = data[pindex+18]
+		  sd_struct1.card_sel = data[pindex+19]
+		  sd_struct1.read_state = data[pindex+20]
+		  sd_struct1.pbk_state = data[pindex+21]
+		  sd_struct1.read_stream = data[pindex+22]
+		  sd_struct1.read_id = data[pindex+23]
+
+		  sd_struct1.read_end_time = ulong(data[pindex+24]) + ishft(ulong(data[pindex+25]),8) + $
+            ishft(ulong(data[pindex+26]),16) + ishft(ulong(data[pindex+27]),24)
+
+		  for ii=0,SD_PARTITIONS_NUM-1 do begin
+		  	sd_struct1.partitions[ii].start = ulong(data[pindex+28+ii*24]) + $
+		  			ishft(ulong(data[pindex+29+ii*24]),8) + $
+            		ishft(ulong(data[pindex+30+ii*24]),16) + ishft(ulong(data[pindex+31+ii*24]),24)
+		  	sd_struct1.partitions[ii].size = ulong(data[pindex+32+ii*24]) + $
+		  			ishft(ulong(data[pindex+33+ii*24]),8) + $
+            		ishft(ulong(data[pindex+34+ii*24]),16) + ishft(ulong(data[pindex+35+ii*24]),24)
+		  	sd_struct1.partitions[ii].write = ulong(data[pindex+36+ii*24]) + $
+		  			ishft(ulong(data[pindex+37+ii*24]),8) + $
+            		ishft(ulong(data[pindex+38+ii*24]),16) + ishft(ulong(data[pindex+39+ii*24]),24)
+		  	sd_struct1.partitions[ii].read = ulong(data[pindex+40+ii*24]) + $
+		  			ishft(ulong(data[pindex+41+ii*24]),8) + $
+            		ishft(ulong(data[pindex+42+ii*24]),16) + ishft(ulong(data[pindex+43+ii*24]),24)
+		  	sd_struct1.partitions[ii].pbk = ulong(data[pindex+44+ii*24]) + $
+		  			ishft(ulong(data[pindex+45+ii*24]),8) + $
+            		ishft(ulong(data[pindex+46+ii*24]),16) + ishft(ulong(data[pindex+47+ii*24]),24)
+		  	sd_struct1.partitions[ii].id = ulong(data[pindex+48+ii*24]) + $
+		  			ishft(ulong(data[pindex+49+ii*24]),8) + $
+            		ishft(ulong(data[pindex+50+ii*24]),16) + ishft(ulong(data[pindex+51+ii*24]),24)
+		  endfor
+          pkt_expectedCheckbytes = fletcher_checkbytes(data[pindex:pindex+27])
+          pkt_expectedCheckbytes = long(pkt_expectedCheckbytes[0]) + $
+          						ishft(long(pkt_expectedCheckbytes[1]),8)
+          pkt_actualCheckbytes = 0L ; none  to read from packet
+
+          sd_struct1.checkbytes = pkt_actualCheckbytes
+          sd_struct1.checkbytes_calculated = pkt_expectedCheckbytes
+          ; sd_struct1.checkbytes_valid = pkt_actualCheckbytes EQ pkt_expectedCheckbytes
+          ; sd_struct1.SyncWord = (long(data[pindex-2]) + ishft(long(data[pindex-1]),8))  ;none
+
+          if (sd_count eq 0) then sd = replicate(sd_struct1, N_CHUNKS) else $
+            if sd_count ge n_elements(sd) then sd = [sd, replicate(sd_struct1, N_CHUNKS)]
+          sd[sd_count] = sd_struct1
+          sd_count += 1
+
         endif
 
 	  endif else if (packet_id eq PACKET_ID_SCI) then begin
@@ -1167,7 +1339,7 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
           hk_struct1.bat1_temp_conv = float(barray,0)
 
 		  hk_struct1.is1_mode = fix(data[pindex+255])
-		  
+
 		  ; Override the eclipse flag in cases that it should've been triggered. Part way through the mission, we lowered the CSS thresholds in the onboard logic that determine the eclipse flag.
 		  IF hk_struct1.eclipse_state EQ 0 THEN BEGIN
 		    IF hk_struct1.sp0_volt LT 17 OR hk_struct1.sp1_volt LT 17 OR hk_struct1.sp2_volt LT 17 THEN BEGIN
@@ -1211,6 +1383,8 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
   if arg_present(log) and n_elements(log) ne 0 then log = log[0:log_count-1]
   if arg_present(sci) and n_elements(sci) ne 0 then sci = sci[0:sci_count-1]
   if arg_present(dump) and n_elements(dump) ne 0 then dump = dump[0:dump_count-1]
+  if arg_present(css) and n_elements(css) ne 0 then css = css[0:css_count-1]
+  if arg_present(sd) and n_elements(sd) ne 0 then sd = sd[0:sd_count-1]
   if arg_present(hk) and n_elements(hk) ne 0 then hk = hk[0:hk_count-1]
   if arg_present(p1sci) and n_elements(p1sci) ne 0 then p1sci = p1sci[0:p1sci_count-1]
   if arg_present(p2sci) and n_elements(p2sci) ne 0 then p2sci = p2sci[0:p2sci_count-1]
@@ -1247,6 +1421,8 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
     print, '*** daxss_read_packets finished:'
     if (log_count gt 0) then  print, 'Number of LOG  Packets = ', log_count
     if (dump_count gt 0) then print, 'Number of DUMP Packets = ', dump_count
+    if (css_count gt 0) then print, 'Number of ADCS_CSS Packets = ', css_count
+    if (sd_count gt 0) then print, 'Number of SD_HK Packets = ', sd_count
     if (sci_count gt 0) then  print, 'Number of SCI  Packets = ', sci_count,  ' and number of errors = ', sci_err_count
     if (p1sci_count gt 0) then  print, 'Number of SCI-1  Packets = ', p1sci_count
     if (p2sci_count gt 0) then  print, 'Number of SCI-2  Packets = ', p2sci_count
@@ -1256,6 +1432,8 @@ pro is1_daxss_beacon_read_packets, input, hk=hk, sci=sci, log=log, dump=dump, $
 		printf, log_lun, "***** is1_daxss_beacon_read_packets() finished ***** "
 		printf, log_lun, "Number of LOG  Packets = " + strtrim(log_count,2)
 		printf, log_lun, "Number of DUMP Packets = " + strtrim(dump_count,2)
+		printf, log_lun, "Number of CSS  Packets = " + strtrim(css_count,2)
+		printf, log_lun, "Number of SD   Packets = " + strtrim(sd_count,2)
 		printf, log_lun, "Number of SCI  Packets = " + strtrim(sci_count,2)
 		printf, log_lun, "    number of SCI    errors  = " + strtrim(sci_err_count,2)
 		printf, log_lun, "    number of SCI-1  Packets = " + strtrim(p1sci_count,2)
