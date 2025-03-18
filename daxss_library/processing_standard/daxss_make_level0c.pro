@@ -21,6 +21,8 @@
 ;     yyyydoy [long]:       The date in yyyydoy format that you want to process.
 ;     yyyymmdd [long]:      The date in yyyymmdd format that you want to process.
 ;	  use_csv_file:			Use IIST data processing Level 0 product (CSV file format, merged)
+;	  merged_raw:    		Option to use 2024 merged Level 0 packet file instead of daily-produced files
+;								This is used with the use_csv_file option.
 ;
 ; KEYWORD PARAMETERS:
 ;   VERBOSE: Set this to print out processing messages while running.
@@ -58,11 +60,18 @@
 ; HISTORY
 ;	2022-02-27	T. Woods, updated for IS-1 paths
 ;	2022-03-16	T. Woods, updated with use_csv_file option to use IIST processed Level 0 CSV file
+;	2022-10-05  T. Woods, updated with including ADCS_CSS packets into DAXSS L0C files
+;	2023-02-18  T. Woods, updated with including SD_HK packets into DAXSS L0C files
+;	2023-10-06	T. Woods, updated to use Aug-28-2023 IS-1 Level 0 CSV file to recover the missing data
+;					(issue is that daxss_sci_level_0.csv dropped from 307MB to 114MB on Aug-29-2023)
+;					(this update is actually in daxss_make_level0b.pro)
+;	2024-02-02	T. Woods, added /merged_raw option to use the Indian new merged Level 0 packet file
 ;
 ;+
-PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyydoy = yyyydoy, $
-						            yyyymmdd = yyyymmdd, use_csv_file=use_csv_file, version=version, $
-                        VERBOSE=VERBOSE, DEBUG=DEBUG, extra = _extra
+PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, $
+					merged_raw=merged_raw, yyyydoy = yyyydoy, $
+					yyyymmdd = yyyymmdd, use_csv_file=use_csv_file, version=version, $
+                    VERBOSE=VERBOSE, DEBUG=DEBUG, extra = _extra
 
   ; Defaults
   fm = 3	; changed from FM4 to FM3 on 5/24/2022, TW
@@ -91,7 +100,8 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   	  hostname = strupcase(hostname_output[n_elements(hostname_output)-1])
   	  if (hostname eq 'MACD3750') then begin
   	  	; run daxss_make_level0b.pro
-  	  	daxss_make_level0b, verbose=VERBOSE
+  	  	daxss_make_level0b, verbose=VERBOSE, merged_raw=merged_raw
+  	  	;;; if keyword_set(verbose) then stop, 'STOPPED: DEBUG DAXSS Level 0B file...'
   	  endif else begin
   	  	message, /INFO, 'WARNING: DAXSS Level 0b file was not re-made !'
   	  endelse
@@ -127,10 +137,13 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
 	; IS1/DAXSS processing has its own reader code
   	;		use "diag" packets for the "dump" packets for FM3 so compatible with FM 1&2 code
   	; NEW 5/11/2022:  add DIR_LOG option to log the SCI packet issues
+  	; NEW 10/5/2022:  add ADCS_CSS packets
+  	; NEW 2/18/2023:  add SD_HK packets
   	if keyword_set(verbose) then DIR_LOG = getenv('minxss_data') + path_sep() + $
   			flightModelString + path_sep() + 'log' + path_sep() + 'daxss_read' + path_sep()
     is1_daxss_beacon_read_packets, filename, hk=hkTmp, sci=sciTmp, log=logTmp, dump=dumpTmp, $
-    	p1sci=p1sciTmp, p2sci=p2sciTmp, verbose=verbose, dir_log=DIR_LOG, _extra=_extra
+    	css=cssTmp, sd=sdTmp, p1sci=p1sciTmp, p2sci=p2sciTmp, verbose=verbose, $
+    	dir_log=DIR_LOG, _extra=_extra
 
 	; Count number of HK packets
   	IF hkTmp NE !NULL then hk_count += n_elements(hkTmp)
@@ -160,6 +173,15 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
 
     IF dumpTmp NE !NULL AND dump EQ !NULL THEN dump = dumpTmp $
     ELSE IF dumpTmp NE !NULL AND dump NE !NULL THEN dump = [dump, dumpTmp]
+
+	; NEW 10/5/2022: CSS packets
+    IF cssTmp NE !NULL AND css EQ !NULL THEN css = cssTmp $
+    ELSE IF cssTmp NE !NULL AND css NE !NULL THEN css = [css, cssTmp]
+
+	; NEW 2/18/2023: SD packets
+    IF sdTmp NE !NULL AND sd EQ !NULL THEN sd = sdTmp $
+    ELSE IF sdTmp NE !NULL AND sd NE !NULL THEN sd = [sd, sdTmp]
+
   ENDFOR ; loop through telemetry files
 
   ;
@@ -179,6 +201,12 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   ENDIF
   IF log NE !NULL THEN minxss_sort_telemetry, log, fm=fm, verbose=verbose, _extra=_extra
   IF dump NE !NULL THEN minxss_sort_telemetry, dump, fm=fm, verbose=verbose, _extra=_extra
+
+  ; Don't SORT CSS packets as  "time" is just seconds since Reset
+  ; IF css NE !NULL THEN minxss_sort_telemetry, css, fm=fm, verbose=verbose, _extra=_extra
+
+  ; Don't SORT SD packets as  "time" is just seconds since Reset
+  ; IF sd NE !NULL THEN minxss_sort_telemetry, sd, fm=fm, verbose=verbose, _extra=_extra
 
   ; 2022-04-22 T. Woods:  don't sort p1sci and p2sci packets as only using them to debug the SCI packet extraction issues
   ;  Allow same time values in the p1sci packets, so use the /no_unique option
@@ -216,6 +244,22 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
     dump.time_human = jpmjd2iso(dump.time_jd, /NO_T_OR_Z)
   ENDIF
 
+  ; Don't add more Time Variables to CSS packet
+  ; Because CSS packets "time" is just seconds since Reset
+  ;IF css NE !NULL THEN BEGIN
+  ;  css = JPMAddTagsToStructure(css, 'time_gps', 'double')
+  ;  css = JPMAddTagsToStructure(css, 'time_jd', 'double')
+  ;  css = JPMAddTagsToStructure(css, 'time_iso', 'string')
+  ;  css = JPMAddTagsToStructure(css, 'time_human', 'string')
+  ;  css.time_gps = css.time + time_offset_sec
+  ;  css.time_jd = gps2jd(css.time_gps)
+  ;  css.time_iso = jpmjd2iso(css.time_jd)
+  ;  css.time_human = jpmjd2iso(css.time_jd, /NO_T_OR_Z)
+  ;ENDIF
+
+  ; Don't add more Time Variables to SD packet
+  ; Because SD packets "time" is just seconds since Reset
+
   ; If no YYYYDOY, grab one from the HK packet
   IF yyyydoy EQ !NULL THEN BEGIN
 	  jdmax = gps2jd(max(hk.daxss_time)) < systime(/julian)
@@ -240,7 +284,7 @@ PRO daxss_make_level0c, telemetryFileNamesArray = telemetryFileNamesArray, yyyyd
   IF keyword_set(verbose) THEN message, /INFO, 'Saving DAXSS sorted packets into ' + fullFilename
   file_description = 'DAXSS Level 0c data ' + '; Year = '+strmid(yyyydoy, 0, 4) + '; DOY = ' + $
         strmid(yyyydoy, 4, 3) + ' ... FILE GENERATED: '+ JPMsystime()
-  save, hk, sci, p1sci, p2sci, log, dump, FILENAME = fullFilename, /COMPRESS, description = file_description
+  save, hk, sci, p1sci, p2sci, log, dump, css, sd, FILENAME = fullFilename, /COMPRESS, description = file_description
 
   daxss_make_netcdf, '0c', version=version, verbose=verbose
 
