@@ -51,6 +51,8 @@
 ;
 ; HISTORY:
 ;	6/27/2022	T. Woods, daxss_make_level1.pro adopted for daxss_make_level1new.pro
+;	5/7/2024	T. Woods, updated with new daxss_dead_time_slow_only.pro call to fix dead-time correction
+;	1/28/2024	T. Woods, It is more accurate to use the updated daxss_dead_time.pro
 ;
 ;+
 PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
@@ -70,7 +72,8 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
     message,/INFO, "daxss_make_level1 is processing data for FM " + fm_str $
     	+':  START at '+JPMsystime()
   endif
-  IF version EQ !NULL THEN version = '2.0.0'   ; updated 6/27/2022 T.Woods
+  ;; IF version EQ !NULL THEN version = '2.0.0'   ; updated 6/27/2022 T.Woods
+  IF version EQ !NULL THEN version = '2.1.0'   ; updated 5/7/2024 T.Woods
   IF cal_version EQ !NULL THEN cal_version = '2.0.0'
 
   ; Constants
@@ -104,8 +107,8 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
 ;  wradio1 = where(DAXSS_LEVEL0D.x123_radio_flag eq 1, num_radio1)
 ;  if (num_radio1 gt 0) then DAXSS_LEVEL0D[wradio1].x123_accum_time -= DAXSS_LEVEL0D[wradio1].x123_radio_flag * 263L
   accum_time = (DAXSS_LEVEL0D.x123_accum_time/1000.) > 0.001  ; force accum_time to not be zero
-  live_time = DAXSS_LEVEL0D.x123_live_time/1000.
-  avg_time = (accum_time + live_time)/2.
+  live_time = (DAXSS_LEVEL0D.x123_live_time/1000.) > 0.001
+  avg_time = (accum_time + live_time)/2.   ; note that avg_time is same as using accum_time and f_time correction
   real_time  =  DAXSS_LEVEL0D.x123_real_time/1000.
   ACCUM_TIME_FACTOR = 0.6  ; new check 5/28/2022 to exclude data when accum_time < this_factor * real_time
   REAL_TIME_LIMIT = 2.9		; something is wrong if the integration time ever goes below 3 sec
@@ -114,7 +117,10 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
   slow_count_rate = DAXSS_LEVEL0D.x123_slow_count / accum_time
 
   FAST_LIMIT = 5.0E5  ; New Limit for FM-3 (T. Woods, 6/27/2022)
-  SLOW_LIMIT = 1.2E5
+  ; 3/10/2025: T. Woods, Change SLOW_LIMIT from 1.2E5 to 1.4E5 to be consistent with new Dead-Time-Correction
+  ;            This change is consistent with DEAD_TIME_CORRECTION_LIMIT of 2.0 and M1 flare limit
+  SLOW_LIMIT = 1.4E5  ; New Limit (was 1.2E5) for changes to dead-time-correction (T. Woods, 5/7/2024)
+					; Seen FAST up to 2.7E6 for large flare but then SLOW goes to zero counts
 
   TANGENT_RAY_HEIGHT_MIN = 300.0	; define how low is allowed for solar slant path
 
@@ -253,9 +259,35 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
   ;
   ;	Dead-Time is calculated using FAST and SLOW counts (cps) for the whole mission first
   ;
-  dead_time_factor = daxss_dead_time( fast_count_rate, slow_count_rate, flag_valid=deadtime_flag, $
-  							uncertainty=deadtime_uncertainty )
-  minxsslevel1_x123.deadtime_correction_factor = dead_time_factor
+  ;; OLD CODE ;; dead_time_factor = daxss_dead_time( fast_count_rate, slow_count_rate, flag_valid=deadtime_flag, $
+  ;; OLD CODE ;; 							uncertainty=deadtime_uncertainty )
+  ;
+  ; New Dead-Time Correction with Slow Counts Only and removal of divide by 2 (T. Woods, 5/7/2024)
+  ;; dead_time_factor = daxss_dead_time_slow_only( slow_count_rate, flag_valid=deadtime_flag, $
+  ;;							uncertainty=deadtime_uncertainty )
+
+  ;  1/28/2025:  It is more accurate to use the original daxss_dead_time.pro (but updated)
+  ;			This version then agrees with  slow or Spectrum divided by avg_time (accum & live average)
+  ; dead_time_factor = daxss_dead_time( fast_count_rate, slow_count_rate, flag_valid=deadtime_flag, $
+  ; 							uncertainty=deadtime_uncertainty )
+
+  ; 2/22/2025:  T. Woods, new daxss_dead_time_avg_time.pro to use avg_time and
+  ;						to use also slow dead time correction, the "time" inputs are millisec
+  dead_time_factor = daxss_dead_time_avg_time( slow_count_rate, accum_time*1000., live_time*1000., $
+  				flag_valid=deadtime_flag, uncertainty=deadtime_uncertainty )
+
+  ;  1/30/2025:  The ratio of (avg_time / accum_time) might be more accurate for fixing differences on 2022/088
+  dead_time_factor_time_based = accum_time / (avg_time > 0.1)
+  DEAD_TIME_MAXIMUM = 3.0
+  wbad = where( (avg_time lt 0.1) OR (dead_time_factor_time_based gt DEAD_TIME_MAXIMUM), num_bad )
+  if (num_bad gt 2) then dead_time_factor_time_based[wbad] = DEAD_TIME_MAXIMUM
+
+  ;  1/30/25: T. Woods - use dead_time_factor_time_based (as better option versus dead_time_factor)
+  ; dead_time_factor_best = dead_time_factor_time_based
+
+  ;  2/22/2025:  T. Woods - changed to usig new daxss_dead_time_avg_time.pro
+  dead_time_factor_best = dead_time_factor
+  minxsslevel1_x123.deadtime_correction_factor = dead_time_factor_best
   minxsslevel1_x123.deadtime_uncertainty = deadtime_uncertainty
 
   ;
@@ -272,7 +304,7 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
 
   	;		spectrum_corrected = daxss_apply_rmf(spectrum_cps) * $
   	;				daxss_dead_time( fast_count_rate, slow_count_rate )
-  	spectrum_corrected = daxss_apply_rmf(energy_array, spectrum_cps) * dead_time_factor[ii]
+  	spectrum_corrected = daxss_apply_rmf(energy_array, spectrum_cps) * dead_time_factor_best[ii]
 
   	;		spectrum_corrected2 = daxss_subtract_background(spectrum_corrected)
   	spectrum_corrected2 = daxss_subtract_background(spectrum_corrected, fit_background=fit_background1)
