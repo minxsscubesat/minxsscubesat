@@ -92,7 +92,9 @@ daxss_level0d_one = CREATE_STRUCT( sci[0], 'time_yd', 0.0D0, $
 					'adcs_mode', 0.0, 'eclipse', 0, $
 					'longitude', 0.0, 'latitude', 0.0, 'altitude', 0.0, $
 					'sun_right_ascension', 0.0, 'sun_declination', 0.0, $
-					'earth_sun_distance', 0.0, 'spacecraft_in_saa', 0.0  )
+					'earth_sun_distance', 0.0, 'spacecraft_in_saa', 0.0, $
+					'solar_zenith_angle', 0.0, 'tangent_ray_height', 0.0, $
+					'trh_longitude', 0.0, 'trh_latitude', 0.0  )
 
 ; make an array for the Level 0D data
 num_sci = n_elements(sci)
@@ -147,6 +149,16 @@ sunVector = sunvec(jd = daxss_level0d.time_jd, r = earth_sun_distance, alpha = r
 daxss_level0d.earth_sun_distance = earth_sun_distance ; [AU]
 daxss_level0d.sun_right_ascension = right_ascension   ; [º]
 daxss_level0d.sun_declination = declination           ; [º]
+
+; Added  solar_zenith_angle  and  tangent_ray_height  for Version 2.1
+solar_zenith_altitude, daxss_level0d.time_yd, daxss_level0d.longitude, $
+				daxss_level0d.latitude, daxss_level0d.altitude, sza, trh, $
+				trh_longitude, trh_latitude
+daxss_level0d.solar_zenith_angle = sza
+daxss_level0d.tangent_ray_height = trh
+; Added sun angles and tangent ray height location information for Version 2.2
+daxss_level0d.trh_longitude = trh_longitude
+daxss_level0d.trh_latitude = trh_latitude
 
 ;;
 ; 4. Save DAXSS Level 0D array of structures to disk
