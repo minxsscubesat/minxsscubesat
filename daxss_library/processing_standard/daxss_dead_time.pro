@@ -45,6 +45,7 @@
 ;
 ; HISTORY:
 ;	6/27/2022	T. Woods, daxss_dead_time.pro created for daxss_make_level1new.pro
+;	1/28/2025   T. Woods, Fixed the dead-time constant and removed the divide by 2 in the equation
 ;
 ;+
 function daxss_dead_time, fast_count_rate, slow_count_rate, $
@@ -60,7 +61,9 @@ function daxss_dead_time, fast_count_rate, slow_count_rate, $
 	tau_fast_resolve_time = 0.120E-6	; seconds - X123 parameter
 	tau_slow_peak_time = 1.200E-6		; seconds - X123 parameter
 	; tau_dead_time = 2.875E-6			; seconds - pre-flight SURF calibration
-	tau_dead_time = 1.95E-6   ; seconds - on-orbit calibration to remove no-beacon spikes
+	; tau_dead_time = 1.95E-6   ; seconds - on-orbit calibration to remove no-beacon spikes
+	; 5/7/2024 - switch back to the pre-flight calibration result (T. Woods)
+	tau_dead_time = 2.875E-6
 
 	DEAD_TIME_RELATIVE_UNCERTAINTY = 0.05	; estimated uncertainty is 5% based on testing in-flight data
 	DEAD_TIME_CORRECTION_LIMIT = 2.0		; set dead time correction valid if factor is less than 2.0
@@ -79,11 +82,16 @@ function daxss_dead_time, fast_count_rate, slow_count_rate, $
 	COMMON daxss_dead_time_orginal_common, c_in, c_meas_slow, c_meas_fast, c_dead_time_uncertainty
 	if (n_elements(c_in) le 1) or (do_table_calculation ne 0) then begin
 		c_in = findgen(100000L)*100.D0 + 1.
-		c_meas_slow = c_in * exp(-c_in*tau_dead_time/2.)
+		; c_meas_slow = c_in * exp(-c_in*tau_dead_time/2.)
+		; c_meas_fast = c_in * exp(-c_in*tau_fast_resolve_time/2.)
+		;  remove the divide by 2 for the slow deadtime calculation (T. Woods 1/28/2025)
+		c_meas_slow = c_in * exp(-c_in*tau_dead_time)
+		;  leave in the divide by 2 for the fast deadtime as its tau-constant is not fitted
 		c_meas_fast = c_in * exp(-c_in*tau_fast_resolve_time/2.)
 		; calculate uncertainty as difference for the c_meas_slow with different tau_dead_time values
-		c_meas_slow_low = c_in * exp(-c_in*tau_dead_time*(1.-DEAD_TIME_RELATIVE_UNCERTAINTY)/2.)
-		c_meas_slow_high = c_in * exp(-c_in*tau_dead_time*(1.+DEAD_TIME_RELATIVE_UNCERTAINTY)/2.)
+		;  remove the divide by 2 for the uncertainty calculation too (T. Woods 1/28/2025)
+		c_meas_slow_low = c_in * exp(-c_in*tau_dead_time*(1.-DEAD_TIME_RELATIVE_UNCERTAINTY))
+		c_meas_slow_high = c_in * exp(-c_in*tau_dead_time*(1.+DEAD_TIME_RELATIVE_UNCERTAINTY))
 		c_dead_time_uncertainty = abs(c_meas_slow_low - c_meas_slow_high)/2./c_meas_slow
 		if keyword_set(VERBOSE) then $
 			print, 'DEAD_TIME correction is good up to ', $
