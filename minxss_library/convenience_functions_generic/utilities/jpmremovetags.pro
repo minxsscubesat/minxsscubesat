@@ -61,7 +61,7 @@ FOREACH structureArrayElement, structure DO BEGIN
   hashTemporary = orderedhash(structureArrayElement, /EXTRACT)
   
   ; Loop through input tagNamesArray (works even if it's only a single tagName)
-  FOREACH tagToRemove, tagNamesArray DO BEGIN
+  FOREACH tagToRemove, strup(tagNamesArray) DO BEGIN
     IF hashTemporary.HasKey(tagToRemove) THEN BEGIN
       hashTemporary.Remove, tagToRemove 
     ENDIF

@@ -1,5 +1,5 @@
 ;
-;	dot.pro
+;	dots.pro
 ;	User symbol for plotting that is a dot
 ;
 ;	Pankratz
@@ -13,7 +13,7 @@ if keyword_set(help) then begin
   return
 end
 
-if keyword_set(large) then radius=1.0 else radius=4.0
+if keyword_set(large) then radius=2.0 else radius=4.0
 
 theta = 360. * (findgen(21) / 20.0) / !radeg
 usersym=transpose(reform([cos(theta)/radius,sin(theta)/radius],21,2))
