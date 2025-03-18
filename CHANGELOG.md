@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
+  
+### Changed
+  
+### Deprecated
+
+### Removed
+
+### Fixed
+* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
+* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+
+## [v5.0.0-minxss%2Bv3.0.0-daxss](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v5.0.0-minxss%2Bv3.0.0-daxss)
+
+### Added
 * New function to compute flare energy
 * Added DAXSS radiation background subtraction algorithm that uses the background signal in the X123 high energy range above 12 keV. This background correction is very close to zero most of the time but can be a few counts per second during major geomagnetic storms near Earth's polar regions.
 * Added some geometric calculations (e.g., solar zenith angle/altitude, tangent ray)
@@ -20,14 +34,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 * For the DAXSS data product archive, the TIME variable was changed to TAI seconds and a new JD_DATE variable is added for the Julian Day.
 * Metadata files now have corresponding version numbers
 * Some minor directory structure stuff (e.g., aia_code, ospex)
-  
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-* TODO: `xp.x123_estimated_xp_fc` is always = 2654.2224 but shouldn't be
-* TODO: `minxsslevel2.x123.spectrum_total_count_accuracy` and ""`_precision` are identical but shouldn't be
+
 
 ## [v4.0.0-minxss+v2.0.0-daxss](https://github.com/minxsscubesat/minxsscubesat/releases/tag/v4.0.0-minxss%2Bv2.0.0-daxss)
 
