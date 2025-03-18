@@ -36,6 +36,10 @@
 ; PROCEDURE:
 ;   1. Call daxss_make_level1_average for each time average desired (1 minute, 1 hour)
 ;   2. Move the files it generates to the Level 2 folder
+;
+;	HISTORY
+;	5/7/2024	T. Woods, updated to Version 2.1 default for changes to Level 1 (Ver 2.1)
+;
 ;+
 pro daxss_make_x123_average, average_minutes, fm=fm, version=version, VERBOSE=VERBOSE, DEBUG=DEBUG
 
@@ -58,7 +62,8 @@ if (fm gt 3) or (fm lt 3) then begin
 endif
 fm_str = strtrim(fm,2)
 
-IF version EQ !NULL THEN version = '2.0.0'
+;; IF version EQ !NULL THEN version = '2.0.0'
+IF version EQ !NULL THEN version = '2.1.0'	; updated to Version 2.1 default (T. Woods, 5/7/2024)
 IF ~isA(version, 'string') THEN BEGIN
   message, /INFO, JPMsystime() + " ERROR: version input must be a string"
   return
