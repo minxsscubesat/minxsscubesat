@@ -7,11 +7,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [Unreleased]
 
 ### Added
-*  Added DAXSS radiation background subtraction algorithm for Version 2.1 that uses the background signal in the X123 high energy range above 12 keV. This background correction is very close to zero most of the time but can be a few counts per second during major geomagnetic storms near Earth's polar regions.
+* New function to compute flare energy
+* Added DAXSS radiation background subtraction algorithm that uses the background signal in the X123 high energy range above 12 keV. This background correction is very close to zero most of the time but can be a few counts per second during major geomagnetic storms near Earth's polar regions.
+* Added some geometric calculations (e.g., solar zenith angle/altitude, tangent ray)
+* Added handful of convenience functions
+* Added handful of new analysis codes
   
 ### Changed
-*  Updated the DAXSS deadtime correction for the X123 to better match the flight solar signal levels (changes for Version 2.1 and Version 2.2).
-*  For the DAXSS data product archive, the TIME variable was changed to TAI seconds and a new JD_DATE variable is added for the Julian Day.
+* Major update to netCDF files. Now only two time formats are included: TAI and Julian date. TAI is the unlimited dimension of the file and is listed simply as "TIME". Metadata has been updated throughout. At Level 1, X123, X123 dark data, XP, and XP dark data are split into separate files (for the netCDFs only; these are still all kept in a single file for the IDL saveset). 
+* Updated how histograms of ADCS jitter are presented
+* Updated the DAXSS deadtime correction for the X123 to better match the flight solar signal levels (changes for Version 2.1 and Version 2.2).
+* For the DAXSS data product archive, the TIME variable was changed to TAI seconds and a new JD_DATE variable is added for the Julian Day.
+* Metadata files now have corresponding version numbers
+* Some minor directory structure stuff (e.g., aia_code, ospex)
   
 ### Deprecated
 
