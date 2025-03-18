@@ -5,9 +5,9 @@
 ;
 ;	2024-05-07	T. Woods, original code for DAXSS Level 2 1-min averages Version 2
 ;
-pro daxss_goes_compare, version=version, eps=eps, verbose=verbose
+pro daxss_goes_compare, version=version, eps=eps, verbose=verbose, result=result
 
-if not keyword_set(version) then version = '2.1.0'
+if not keyword_set(version) then version = '2.2.0'
 version = strtrim(version,2)
 doEPS = keyword_set(eps)
 ; force VERBOSE to be On
@@ -16,6 +16,8 @@ doEPS = keyword_set(eps)
 d2file = '$minxss_data/fm3/level2/daxss_l2_1minute_average_mission_length_v'+version+'.sav'
 if keyword_set(verbose) then print, 'Restoring DAXSS Level 2 file, version '+version+'...'
 restore, d2file		; daxss_average_data and daxss_average_meta
+if keyword_set(verbose) then print, 'DAXSS Number of Spectra = ', n_elements(daxss_average_data)
+
 x123_energy = daxss_average_data[0].energy ; in keV
 x123_energy_step = x123_energy[2] - x123_energy[1]  ; assumes constant grid
 ; convert DAXSS irradiance units of photons/sec/cm^2/keV  to Watts/m^2/keV
@@ -45,6 +47,8 @@ for i=0L,num_sp-1 do begin
 						* energy_factor[wgooda] * x123_energy_step )
 endfor
 
+result = [ [daxss_average_data.time_jd], [daxss_xrs_a], [daxss_average_data.goes_xrsa], $
+				[daxss_xrs_b], [daxss_average_data.goes_xrsb] ]
 ;
 ;	do plots now - plot XRS-B comparison first
 ;
