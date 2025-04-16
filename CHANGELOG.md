@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
   
 ### Changed
+* With v3.1.0 for DAXSS, we're changing the way we pull level 0 files. It was automatically pulled from Google Drive and storing on Dropbox. Now that will be a manual process. 
   
 ### Deprecated
 
