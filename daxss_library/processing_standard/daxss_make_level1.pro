@@ -53,9 +53,10 @@
 ;	6/27/2022	T. Woods, daxss_make_level1.pro adopted for daxss_make_level1new.pro
 ;	5/7/2024	T. Woods, updated with new daxss_dead_time_slow_only.pro call to fix dead-time correction
 ;	1/28/2024	T. Woods, It is more accurate to use the updated daxss_dead_time.pro
+;	6/11/2025 R. Sewell, updated for logic to allow special occultation processing
 ;
 ;+
-PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
+PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, OCCULTATION=OCCULTATION, $
                     	 VERBOSE=VERBOSE, DEBUG=DEBUG
 
   ; Defaults
@@ -73,8 +74,8 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
     	+':  START at '+JPMsystime()
   endif
   ;; IF version EQ !NULL THEN version = '2.0.0'   ; updated 6/27/2022 T.Woods
-  IF version EQ !NULL THEN version = '2.1.0'   ; updated 5/7/2024 T.Woods
-  IF cal_version EQ !NULL THEN cal_version = '2.0.0'
+  IF version EQ !NULL THEN version = '3.1.0'   ; updated 6/11/2025 R. Sewell
+  IF cal_version EQ !NULL THEN cal_version = '3.0.0'
 
   ; Constants
   seconds_per_day = 60.0*60.0*24.0D0
@@ -357,17 +358,30 @@ PRO daxss_make_level1, fm=fm, version=version, cal_version=cal_version, $
 
 ;   5. Select (filter) the data for good (valid) data
 ;   	e.g., not in eclipse by at least one minute, valid deadtime correction, etc.
-
-  wsci = where( (deadtime_flag ne 0) $
-  			   and (fast_count_rate lt FAST_LIMIT) $
-  			   and (accum_time ge (ACCUM_TIME_FACTOR * real_time)) $
-  			   and (real_time gt REAL_TIME_LIMIT) $
-               and (minxsslevel1_x123.tangent_ray_height gt TANGENT_RAY_HEIGHT_MIN) $
-               and (DAXSS_LEVEL0D.x123_det_temp gt 230.) and (DAXSS_LEVEL0D.x123_det_temp lt 241.) $
-               and DAXSS_LEVEL0D.x123_read_errors le 3 $
-               and DAXSS_LEVEL0D.x123_write_errors le 3, $
-               num_sp)
-			; and (DAXSS_LEVEL0D.eclipse lt 1.0) $
+;   R. Sewell 6/11/2025 Changed logic to not remove occultation data for special processing with occultation flag 
+  if keyword_set(occultation) then BEGIN
+    wsci = where( (deadtime_flag ne 0) $
+      and (fast_count_rate lt FAST_LIMIT) $
+      and (accum_time ge (ACCUM_TIME_FACTOR * real_time)) $
+      and (real_time gt REAL_TIME_LIMIT) $
+      and (DAXSS_LEVEL0D.x123_det_temp gt 230.) and (DAXSS_LEVEL0D.x123_det_temp lt 241.) $
+      and DAXSS_LEVEL0D.x123_read_errors le 3 $
+      and DAXSS_LEVEL0D.x123_write_errors le 3, $
+      num_sp)
+      version=version+'-occultation'
+  endif else begin
+    wsci = where( (deadtime_flag ne 0) $
+      and (fast_count_rate lt FAST_LIMIT) $
+      and (accum_time ge (ACCUM_TIME_FACTOR * real_time)) $
+      and (real_time gt REAL_TIME_LIMIT) $
+      and (minxsslevel1_x123.tangent_ray_height gt TANGENT_RAY_HEIGHT_MIN) $
+      and (DAXSS_LEVEL0D.x123_det_temp gt 230.) and (DAXSS_LEVEL0D.x123_det_temp lt 241.) $
+      and DAXSS_LEVEL0D.x123_read_errors le 3 $
+      and DAXSS_LEVEL0D.x123_write_errors le 3, $
+      num_sp)
+    ; and (DAXSS_LEVEL0D.eclipse lt 1.0) $
+  endelse
+  
 
   if keyword_set(verbose) then BEGIN
   	message, /INFO, 'Number of good L1 science packets = '+strtrim(num_sp,2) $
